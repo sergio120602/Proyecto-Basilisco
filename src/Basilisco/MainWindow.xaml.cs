@@ -17,6 +17,9 @@ public partial class MainWindow : Window
     const int FilterIconDecodeWidth = 480;
 
     readonly LibraryStore _store = new();
+    readonly AppSettings _settings = AppSettings.Load();
+    readonly SteamGridDbProvider _steamGridDb = new();
+    readonly TheGamesDbProvider _theGamesDb = new();
     readonly Library _library;
     readonly CoverFlow _flow;
 
@@ -48,6 +51,7 @@ public partial class MainWindow : Window
         RefreshCarousel(0);
 
         Customizer.Saved += ApplyCustomization;
+        Customizer.ArtSearchRequested += OpenArtSearch;
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
         FolderImporter.ImportRequested += ApplyFolderImport;
@@ -171,7 +175,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen;
+    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
@@ -570,6 +574,15 @@ public partial class MainWindow : Window
         ShowToast(message);
     }
 
+    /// <summary>Busca en internet la portada (SteamGridDB) o la contraportada (TheGamesDB) del juego que se está personalizando.</summary>
+    void OpenArtSearch(string gameName, bool back)
+    {
+        if (back)
+            ArtSearch.Open(_theGamesDb, _settings, gameName, Customizer.SetBackImage);
+        else
+            ArtSearch.Open(_steamGridDb, _settings, gameName, Customizer.SetFrontImage);
+    }
+
     void OpenFilterEditor(GameFilter? filter)
     {
         if (filter is null)
@@ -785,7 +798,7 @@ public partial class MainWindow : Window
         // Con un menú abierto, soltar una imagen la usa como portada del juego o imagen del filtro.
         if (IsPanelOpen)
         {
-            if (paths.FirstOrDefault(ImageStore.IsImage) is not { } image)
+            if (ArtSearch.IsOpen || paths.FirstOrDefault(ImageStore.IsImage) is not { } image)
                 return;
 
             if (Customizer.IsOpen)

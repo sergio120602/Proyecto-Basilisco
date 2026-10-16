@@ -1,0 +1,104 @@
+<UserControl x:Class="Basilisco.Customization.ArtSearchPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
+    <!-- Se abre encima del menú Personalizar -->
+    <Grid Background="#A60E1218">
+        <Border Background="#F4F6F9" CornerRadius="20" Padding="32" Width="1000" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
+            </Border.Effect>
+            <StackPanel>
+                <Grid>
+                    <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" Foreground="#1B222C" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="ChangeKeyButton" Style="{StaticResource PillButton}" Content="Cambiar clave" Click="OnChangeKeyClick"/>
+                        <Button Style="{StaticResource PillButton}" Content="Cerrar" Margin="10,0,0,0" Click="OnCloseClick"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Clave de la API (la primera vez, o para cambiarla) -->
+                <StackPanel x:Name="KeyView" Margin="0,22,0,0" Visibility="Collapsed">
+                    <TextBlock x:Name="KeyHelpText" FontSize="14" Foreground="#1F2630" TextWrapping="Wrap"/>
+                    <TextBlock FontSize="12" Foreground="#5B6573" Margin="0,6,0,0" TextWrapping="Wrap"
+                               Text="La clave se guarda en basilisco-data/settings.json, junto al .exe, para que Basilisco siga siendo portable."/>
+                    <DockPanel Margin="0,14,0,0">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Guardar clave" Margin="10,0,0,0"
+                                Click="OnSaveKeyClick"/>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Conseguir clave" Margin="10,0,0,0"
+                                Click="OnGetKeyClick"/>
+                        <TextBox x:Name="KeyBox" Style="{StaticResource FieldTextBox}" FontSize="15"/>
+                    </DockPanel>
+                </StackPanel>
+
+                <!-- Búsqueda y resultados -->
+                <StackPanel x:Name="SearchView" Margin="0,22,0,0">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Buscar" Margin="10,0,0,0"
+                                Click="OnSearchClick"/>
+                        <TextBox x:Name="SearchBox" Style="{StaticResource FieldTextBox}" FontSize="15"/>
+                    </DockPanel>
+
+                    <Grid Margin="0,16,0,0" Height="440">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="280"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Background="White" CornerRadius="12" BorderBrush="#DCE0E7" BorderThickness="1">
+                            <ListBox x:Name="GamesList" BorderThickness="0" Background="Transparent" Margin="4"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="OnGameSelected">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="6,5">
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#1F2630" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="#5B6573"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="White" CornerRadius="12" BorderBrush="#DCE0E7" BorderThickness="1">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                                <ItemsControl x:Name="ImagesList">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Click="OnImageClick" Cursor="Hand" Margin="6" Focusable="False" ToolTip="Usar esta imagen">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Tile" Background="#EEF1F5" CornerRadius="10" Padding="6"
+                                                                BorderBrush="Transparent" BorderThickness="2">
+                                                            <StackPanel>
+                                                                <Image Source="{Binding ThumbUrl}" Width="150" Height="150" Stretch="Uniform"/>
+                                                                <TextBlock Text="{Binding SizeText}" FontSize="11" Foreground="#5B6573"
+                                                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Tile" Property="BorderBrush" Value="#3E6FD8"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <TextBlock x:Name="StatusText" FontSize="13" Foreground="#5B6573" Margin="2,14,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

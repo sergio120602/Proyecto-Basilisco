@@ -37,6 +37,9 @@ public partial class CustomizePanel : UserControl
     static readonly Brush MutedText = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
 
     public event Action<CustomizeResult>? Saved;
+
+    /// <summary>El usuario quiere buscar una portada (false) o una contraportada (true) en internet para este nombre.</summary>
+    public event Action<string, bool>? ArtSearchRequested;
     public event Action? Closed;
 
     public bool IsOpen => Visibility == Visibility.Visible;
@@ -89,7 +92,7 @@ public partial class CustomizePanel : UserControl
             SetFrontImage(path);
     }
 
-    void SetFrontImage(string path)
+    public void SetFrontImage(string path)
     {
         if (!IsValidImage(path))
             return;
@@ -98,7 +101,7 @@ public partial class CustomizePanel : UserControl
         _preview.ShowFront();
     }
 
-    void SetBackImage(string path)
+    public void SetBackImage(string path)
     {
         if (!IsValidImage(path))
             return;
@@ -234,6 +237,10 @@ public partial class CustomizePanel : UserControl
             ShowPath(_newPath);
         }
     }
+
+    void OnSearchFrontClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), false);
+
+    void OnSearchBackClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), true);
 
     void OnShowFrontClick(object sender, RoutedEventArgs e) => _preview.ShowFront();
 

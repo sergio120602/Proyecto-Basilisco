@@ -187,6 +187,7 @@
         </Grid>
 
         <customization:CustomizePanel x:Name="Customizer"/>
+        <customization:ArtSearchPanel x:Name="ArtSearch"/>
         <customization:FilterPanel x:Name="FilterEditor"/>
         <customization:FolderImportPanel x:Name="FolderImporter"/>
     </Grid>
