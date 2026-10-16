@@ -9,7 +9,7 @@
     <RootNamespace>Basilisco</RootNamespace>
     <AssemblyName>Basilisco</AssemblyName>
 
-    <Version>0.0.7</Version>
+    <Version>0.0.8</Version>
     <Product>Proyecto Basilisco</Product>
     <Description>Launcher de videojuegos portable</Description>
 

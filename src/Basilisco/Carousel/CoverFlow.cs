@@ -25,7 +25,10 @@ public sealed class CoverFlow
     const double NeighborOffsetX = 1.15;
     const double StackSpacingX = 0.24;
     const double NeighborDepth = 0.55;
-    const double StackSpacingDepth = 0.2;
+    // Separación en profundidad de las cajas apiladas. Con menos, al deslizar (cuando cada caja tiene un giro
+    // distinto) el lomo de la de detrás llega a atravesar la portada de la de delante y se ve una raya negra.
+    // Con 0,3 queda siempre al menos 0,05 por detrás durante toda la animación.
+    const double StackSpacingDepth = 0.3;
     const double SideAngle = 32;
 
     // Cuanto mayor, más rápido llega la animación a su destino.
