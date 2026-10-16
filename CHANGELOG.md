@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.3] - 2026-10-16
+
+Filtros para agrupar los juegos como quieras.
+
+- **Barra de filtros** arriba: «Todos los juegos» y tus filtros, cada uno con el número de juegos que tiene. Cambia de filtro con un clic o con `Tab` / `Shift+Tab`.
+- **Crear filtros** con «+ Nuevo filtro»: ponles un nombre y la imagen que quieras (se ve entera, sin deformarla ni recortarla) con vista previa de cómo quedará la pestaña.
+- **Editar o eliminar** un filtro con clic derecho sobre su pestaña. Eliminar un filtro no borra sus juegos.
+- **Asignar juegos** a uno o varios filtros desde Personalizar (`E`), en la nueva sección «Filtros».
+- Lo que importes con un filtro seleccionado entra directamente en ese filtro.
+- En «Todos los juegos», las etiquetas de cada juego muestran a qué filtros pertenece.
+- Arreglado: al abrir un menú con el ratón, el cursor no se colocaba en el campo del nombre.
+
 ## [0.0.2] - 2026-10-16
 
 Menú de personalización para cada juego.

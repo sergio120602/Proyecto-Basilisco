@@ -12,4 +12,6 @@ public static class AppInfo
         Path.Combine(AppContext.BaseDirectory, "basilisco-data");
 
     public static string CoversDirectory { get; } = Path.Combine(DataDirectory, "covers");
+
+    public static string FilterImagesDirectory { get; } = Path.Combine(DataDirectory, "filters");
 }

@@ -69,7 +69,8 @@ public sealed class CoverFlow
         _viewport.Children.Add(new ModelVisual3D { Content = _scene });
     }
 
-    public void SetItems(IReadOnlyList<CarouselItem> items, int selectedIndex)
+    /// <param name="jump">True para colocarse directamente en la selección sin deslizar (al cambiar de filtro).</param>
+    public void SetItems(IReadOnlyList<CarouselItem> items, int selectedIndex, bool jump = false)
     {
         _slots.Clear();
         _modelIndex.Clear();
@@ -85,7 +86,7 @@ public sealed class CoverFlow
 
         var last = Math.Max(0, _slots.Count - 1);
         _target = Math.Clamp(selectedIndex, 0, last);
-        _position = Math.Clamp(_position, 0, last);
+        _position = jump ? _target : Math.Clamp(_position, 0, last);
 
         ApplyLayout();
         StartAnimation();

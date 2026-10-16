@@ -16,9 +16,18 @@ public partial class MainWindow : Window
     const string ImportFilter =
         "Juegos y aplicaciones (*.exe;*.lnk;*.url;*.bat;*.cmd)|*.exe;*.lnk;*.url;*.bat;*.cmd|Todos los archivos (*.*)|*.*";
 
+    const int FilterIconDecodeWidth = 96;
+
     readonly LibraryStore _store = new();
-    readonly List<Game> _games;
+    readonly Library _library;
     readonly CoverFlow _flow;
+
+    /// <summary>Filtro seleccionado arriba; null es «Todos los juegos».</summary>
+    GameFilter? _activeFilter;
+
+    /// <summary>Juegos que se ven en el carrusel con el filtro actual, en el mismo orden.</summary>
+    List<Game> _visibleGames = [];
+
     int _wheelDelta;
     bool _fullScreen;
 
@@ -27,44 +36,109 @@ public partial class MainWindow : Window
         InitializeComponent();
         VersionText.Text = $"v{AppInfo.Version}";
 
-        _games = _store.Load();
+        _library = _store.Load();
         _flow = new CoverFlow(Viewport);
         _flow.SelectedIndexChanged += ShowDetails;
+        RefreshFilterTabs();
         RefreshCarousel(0);
 
         Customizer.Saved += ApplyCustomization;
+        FilterEditor.Saved += ApplyFilter;
+        FilterEditor.DeleteRequested += DeleteFilter;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
     }
 
-    bool IsAddCard(int index) => index >= _games.Count;
+    List<Game> Games => _library.Games;
+    List<GameFilter> Filters => _library.Filters;
 
-    void RefreshCarousel(int selectedIndex)
+    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen;
+
+    bool IsAddCard(int index) => index >= _visibleGames.Count;
+
+    bool BelongsToActiveFilter(Game game) => _activeFilter is null || game.FilterIds.Contains(_activeFilter.Id);
+
+    int CountGames(GameFilter filter) => Games.Count(game => game.FilterIds.Contains(filter.Id));
+
+    void RefreshCarousel(int selectedIndex, bool jump = false)
     {
-        var items = _games
+        _visibleGames = Games.Where(BelongsToActiveFilter).ToList();
+        var items = _visibleGames
             .Select(ToCarouselItem)
             .Append(new CarouselItem("Importar juego", IsAddCard: true))
             .ToList();
 
-        AllGamesTab.Text = $"Todos los juegos ({_games.Count})";
-        _flow.SetItems(items, selectedIndex);
+        _flow.SetItems(items, selectedIndex, jump);
     }
 
     static CarouselItem ToCarouselItem(Game game) =>
-        new(game.Name, IsAddCard: false, CoverStore.GetPath(game));
+        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game));
+
+    void RefreshFilterTabs()
+    {
+        var tabs = new List<FilterTab>
+        {
+            new() { Label = $"Todos los juegos ({Games.Count})", IsSelected = _activeFilter is null },
+        };
+
+        foreach (var filter in Filters)
+        {
+            var image = ImageStore.GetFilterImagePath(filter);
+            tabs.Add(new FilterTab
+            {
+                Filter = filter,
+                Label = $"{filter.Name} ({CountGames(filter)})",
+                Icon = image is null ? null : CoverArt.LoadImage(image, FilterIconDecodeWidth),
+                IsSelected = filter == _activeFilter,
+            });
+        }
+
+        tabs.Add(new FilterTab { Label = "+  Nuevo filtro", IsAddButton = true });
+        FilterTabs.ItemsSource = tabs;
+
+        // Si hay muchos filtros, que el seleccionado no quede escondido fuera de la barra.
+        var selected = tabs.FindIndex(tab => tab.IsSelected);
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (FilterTabs.ItemContainerGenerator.ContainerFromIndex(selected) is FrameworkElement container)
+                container.BringIntoView();
+        });
+    }
+
+    void SelectFilter(GameFilter? filter)
+    {
+        _activeFilter = filter;
+        RefreshFilterTabs();
+        RefreshCarousel(0, jump: true);
+
+        Viewport.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260))
+        {
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+        });
+    }
+
+    void CycleFilter(int direction)
+    {
+        var options = new List<GameFilter?> { null };
+        options.AddRange(Filters);
+        var current = options.IndexOf(_activeFilter);
+        SelectFilter(options[(current + direction + options.Count) % options.Count]);
+    }
 
     void ShowDetails(int index)
     {
         if (IsAddCard(index))
         {
             TitleText.Text = "Importar juego";
-            Chips.ItemsSource = new[] { "Ejecutables, accesos directos y scripts", "También puedes arrastrar archivos aquí" };
+            Chips.ItemsSource = _activeFilter is { } filter && _visibleGames.Count == 0
+                ? new[] { $"«{filter.Name}» está vacío", "Asigna juegos con E desde «Todos los juegos»", "o importa juegos nuevos aquí" }
+                : new[] { "Ejecutables, accesos directos y scripts", "También puedes arrastrar archivos aquí" };
             ActivateHint.Text = "Importar";
             GameHints.Visibility = Visibility.Collapsed;
         }
         else
         {
-            var game = _games[index];
+            var game = _visibleGames[index];
             TitleText.Text = game.Name;
             Chips.ItemsSource = DescribeGame(game);
             ActivateHint.Text = "Jugar";
@@ -77,7 +151,7 @@ public partial class MainWindow : Window
         });
     }
 
-    static List<string> DescribeGame(Game game)
+    List<string> DescribeGame(Game game)
     {
         var chips = new List<string>
         {
@@ -105,6 +179,12 @@ public partial class MainWindow : Window
                 1 => "Ayer",
                 _ => last.ToString("dd/MM/yyyy"),
             });
+        }
+
+        // En «Todos los juegos» enseñamos a qué filtros pertenece; dentro de un filtro ya se sabe.
+        if (_activeFilter is null)
+        {
+            chips.AddRange(Filters.Where(filter => game.FilterIds.Contains(filter.Id)).Select(filter => filter.Name));
         }
 
         var folder = Path.GetFileName(Path.GetDirectoryName(game.Path));
@@ -135,14 +215,14 @@ public partial class MainWindow : Window
         if (IsAddCard(index))
             Import();
         else
-            Launch(_games[index]);
+            Launch(_visibleGames[index]);
     }
 
     void Import()
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Importar juego",
+            Title = _activeFilter is null ? "Importar juego" : $"Importar juego a «{_activeFilter.Name}»",
             Filter = ImportFilter,
             Multiselect = true,
             // Queremos el acceso directo tal cual, no el archivo al que apunta, para conservar sus argumentos.
@@ -155,7 +235,7 @@ public partial class MainWindow : Window
 
     void AddGames(IEnumerable<string> paths)
     {
-        var firstNew = -1;
+        Game? first = null;
         var added = 0;
         var skippedFolders = false;
 
@@ -166,21 +246,34 @@ public partial class MainWindow : Window
                 skippedFolders = true;
                 continue;
             }
-            if (!File.Exists(path) || _games.Any(g => string.Equals(g.Path, path, StringComparison.OrdinalIgnoreCase)))
+            if (!File.Exists(path))
                 continue;
 
-            _games.Add(new Game
+            var game = Games.FirstOrDefault(g => string.Equals(g.Path, path, StringComparison.OrdinalIgnoreCase));
+            if (game is null)
             {
-                Name = Path.GetFileNameWithoutExtension(path),
-                Path = path,
-                AddedAt = DateTime.Now,
-            });
-            if (firstNew < 0)
-                firstNew = _games.Count - 1;
+                game = new Game
+                {
+                    Name = Path.GetFileNameWithoutExtension(path),
+                    Path = path,
+                    AddedAt = DateTime.Now,
+                };
+                Games.Add(game);
+            }
+            else if (BelongsToActiveFilter(game))
+            {
+                continue;
+            }
+
+            // Lo que se importa dentro de un filtro entra directamente en él.
+            if (_activeFilter is not null)
+                game.FilterIds.Add(_activeFilter.Id);
+
+            first ??= game;
             added++;
         }
 
-        if (added == 0)
+        if (first is null)
         {
             ShowToast(skippedFolders
                 ? "La importación de carpetas llegará en una próxima versión"
@@ -189,8 +282,12 @@ public partial class MainWindow : Window
         }
 
         Save();
-        RefreshCarousel(firstNew);
-        ShowToast(added == 1 ? $"«{_games[firstNew].Name}» añadido a la biblioteca" : $"{added} juegos añadidos a la biblioteca");
+        RefreshFilterTabs();
+        RefreshCarousel(0);
+        _flow.Select(_visibleGames.IndexOf(first));
+
+        var target = _activeFilter is null ? "la biblioteca" : $"«{_activeFilter.Name}»";
+        ShowToast(added == 1 ? $"«{first.Name}» añadido a {target}" : $"{added} juegos añadidos a {target}");
     }
 
     void Launch(Game game)
@@ -226,39 +323,41 @@ public partial class MainWindow : Window
         if (IsAddCard(index))
             return;
 
-        var game = _games[index];
+        var game = _visibleGames[index];
         var answer = MessageBox.Show(this, $"¿Quitar «{game.Name}» de la biblioteca?\n\nEl juego no se borrará de tu disco.",
             "Quitar juego", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes)
             return;
 
-        CoverStore.RemoveCover(game);
-        _games.RemoveAt(index);
+        ImageStore.RemoveCover(game);
+        Games.Remove(game);
         Save();
+        RefreshFilterTabs();
         RefreshCarousel(index);
     }
 
     void OpenCustomizer(int index)
     {
         if (!IsAddCard(index))
-            Customizer.Open(_games[index]);
+            Customizer.Open(_visibleGames[index], Filters);
     }
 
     void ApplyCustomization(CustomizeResult result)
     {
         var game = result.Game;
-        var index = _games.IndexOf(game);
+        var index = _visibleGames.IndexOf(game);
         if (index < 0)
             return;
 
         game.Name = result.Name;
+        game.FilterIds = result.FilterIds;
         var message = "Cambios guardados";
         try
         {
             if (result.NewImagePath is { } image)
-                CoverStore.SetCover(game, image);
+                ImageStore.SetCover(game, image);
             else if (result.RemoveImage)
-                CoverStore.RemoveCover(game);
+                ImageStore.RemoveCover(game);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -266,14 +365,83 @@ public partial class MainWindow : Window
         }
 
         Save();
-        _flow.UpdateItem(index, ToCarouselItem(game));
-        ShowDetails(index);
+        RefreshFilterTabs();
+
+        if (BelongsToActiveFilter(game))
+        {
+            _flow.UpdateItem(index, ToCarouselItem(game));
+            ShowDetails(index);
+        }
+        else
+        {
+            // Lo has sacado del filtro que estás viendo: desaparece del carrusel.
+            RefreshCarousel(index);
+            message = $"«{game.Name}» ya no está en «{_activeFilter!.Name}»";
+        }
         ShowToast(message);
+    }
+
+    void OpenFilterEditor(GameFilter? filter)
+    {
+        if (filter is null)
+            FilterEditor.OpenNew();
+        else
+            FilterEditor.OpenEdit(filter, CountGames(filter));
+    }
+
+    void ApplyFilter(FilterResult result)
+    {
+        var isNew = result.Filter is null;
+        var filter = result.Filter ?? new GameFilter();
+        filter.Name = result.Name;
+
+        var message = isNew ? $"Filtro «{filter.Name}» creado" : "Filtro guardado";
+        try
+        {
+            if (result.NewImagePath is { } image)
+                ImageStore.SetFilterImage(filter, image);
+            else if (result.RemoveImage)
+                ImageStore.RemoveFilterImage(filter);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            message = "No se pudo copiar la imagen; el resto de cambios sí se han guardado";
+        }
+
+        if (isNew)
+            Filters.Add(filter);
+        Save();
+
+        if (isNew)
+            SelectFilter(filter);
+        else
+            RefreshFilterTabs();
+        ShowToast(message);
+    }
+
+    void DeleteFilter(GameFilter filter)
+    {
+        var answer = MessageBox.Show(this, $"¿Eliminar el filtro «{filter.Name}»?\n\nLos juegos que tenga no se borran: siguen en «Todos los juegos».",
+            "Eliminar filtro", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes)
+            return;
+
+        foreach (var game in Games)
+            game.FilterIds.Remove(filter.Id);
+        ImageStore.RemoveFilterImage(filter);
+        Filters.Remove(filter);
+        Save();
+
+        if (filter == _activeFilter)
+            SelectFilter(null);
+        else
+            RefreshFilterTabs();
+        ShowToast($"Filtro «{filter.Name}» eliminado");
     }
 
     void Save()
     {
-        if (!_store.Save(_games))
+        if (!_store.Save(_library))
             ShowToast("No se pudo guardar la biblioteca");
     }
 
@@ -299,8 +467,8 @@ public partial class MainWindow : Window
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Con el menú abierto las teclas son para él (escribir el nombre, Enter, Esc).
-        if (Customizer.IsOpen)
+        // Con un menú abierto las teclas son para él (escribir el nombre, Enter, Esc).
+        if (IsPanelOpen)
             return;
 
         switch (e.Key)
@@ -309,6 +477,7 @@ public partial class MainWindow : Window
             case Key.Right: _flow.MoveBy(1); break;
             case Key.Home: _flow.Select(0); break;
             case Key.End: _flow.Select(_flow.Count - 1); break;
+            case Key.Tab: CycleFilter(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? -1 : 1); break;
             case Key.Enter or Key.Space: Activate(_flow.SelectedIndex); break;
             case Key.Delete: RemoveSelected(); break;
             case Key.E: OpenCustomizer(_flow.SelectedIndex); break;
@@ -322,7 +491,7 @@ public partial class MainWindow : Window
 
     void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (Customizer.IsOpen)
+        if (IsPanelOpen)
             return;
 
         // Acumulamos para que los touchpads (que mandan deltas pequeños) no aceleren el carrusel.
@@ -355,6 +524,23 @@ public partial class MainWindow : Window
         OpenCustomizer(index);
     }
 
+    void OnFilterTabClick(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not FilterTab tab)
+            return;
+
+        if (tab.IsAddButton)
+            OpenFilterEditor(null);
+        else if (tab.Filter != _activeFilter)
+            SelectFilter(tab.Filter);
+    }
+
+    void OnFilterTabRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is FilterTab { Filter: { } filter })
+            OpenFilterEditor(filter);
+    }
+
     void OnImportClick(object sender, RoutedEventArgs e) => Import();
 
     void OnDragOver(object sender, DragEventArgs e)
@@ -368,11 +554,16 @@ public partial class MainWindow : Window
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths)
             return;
 
-        // Con el menú abierto, soltar una imagen la usa como portada del juego.
-        if (Customizer.IsOpen)
+        // Con un menú abierto, soltar una imagen la usa como portada del juego o imagen del filtro.
+        if (IsPanelOpen)
         {
-            if (paths.FirstOrDefault(CoverStore.IsImage) is { } image)
+            if (paths.FirstOrDefault(ImageStore.IsImage) is not { } image)
+                return;
+
+            if (Customizer.IsOpen)
                 Customizer.SetImage(image);
+            else
+                FilterEditor.SetImage(image);
             return;
         }
 

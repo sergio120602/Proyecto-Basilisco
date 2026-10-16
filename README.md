@@ -12,7 +12,7 @@ Es **100 % portable**: un único `.exe`, sin instalación de ningún tipo. Lo co
 
 Descarga el último `Basilisco-vX.Y.Z-win-x64.exe` desde **[Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases)** y ábrelo. No necesita instalar nada (ni siquiera .NET).
 
-La biblioteca y las portadas se guardan en una carpeta `basilisco-data` junto al `.exe`, así que si mueves el `.exe`, mueve también esa carpeta.
+La biblioteca, las portadas y los filtros se guardan en una carpeta `basilisco-data` junto al `.exe`, así que si mueves el `.exe`, mueve también esa carpeta.
 
 ## 🎯 Objetivo
 
@@ -25,7 +25,10 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Navegar por el carrusel | `←` `→`, rueda del ratón o clic en una caja lateral |
 | Jugar | `Enter` o clic en la caja central |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
-| Personalizar (nombre y portada) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada y filtros) | `E` o clic derecho sobre la caja |
+| Cambiar de filtro | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
+| Crear filtro | «+ Nuevo filtro» en la barra de arriba |
+| Editar o eliminar filtro | Clic derecho sobre su pestaña |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
 | Pantalla completa | `F11` (`Esc` para salir) |
 
@@ -56,7 +59,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] Elegir tecnología → C# + WPF (.NET 10), compilado como `.exe` portable
 - [x] **Paso 1 · v0.0.1** — El `.exe` abre, carrusel 3D con cajas negras, importar y lanzar cualquier juego o aplicación
 - [x] **Paso 2 · v0.0.2** — Menú de personalización: cambiar el nombre y la portada de cada juego
-- [ ] **Paso 3** — Filtros personalizados para dividir los programas en grupos
+- [x] **Paso 3 · v0.0.3** — Filtros personalizados (con nombre e imagen) para agrupar los juegos
 - [ ] **Paso 4** — Personalización con imagen delantera y trasera de la caja
 - [ ] **Paso 5** — Poder girar las portadas
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…)
