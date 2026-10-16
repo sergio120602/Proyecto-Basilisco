@@ -27,6 +27,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Girar la caja (ver grosor y contraportada) | Arrastrar la caja central con el ratón |
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
+| Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
 | Personalizar (nombre, portada, contraportada y filtros) | `E` o clic derecho sobre la caja |
 | Cambiar de filtro | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
 | Crear filtro | «+ Nuevo filtro» en la barra de arriba |
@@ -44,9 +45,9 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 
 ### 📁 Importación de carpetas
 - Importar juegos individuales desde cualquier carpeta. ✅ *(v0.0.1)*
-- **Importar directorios completos**: seleccionar una carpeta y que Basilisco escanee todo su contenido para detectar los juegos que contiene.
-- Detección de ejecutables de juego (descartando instaladores, desinstaladores, herramientas, etc.).
-- Posibilidad de volver a escanear las carpetas para detectar juegos nuevos.
+- **Importar directorios completos**: seleccionar una carpeta y que Basilisco escanee todo su contenido para detectar los juegos que contiene. ✅ *(v0.0.6)*
+- Detección de ejecutables de juego (descartando instaladores, desinstaladores, herramientas, etc.). ✅ *(v0.0.6)*
+- Volver a escanear una carpeta para detectar juegos nuevos (los ya importados se marcan y no se duplican). ✅ *(v0.0.6)*
 
 ### 🎮 Biblioteca unificada
 - Vista única con todos los juegos, vengan de donde vengan.
@@ -67,7 +68,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…)
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
-- [ ] Importar directorios completos y escanearlos en busca de juegos
+- [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
 
 ### 💡 Ideas para el futuro
 - Información de cada juego (descripción, año, género…).

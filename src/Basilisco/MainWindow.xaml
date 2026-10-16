@@ -115,8 +115,12 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <Button Grid.Column="2" VerticalAlignment="Center" Style="{StaticResource PillButton}"
-                    Content="+  Importar juego" Click="OnImportClick"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource PillButton}" Content="+  Importar carpeta" Click="OnImportFolderClick"
+                        ToolTip="Busca todos los juegos de una carpeta (C)"/>
+                <Button Style="{StaticResource PillButton}" Content="+  Importar juego" Click="OnImportClick" Margin="10,0,0,0"
+                        ToolTip="Añade un ejecutable o acceso directo (I)"/>
+            </StackPanel>
         </Grid>
 
         <!-- Título y etiquetas del juego seleccionado -->
@@ -171,6 +175,8 @@
                 </StackPanel>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="I"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="C"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Carpeta"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Tab"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
             </StackPanel>
@@ -182,5 +188,6 @@
 
         <customization:CustomizePanel x:Name="Customizer"/>
         <customization:FilterPanel x:Name="FilterEditor"/>
+        <customization:FolderImportPanel x:Name="FolderImporter"/>
     </Grid>
 </Window>

@@ -53,6 +53,7 @@ public partial class MainWindow : Window
         Customizer.Saved += ApplyCustomization;
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
+        FolderImporter.ImportRequested += ApplyFolderImport;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
     }
@@ -60,7 +61,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen;
+    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
@@ -140,7 +141,7 @@ public partial class MainWindow : Window
             TitleText.Text = "Importar juego";
             Chips.ItemsSource = _activeFilter is { } filter && _visibleGames.Count == 0
                 ? new[] { $"«{filter.Name}» está vacío", "Asigna juegos con E desde «Todos los juegos»", "o importa juegos nuevos aquí" }
-                : new[] { "Ejecutables, accesos directos y scripts", "También puedes arrastrar archivos aquí" };
+                : new[] { "Ejecutables, accesos directos y scripts", "C para importar una carpeta entera", "También puedes arrastrar archivos o carpetas aquí" };
             ActivateHint.Text = "Importar";
             GameHints.Visibility = Visibility.Collapsed;
         }
@@ -238,44 +239,77 @@ public partial class MainWindow : Window
         };
 
         if (dialog.ShowDialog(this) == true)
-            AddGames(dialog.FileNames);
+            AddFiles(dialog.FileNames);
     }
 
-    void AddGames(IEnumerable<string> paths)
+    void ImportFolder()
+    {
+        var dialog = new OpenFolderDialog { Title = "Importar carpeta de juegos" };
+        if (dialog.ShowDialog(this) == true)
+            OpenFolderImport(dialog.FolderName);
+    }
+
+    void OpenFolderImport(string folder) =>
+        FolderImporter.Open(folder, IsInLibrary, _activeFilter?.Name);
+
+    bool IsInLibrary(string path) =>
+        Games.Any(game => string.Equals(game.Path, path, StringComparison.OrdinalIgnoreCase));
+
+    void ApplyFolderImport(FolderImportResult result)
+    {
+        GameFilter? groupFilter = null;
+        if (result.NewFilterName is { } name)
+        {
+            // Si ya hay un filtro con ese nombre, se reutiliza en lugar de duplicarlo.
+            groupFilter = Filters.FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.CurrentCultureIgnoreCase));
+            if (groupFilter is null)
+            {
+                groupFilter = new GameFilter { Name = name };
+                Filters.Add(groupFilter);
+            }
+        }
+
+        AddGames(result.Games.Select(game => (game.Path, (string?)game.Name)), groupFilter);
+    }
+
+    void AddFiles(IEnumerable<string> paths)
+    {
+        var files = paths.Where(File.Exists).Select(path => (path, (string?)null)).ToList();
+        if (files.Count > 0)
+            AddGames(files);
+    }
+
+    /// <param name="games">Ruta de cada juego y, si se conoce, su nombre (si no, el del archivo).</param>
+    /// <param name="groupFilter">Filtro extra al que añadir los juegos, además del seleccionado.</param>
+    void AddGames(IEnumerable<(string Path, string? Name)> games, GameFilter? groupFilter = null)
     {
         Game? first = null;
         var added = 0;
-        var skippedFolders = false;
 
-        foreach (var path in paths)
+        foreach (var (path, name) in games)
         {
-            if (Directory.Exists(path))
-            {
-                skippedFolders = true;
-                continue;
-            }
-            if (!File.Exists(path))
-                continue;
-
             var game = Games.FirstOrDefault(g => string.Equals(g.Path, path, StringComparison.OrdinalIgnoreCase));
             if (game is null)
             {
                 game = new Game
                 {
-                    Name = Path.GetFileNameWithoutExtension(path),
+                    Name = name ?? Path.GetFileNameWithoutExtension(path),
                     Path = path,
                     AddedAt = DateTime.Now,
                 };
                 Games.Add(game);
             }
-            else if (BelongsToActiveFilter(game))
+            else if (BelongsToActiveFilter(game) && (groupFilter is null || game.FilterIds.Contains(groupFilter.Id)))
             {
                 continue;
             }
 
             // Lo que se importa dentro de un filtro entra directamente en él.
-            if (_activeFilter is not null)
-                game.FilterIds.Add(_activeFilter.Id);
+            foreach (var filter in new[] { _activeFilter, groupFilter })
+            {
+                if (filter is not null && !game.FilterIds.Contains(filter.Id))
+                    game.FilterIds.Add(filter.Id);
+            }
 
             first ??= game;
             added++;
@@ -283,9 +317,7 @@ public partial class MainWindow : Window
 
         if (first is null)
         {
-            ShowToast(skippedFolders
-                ? "La importación de carpetas llegará en una próxima versión"
-                : "Ya estaba en tu biblioteca");
+            ShowToast("Ya estaba en tu biblioteca");
             return;
         }
 
@@ -294,7 +326,7 @@ public partial class MainWindow : Window
         RefreshCarousel(0);
         _flow.Select(_visibleGames.IndexOf(first));
 
-        var target = _activeFilter is null ? "la biblioteca" : $"«{_activeFilter.Name}»";
+        var target = (_activeFilter ?? groupFilter) is { } shown ? $"«{shown.Name}»" : "la biblioteca";
         ShowToast(added == 1 ? $"«{first.Name}» añadido a {target}" : $"{added} juegos añadidos a {target}");
     }
 
@@ -497,6 +529,7 @@ public partial class MainWindow : Window
             case Key.E: OpenCustomizer(_flow.SelectedIndex); break;
             case Key.R: _flow.FlipSelected(); break;
             case Key.I: Import(); break;
+            case Key.C: ImportFolder(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.Escape when _fullScreen: ToggleFullScreen(); break;
             default: return;
@@ -593,6 +626,8 @@ public partial class MainWindow : Window
 
     void OnImportClick(object sender, RoutedEventArgs e) => Import();
 
+    void OnImportFolderClick(object sender, RoutedEventArgs e) => ImportFolder();
+
     void OnDragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
@@ -612,11 +647,14 @@ public partial class MainWindow : Window
 
             if (Customizer.IsOpen)
                 Customizer.DropImage(image);
-            else
+            else if (FilterEditor.IsOpen)
                 FilterEditor.SetImage(image);
             return;
         }
 
-        AddGames(paths);
+        // Una carpeta soltada se escanea entera; los archivos sueltos se importan tal cual.
+        AddFiles(paths);
+        if (paths.FirstOrDefault(Directory.Exists) is { } folder)
+            OpenFolderImport(folder);
     }
 }

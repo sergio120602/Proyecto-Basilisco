@@ -1,0 +1,64 @@
+<UserControl x:Class="Basilisco.Customization.FolderImportPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
+    <!-- El fondo oscurece el carrusel y bloquea los clics mientras el menú está abierto -->
+    <Grid Background="#A60E1218">
+        <Border Background="#F4F6F9" CornerRadius="20" Padding="36" Width="760" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
+            </Border.Effect>
+            <StackPanel>
+                <TextBlock Text="Importar carpeta" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
+                <TextBlock x:Name="FolderText" FontSize="12" Foreground="#5B6573" Margin="2,4,0,0" TextTrimming="CharacterEllipsis"/>
+
+                <!-- Mientras escanea -->
+                <StackPanel x:Name="ScanningView" Margin="0,28,0,0">
+                    <ProgressBar IsIndeterminate="True" Height="6" Foreground="#3E6FD8" Background="#DCE0E7" BorderThickness="0"/>
+                    <TextBlock x:Name="ScanStatusText" FontSize="15" Foreground="#1F2630" Margin="2,16,0,0"/>
+                    <Button Style="{StaticResource PillButton}" Content="Cancelar" HorizontalAlignment="Right" Margin="0,24,0,0"
+                            Click="OnCancelClick"/>
+                </StackPanel>
+
+                <!-- Con los resultados -->
+                <StackPanel x:Name="ResultsView" Margin="0,22,0,0" Visibility="Collapsed">
+                    <Grid>
+                        <TextBlock x:Name="SummaryText" FontSize="15" FontWeight="SemiBold" Foreground="#1F2630" VerticalAlignment="Center"/>
+                        <StackPanel x:Name="SelectionButtons" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource PillButton}" Content="Marcar todos" Click="OnSelectAllClick"/>
+                            <Button Style="{StaticResource PillButton}" Content="Desmarcar todos" Margin="10,0,0,0" Click="OnSelectNoneClick"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border x:Name="ListBorder" Background="White" CornerRadius="12" BorderBrush="#DCE0E7" BorderThickness="1"
+                            Margin="0,16,0,0" Padding="6">
+                        <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="ResultsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" IsEnabled="{Binding CanImport}"
+                                                  Focusable="False" Padding="10,0,0,0" Margin="10,7" VerticalContentAlignment="Center">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="#1F2630"/>
+                                                <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="#5B6573" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <ToggleButton x:Name="CreateFilterToggle" Style="{StaticResource FilterToggle}" Margin="0,16,0,0" HorizontalAlignment="Left"/>
+                    <TextBlock x:Name="ActiveFilterText" FontSize="13" Foreground="#5B6573" Margin="2,4,0,0" TextWrapping="Wrap"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                        <Button Style="{StaticResource PillButton}" Content="Cancelar" Click="OnCancelClick"/>
+                        <Button x:Name="ImportButton" Style="{StaticResource PrimaryButton}" Content="Importar" Margin="12,0,0,0"
+                                Click="OnImportClick"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
