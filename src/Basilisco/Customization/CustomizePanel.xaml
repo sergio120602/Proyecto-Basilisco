@@ -41,7 +41,14 @@
 
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="Personalizar" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
-                    <TextBlock x:Name="PathText" FontSize="12" Foreground="#5B6573" Margin="2,4,0,0" TextTrimming="CharacterEllipsis"/>
+
+                    <TextBlock Text="UBICACIÓN" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Cambiar ubicación…"
+                                Margin="12,0,0,0" Click="OnChangeLocationClick"/>
+                        <TextBlock x:Name="PathText" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
 
                     <TextBlock Text="NOMBRE" Style="{StaticResource FieldLabel}" Margin="2,26,0,8"/>
                     <TextBox x:Name="NameBox" Style="{StaticResource FieldTextBox}" TextChanged="OnNameChanged"/>

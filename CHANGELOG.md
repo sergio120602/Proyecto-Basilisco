@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.7] - 2026-10-17
+
+Los juegos que cambias de carpeta ya no se pierden ni se duplican.
+
+- **Reparación automática al abrir Basilisco**: si un juego ya no está donde estaba porque has movido su carpeta (por ejemplo, a una subcarpeta `ports`), lo busca en las carpetas cercanas y actualiza su ubicación sin perder portada, contraportada, filtros ni partidas.
+- **Duplicados**: si después de moverlo lo habías vuelto a importar, las dos entradas se juntan en una (se suman las partidas, se conservan las portadas y los filtros de ambas, y se queda el nombre que pusiste a mano).
+- **Importar reconoce los juegos movidos**: al importar un archivo o una carpeta, los juegos que ya tenías en otra carpeta se marcan como «Lo tenías en otra carpeta» y se actualiza su ubicación en lugar de duplicarlos.
+- **Al jugar un juego que no se encuentra**, Basilisco intenta localizarlo; si no puede, te ofrece buscarlo tú.
+- **Cambiar ubicación** en Personalizar (`E`), que además avisa en rojo si el archivo no se encuentra.
+- Nombres más limpios al importar carpetas: se quitan la versión y la plataforma del final (`ico-pc-v0.7.2` → «Ico-Pc», `Dusk-v1.0.0-win32-x86_64` → «Dusk»).
+
 ## [0.0.6] - 2026-10-17
 
 Importación de carpetas enteras.
