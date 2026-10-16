@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.8] - 2026-10-17
+
+- Arreglado: al pasar de un juego a otro se veía durante unos instantes una raya negra cruzando la portada de la caja de al lado. Era el lomo de la caja de detrás, que atravesaba la portada de la de delante mientras cada una giraba con un ángulo distinto. Ahora las cajas apiladas tienen más separación en profundidad y nunca se tocan durante la animación.
+
 ## [0.0.7] - 2026-10-17
 
 Los juegos que cambias de carpeta ya no se pierden ni se duplican.
