@@ -38,10 +38,6 @@ if ($LASTEXITCODE) { throw 'Falló la compilación.' }
 $asset = Join-Path $dist "Basilisco-$tag-win-x64.exe"
 Move-Item (Join-Path $dist 'Basilisco.exe') $asset
 
-# Copia para probar en la raíz del proyecto: sustituye a la de la versión anterior.
-Get-ChildItem $root -Filter 'Basilisco-v*.exe' | Remove-Item -Force
-Copy-Item $asset $root
-
 Write-Host 'Subiendo código y etiqueta...' -ForegroundColor Cyan
 git -C $root tag -a $tag -m "Basilisco $tag"
 git -C $root push origin HEAD
@@ -68,3 +64,10 @@ Invoke-RestMethod -Method Post -Uri "https://uploads.github.com/repos/$repo/rele
     -Headers $headers -InFile $asset -ContentType 'application/octet-stream' | Out-Null
 
 Write-Host "Publicado: $($release.html_url)" -ForegroundColor Green
+
+# Copia para probar en la raíz del proyecto: sustituye a la de la versión anterior.
+Copy-Item $asset $root -Force
+foreach ($old in Get-ChildItem $root -Filter 'Basilisco-v*.exe' | Where-Object Name -ne $assetName) {
+    try { Remove-Item $old.FullName -Force -ErrorAction Stop }
+    catch { Write-Warning "No se pudo borrar $($old.Name) (¿está abierto?). Se borrará al publicar la próxima versión." }
+}
