@@ -10,32 +10,32 @@ public sealed class LibraryStore
 
     public string FilePath { get; } = Path.Combine(AppInfo.DataDirectory, "library.json");
 
-    public List<Game> Load()
+    public Library Load()
     {
         if (!File.Exists(FilePath))
-            return [];
+            return new Library();
 
         try
         {
             var json = File.ReadAllText(FilePath);
-            return JsonSerializer.Deserialize<LibraryFile>(json, Options)?.Games ?? [];
+            return JsonSerializer.Deserialize<Library>(json, Options) ?? new Library();
         }
         catch (Exception)
         {
             // Guardamos una copia del archivo dañado para no perder la biblioteca al volver a guardar.
             try { File.Copy(FilePath, $"{FilePath}.{DateTime.Now:yyyyMMdd-HHmmss}.bak", overwrite: true); }
             catch (IOException) { }
-            return [];
+            return new Library();
         }
     }
 
-    public bool Save(List<Game> games)
+    public bool Save(Library library)
     {
         try
         {
             Directory.CreateDirectory(AppInfo.DataDirectory);
             var temp = FilePath + ".tmp";
-            File.WriteAllText(temp, JsonSerializer.Serialize(new LibraryFile { Games = games }, Options));
+            File.WriteAllText(temp, JsonSerializer.Serialize(library, Options));
             File.Move(temp, FilePath, overwrite: true);
             return true;
         }
@@ -43,11 +43,5 @@ public sealed class LibraryStore
         {
             return false;
         }
-    }
-
-    sealed class LibraryFile
-    {
-        public int Version { get; set; } = 1;
-        public List<Game> Games { get; set; } = [];
     }
 }

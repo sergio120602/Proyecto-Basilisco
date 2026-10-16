@@ -53,13 +53,14 @@ public static class CoverArt
     }
 
     /// <summary>Carga una imagen sin bloquear el archivo. Devuelve null si no se puede leer.</summary>
-    public static BitmapSource? LoadImage(string path)
+    /// <param name="maxWidth">Si la imagen es más ancha, se decodifica reducida a este ancho.</param>
+    public static BitmapSource? LoadImage(string path, int maxWidth = MaxDecodeWidth)
     {
         try
         {
             var image = Decode(path, decodeWidth: 0);
-            if (image.PixelWidth > MaxDecodeWidth)
-                image = Decode(path, MaxDecodeWidth);
+            if (image.PixelWidth > maxWidth)
+                image = Decode(path, maxWidth);
             return image;
         }
         catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)

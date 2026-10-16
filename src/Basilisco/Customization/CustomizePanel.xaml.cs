@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Basilisco.Carousel;
 using Basilisco.Models;
 using Basilisco.Services;
@@ -11,7 +13,8 @@ namespace Basilisco.Customization;
 /// <summary>Lo que el usuario ha decidido en el menú de personalización.</summary>
 /// <param name="NewImagePath">Imagen nueva elegida (aún sin copiar), o null si no ha cambiado.</param>
 /// <param name="RemoveImage">True si ha quitado la portada personalizada.</param>
-public sealed record CustomizeResult(Game Game, string Name, string? NewImagePath, bool RemoveImage);
+/// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
+public sealed record CustomizeResult(Game Game, string Name, string? NewImagePath, bool RemoveImage, List<string> FilterIds);
 
 /// <summary>Menú para cambiar el nombre y la portada de un juego. Los cambios solo se aplican al guardar.</summary>
 public partial class CustomizePanel : UserControl
@@ -31,7 +34,7 @@ public partial class CustomizePanel : UserControl
         Visibility = Visibility.Collapsed;
     }
 
-    public void Open(Game game)
+    public void Open(Game game, IReadOnlyList<GameFilter> filters)
     {
         _game = game;
         _newImagePath = null;
@@ -41,19 +44,33 @@ public partial class CustomizePanel : UserControl
         PathText.ToolTip = game.Path;
         NameBox.Text = game.Name;
 
+        FilterToggles.Children.Clear();
+        foreach (var filter in filters)
+        {
+            FilterToggles.Children.Add(new ToggleButton
+            {
+                Content = filter.Name,
+                Tag = filter.Id,
+                IsChecked = game.FilterIds.Contains(filter.Id),
+                Style = (Style)FindResource("FilterToggle"),
+            });
+        }
+        NoFiltersText.Visibility = filters.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
         Visibility = Visibility.Visible;
         UpdatePreview();
+        // Prioridad Input: el panel ya se ha maquetado y es visible, así que el foco sí se queda.
         Dispatcher.BeginInvoke(() =>
         {
             NameBox.Focus();
             NameBox.SelectAll();
-        });
+        }, DispatcherPriority.Input);
     }
 
     /// <summary>Usa la imagen dada como nueva portada (desde el selector o arrastrándola).</summary>
     public void SetImage(string path)
     {
-        if (!CoverStore.IsImage(path) || CoverArt.LoadImage(path) is null)
+        if (!ImageStore.IsImage(path) || CoverArt.LoadImage(path) is null)
         {
             ShowError("No se ha podido abrir esa imagen. Prueba con un PNG, JPG, BMP, GIF o WebP.");
             return;
@@ -66,7 +83,7 @@ public partial class CustomizePanel : UserControl
     }
 
     string? CurrentImagePath =>
-        _newImagePath ?? (_removeImage || _game is null ? null : CoverStore.GetPath(_game));
+        _newImagePath ?? (_removeImage || _game is null ? null : ImageStore.GetCoverPath(_game));
 
     void UpdatePreview()
     {
@@ -91,7 +108,13 @@ public partial class CustomizePanel : UserControl
             return;
         }
 
-        var result = new CustomizeResult(_game, name, _newImagePath, _removeImage);
+        var filterIds = FilterToggles.Children
+            .OfType<ToggleButton>()
+            .Where(toggle => toggle.IsChecked == true)
+            .Select(toggle => (string)toggle.Tag)
+            .ToList();
+
+        var result = new CustomizeResult(_game, name, _newImagePath, _removeImage, filterIds);
         Close();
         Saved?.Invoke(result);
     }
@@ -112,7 +135,7 @@ public partial class CustomizePanel : UserControl
 
     void OnChooseImageClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Title = "Elegir portada", Filter = CoverStore.FileFilter };
+        var dialog = new OpenFileDialog { Title = "Elegir portada", Filter = ImageStore.FileFilter };
         if (dialog.ShowDialog(Window.GetWindow(this)) == true)
             SetImage(dialog.FileName);
     }

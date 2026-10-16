@@ -11,6 +11,9 @@ public sealed class Game
     /// <summary>Nombre del archivo de la portada personalizada dentro de basilisco-data/covers, si tiene.</summary>
     public string? CoverImage { get; set; }
 
+    /// <summary>Filtros a los que pertenece el juego.</summary>
+    public List<string> FilterIds { get; set; } = [];
+
     public DateTime AddedAt { get; set; }
     public DateTime? LastPlayed { get; set; }
     public int PlayCount { get; set; }
