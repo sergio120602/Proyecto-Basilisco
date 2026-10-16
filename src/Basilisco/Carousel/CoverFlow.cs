@@ -22,12 +22,12 @@ public sealed class CoverFlow
     const double FieldOfView = 55;
 
     // Disposición de las cajas laterales.
-    const double NeighborOffsetX = 1.0;
-    const double StackSpacingX = 0.22;
+    const double NeighborOffsetX = 1.09;
+    const double StackSpacingX = 0.24;
     const double NeighborDepth = 0.55;
     // Separación en profundidad de las cajas apiladas. Con menos, al deslizar (cuando cada caja tiene un giro
     // distinto) el lomo de la de detrás llega a atravesar la portada de la de delante y se ve una raya negra.
-    // Con 0,3 (y las cajas cuadradas) queda siempre al menos 0,09 por detrás durante toda la animación.
+    // Con 0,3 queda siempre al menos 0,065 por detrás durante toda la animación.
     const double StackSpacingDepth = 0.3;
     const double SideAngle = 32;
 

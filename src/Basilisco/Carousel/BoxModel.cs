@@ -12,8 +12,8 @@ namespace Basilisco.Carousel;
 /// </summary>
 public sealed class BoxModel
 {
-    // Caja cuadrada: las carátulas de 1024 × 1024 la llenan entera.
-    public const double Width = 1.0;
+    // Algo más ancha que alta: la franja de la izquierda más una zona cuadrada para la carátula.
+    public const double Width = (double)CoverArt.Width / CoverArt.Height;
     public const double Height = 1.0;
 
     /// <summary>Grosor de la caja; en proporción, el de una caja de CD de PS1.</summary>

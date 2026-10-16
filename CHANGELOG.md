@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.10] - 2026-10-17
+
+- **Vuelve la franja de la izquierda** típica de las cajas de PlayStation, también en las cajas con carátula.
+- La caja es ahora un poco más ancha, justo lo que mide la franja: a su derecha queda una zona cuadrada en la que una carátula de 1024 × 1024 sigue llenándose entera, sin recortarla ni deformarla.
+- Ajustada la separación del carrusel al nuevo ancho, con margen para que no reaparezca la raya negra al deslizar.
+
 ## [0.0.9] - 2026-10-17
 
 - **Carátulas cuadradas de 1024 × 1024**: las cajas pasan a ser cuadradas y sus texturas de 1024 × 1024, así que una carátula de ese tamaño llena la cara entera y se ve a resolución completa, sin franjas negras.
