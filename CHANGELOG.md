@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.2] - 2026-10-16
+
+Menú de personalización para cada juego.
+
+- **Personalizar** un juego con `E` o con clic derecho sobre su caja.
+- **Cambiar el nombre** del juego.
+- **Portada propia**: elige cualquier imagen (PNG, JPG, BMP, GIF, WebP, TIFF) o arrástrala a la ventana con el menú abierto. Se ve entera, sin deformarla ni recortarla; si no tiene la forma de la caja, el hueco que sobra queda en negro.
+- **Quitar la portada** para volver a la caja negra.
+- Vista previa en el menú igual que como se verá en el carrusel. Los cambios solo se aplican al pulsar «Guardar» (`Enter`); `Esc` o clic fuera cancela.
+- Las portadas se copian a `basilisco-data/covers`, así la biblioteca sigue siendo portable aunque muevas o borres la imagen original.
+- Portadas con más resolución para que las imágenes se vean nítidas.
+
 ## [0.0.1] - 2026-10-16
 
 Primera versión: el launcher abre y ya permite añadir y lanzar juegos.

@@ -1,6 +1,7 @@
 <Window x:Class="Basilisco.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:customization="clr-namespace:Basilisco.Customization"
         Title="Basilisco" Width="1280" Height="720" MinWidth="900" MinHeight="520"
         WindowStartupLocation="CenterScreen" WindowState="Maximized"
         FontFamily="Segoe UI Variable Display, Segoe UI" Background="#D3D8E0"
@@ -27,32 +28,6 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,38,0"/>
         </Style>
-        <DropShadowEffect x:Key="PillShadow" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.16"/>
-        <Style x:Key="PillButton" TargetType="Button">
-            <Setter Property="Focusable" Value="False"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#1F2630"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Pill" Background="#EEF1F5" CornerRadius="19" Padding="20,8"
-                                BorderBrush="White" BorderThickness="1" Effect="{StaticResource PillShadow}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Pill" Property="Background" Value="White"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Pill" Property="Background" Value="#DDE2E9"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root">
@@ -76,7 +51,8 @@
             </Border.Background>
         </Border>
 
-        <Viewport3D x:Name="Viewport" ClipToBounds="False" MouseLeftButtonDown="OnViewportMouseDown"/>
+        <Viewport3D x:Name="Viewport" ClipToBounds="False"
+                    MouseLeftButtonDown="OnViewportMouseDown" MouseRightButtonDown="OnViewportRightMouseDown"/>
 
         <!-- Cabecera -->
         <Grid VerticalAlignment="Top" Margin="44,30,44,0">
@@ -134,7 +110,9 @@
                 <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Enter"/></Border>
                 <TextBlock x:Name="ActivateHint" Style="{StaticResource HintText}" Text="Jugar"/>
-                <StackPanel x:Name="RemoveHint" Orientation="Horizontal">
+                <StackPanel x:Name="GameHints" Orientation="Horizontal">
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="E"/></Border>
+                    <TextBlock Style="{StaticResource HintText}" Text="Personalizar"/>
                     <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>
                     <TextBlock Style="{StaticResource HintText}" Text="Quitar"/>
                 </StackPanel>
@@ -146,5 +124,7 @@
                 <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
             </StackPanel>
         </Grid>
+
+        <customization:CustomizePanel x:Name="Customizer"/>
     </Grid>
 </Window>

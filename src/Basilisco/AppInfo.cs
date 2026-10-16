@@ -10,4 +10,6 @@ public static class AppInfo
     // Portable: los datos viven junto al .exe, nunca en AppData ni en el registro.
     public static string DataDirectory { get; } =
         Path.Combine(AppContext.BaseDirectory, "basilisco-data");
+
+    public static string CoversDirectory { get; } = Path.Combine(DataDirectory, "covers");
 }
