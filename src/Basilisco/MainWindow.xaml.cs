@@ -29,6 +29,13 @@ public partial class MainWindow : Window
     /// <summary>Juegos que se ven en el carrusel con el filtro actual, en el mismo orden.</summary>
     List<Game> _visibleGames = [];
 
+    // Arrastrar la caja seleccionada para girarla.
+    const double DragThreshold = 6;
+    const double DragDegreesPerPixel = 0.45;
+    Point? _dragStart;
+    (double Yaw, double Pitch) _dragFrom;
+    bool _dragged;
+
     int _wheelDelta;
     bool _fullScreen;
 
@@ -73,7 +80,7 @@ public partial class MainWindow : Window
     }
 
     static CarouselItem ToCarouselItem(Game game) =>
-        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game));
+        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game), ImageStore.GetBackCoverPath(game));
 
     void RefreshFilterTabs()
     {
@@ -331,6 +338,7 @@ public partial class MainWindow : Window
             return;
 
         ImageStore.RemoveCover(game);
+        ImageStore.RemoveBackCover(game);
         Games.Remove(game);
         Save();
         RefreshFilterTabs();
@@ -355,10 +363,15 @@ public partial class MainWindow : Window
         var message = "Cambios guardados";
         try
         {
-            if (result.NewImagePath is { } image)
-                ImageStore.SetCover(game, image);
-            else if (result.RemoveImage)
+            if (result.Front.NewPath is { } front)
+                ImageStore.SetCover(game, front);
+            else if (result.Front.Remove)
                 ImageStore.RemoveCover(game);
+
+            if (result.Back.NewPath is { } back)
+                ImageStore.SetBackCover(game, back);
+            else if (result.Back.Remove)
+                ImageStore.RemoveBackCover(game);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -482,6 +495,7 @@ public partial class MainWindow : Window
             case Key.Enter or Key.Space: Activate(_flow.SelectedIndex); break;
             case Key.Delete: RemoveSelected(); break;
             case Key.E: OpenCustomizer(_flow.SelectedIndex); break;
+            case Key.R: _flow.FlipSelected(); break;
             case Key.I: Import(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.Escape when _fullScreen: ToggleFullScreen(); break;
@@ -510,11 +524,46 @@ public partial class MainWindow : Window
         if (_flow.HitTest(e.GetPosition(Viewport)) is not { } index)
             return;
 
-        if (index == _flow.SelectedIndex)
-            Activate(index);
-        else
+        if (index != _flow.SelectedIndex)
+        {
             _flow.Select(index);
+            return;
+        }
+
+        // Sobre la caja seleccionada: si se arrastra, se gira; si solo se hace clic, se juega (al soltar).
+        _dragStart = e.GetPosition(Viewport);
+        _dragFrom = _flow.InspectTarget;
+        _dragged = false;
+        Viewport.CaptureMouse();
     }
+
+    void OnViewportMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragStart is not { } start)
+            return;
+
+        var delta = e.GetPosition(Viewport) - start;
+        if (!_dragged && delta.Length < DragThreshold)
+            return;
+
+        _dragged = true;
+        _flow.SetInspect(
+            _dragFrom.Yaw + delta.X * DragDegreesPerPixel,
+            _dragFrom.Pitch + delta.Y * DragDegreesPerPixel * CoverFlow.PitchDragFactor);
+    }
+
+    void OnViewportMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_dragStart is null)
+            return;
+
+        _dragStart = null;
+        Viewport.ReleaseMouseCapture();
+        if (!_dragged)
+            Activate(_flow.SelectedIndex);
+    }
+
+    void OnViewportLostCapture(object sender, MouseEventArgs e) => _dragStart = null;
 
     void OnViewportRightMouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -562,7 +611,7 @@ public partial class MainWindow : Window
                 return;
 
             if (Customizer.IsOpen)
-                Customizer.SetImage(image);
+                Customizer.DropImage(image);
             else
                 FilterEditor.SetImage(image);
             return;

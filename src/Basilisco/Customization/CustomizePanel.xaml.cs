@@ -10,18 +10,25 @@ using Microsoft.Win32;
 
 namespace Basilisco.Customization;
 
-/// <summary>Lo que el usuario ha decidido en el menú de personalización.</summary>
-/// <param name="NewImagePath">Imagen nueva elegida (aún sin copiar), o null si no ha cambiado.</param>
-/// <param name="RemoveImage">True si ha quitado la portada personalizada.</param>
-/// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
-public sealed record CustomizeResult(Game Game, string Name, string? NewImagePath, bool RemoveImage, List<string> FilterIds);
+/// <summary>Cambio de imagen de una cara de la caja decidido en el menú.</summary>
+/// <param name="NewPath">Imagen nueva elegida (aún sin copiar), o null si no se ha elegido otra.</param>
+/// <param name="Remove">True si se ha quitado la imagen personalizada.</param>
+public sealed record ImageChange(string? NewPath, bool Remove);
 
-/// <summary>Menú para cambiar el nombre y la portada de un juego. Los cambios solo se aplican al guardar.</summary>
+/// <summary>Lo que el usuario ha decidido en el menú de personalización.</summary>
+/// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
+public sealed record CustomizeResult(Game Game, string Name, ImageChange Front, ImageChange Back, List<string> FilterIds);
+
+/// <summary>
+/// Menú para cambiar el nombre, la portada, la contraportada y los filtros de un juego,
+/// con la caja en 3D para girarla. Los cambios solo se aplican al guardar.
+/// </summary>
 public partial class CustomizePanel : UserControl
 {
+    readonly BoxPreview _preview;
     Game? _game;
-    string? _newImagePath;
-    bool _removeImage;
+    ImageChange _front = new(null, false);
+    ImageChange _back = new(null, false);
 
     public event Action<CustomizeResult>? Saved;
     public event Action? Closed;
@@ -32,13 +39,13 @@ public partial class CustomizePanel : UserControl
     {
         InitializeComponent();
         Visibility = Visibility.Collapsed;
+        _preview = new BoxPreview(PreviewViewport);
     }
 
     public void Open(Game game, IReadOnlyList<GameFilter> filters)
     {
         _game = game;
-        _newImagePath = null;
-        _removeImage = false;
+        _front = _back = new ImageChange(null, false);
         ErrorText.Visibility = Visibility.Collapsed;
         PathText.Text = game.Path;
         PathText.ToolTip = game.Path;
@@ -67,32 +74,58 @@ public partial class CustomizePanel : UserControl
         }, DispatcherPriority.Input);
     }
 
-    /// <summary>Usa la imagen dada como nueva portada (desde el selector o arrastrándola).</summary>
-    public void SetImage(string path)
+    /// <summary>Pone la imagen soltada en la cara de la caja que se está viendo.</summary>
+    public void DropImage(string path)
     {
-        if (!ImageStore.IsImage(path) || CoverArt.LoadImage(path) is null)
-        {
-            ShowError("No se ha podido abrir esa imagen. Prueba con un PNG, JPG, BMP, GIF o WebP.");
-            return;
-        }
-
-        _newImagePath = path;
-        _removeImage = false;
-        ErrorText.Visibility = Visibility.Collapsed;
-        UpdatePreview();
+        if (_preview.IsShowingBack)
+            SetBackImage(path);
+        else
+            SetFrontImage(path);
     }
 
-    string? CurrentImagePath =>
-        _newImagePath ?? (_removeImage || _game is null ? null : ImageStore.GetCoverPath(_game));
+    void SetFrontImage(string path)
+    {
+        if (!IsValidImage(path))
+            return;
+        _front = new ImageChange(path, false);
+        UpdatePreview();
+        _preview.ShowFront();
+    }
+
+    void SetBackImage(string path)
+    {
+        if (!IsValidImage(path))
+            return;
+        _back = new ImageChange(path, false);
+        UpdatePreview();
+        _preview.ShowBack();
+    }
+
+    bool IsValidImage(string path)
+    {
+        if (ImageStore.IsImage(path) && CoverArt.LoadImage(path) is not null)
+        {
+            ErrorText.Visibility = Visibility.Collapsed;
+            return true;
+        }
+
+        ShowError("No se ha podido abrir esa imagen. Prueba con un PNG, JPG, BMP, GIF o WebP.");
+        return false;
+    }
+
+    static string? Resolve(ImageChange change, string? current) =>
+        change.NewPath ?? (change.Remove ? null : current);
 
     void UpdatePreview()
     {
         if (_game is null)
             return;
 
-        var image = CurrentImagePath;
-        PreviewImage.Source = CoverArt.RenderCover(new CarouselItem(NameBox.Text, IsAddCard: false, image));
-        RemoveImageButton.IsEnabled = image is not null;
+        var front = Resolve(_front, ImageStore.GetCoverPath(_game));
+        var back = Resolve(_back, ImageStore.GetBackCoverPath(_game));
+        _preview.SetItem(new CarouselItem(NameBox.Text, IsAddCard: false, front, back));
+        RemoveImageButton.IsEnabled = front is not null;
+        RemoveBackImageButton.IsEnabled = back is not null;
     }
 
     void Save()
@@ -114,7 +147,7 @@ public partial class CustomizePanel : UserControl
             .Select(toggle => (string)toggle.Tag)
             .ToList();
 
-        var result = new CustomizeResult(_game, name, _newImagePath, _removeImage, filterIds);
+        var result = new CustomizeResult(_game, name, _front, _back, filterIds);
         Close();
         Saved?.Invoke(result);
     }
@@ -122,7 +155,7 @@ public partial class CustomizePanel : UserControl
     void Close()
     {
         _game = null;
-        PreviewImage.Source = null;
+        _preview.Clear();
         Visibility = Visibility.Collapsed;
         Closed?.Invoke();
     }
@@ -133,19 +166,41 @@ public partial class CustomizePanel : UserControl
         ErrorText.Visibility = Visibility.Visible;
     }
 
+    string? PickImage(string title)
+    {
+        var dialog = new OpenFileDialog { Title = title, Filter = ImageStore.FileFilter };
+        return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : null;
+    }
+
     void OnChooseImageClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Title = "Elegir portada", Filter = ImageStore.FileFilter };
-        if (dialog.ShowDialog(Window.GetWindow(this)) == true)
-            SetImage(dialog.FileName);
+        if (PickImage("Elegir portada") is { } path)
+            SetFrontImage(path);
     }
 
     void OnRemoveImageClick(object sender, RoutedEventArgs e)
     {
-        _newImagePath = null;
-        _removeImage = true;
+        _front = new ImageChange(null, true);
         UpdatePreview();
+        _preview.ShowFront();
     }
+
+    void OnChooseBackImageClick(object sender, RoutedEventArgs e)
+    {
+        if (PickImage("Elegir contraportada") is { } path)
+            SetBackImage(path);
+    }
+
+    void OnRemoveBackImageClick(object sender, RoutedEventArgs e)
+    {
+        _back = new ImageChange(null, true);
+        UpdatePreview();
+        _preview.ShowBack();
+    }
+
+    void OnShowFrontClick(object sender, RoutedEventArgs e) => _preview.ShowFront();
+
+    void OnShowBackClick(object sender, RoutedEventArgs e) => _preview.ShowBack();
 
     void OnNameChanged(object sender, TextChangedEventArgs e) => UpdatePreview();
 

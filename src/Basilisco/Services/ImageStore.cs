@@ -4,7 +4,7 @@ using Basilisco.Models;
 namespace Basilisco.Services;
 
 /// <summary>
-/// Guarda una copia de cada imagen elegida por el usuario (portadas de juegos e imágenes de filtros)
+/// Guarda una copia de cada imagen elegida por el usuario (portadas, contraportadas e imágenes de filtros)
 /// junto al .exe, para que todo siga siendo portable aunque la imagen original se mueva o se borre.
 /// </summary>
 public static class ImageStore
@@ -30,6 +30,21 @@ public static class ImageStore
     {
         Delete(AppInfo.CoversDirectory, game.CoverImage);
         game.CoverImage = null;
+    }
+
+    public static string? GetBackCoverPath(Game game) => Resolve(AppInfo.CoversDirectory, game.BackImage);
+
+    public static void SetBackCover(Game game, string sourcePath)
+    {
+        var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-back");
+        RemoveBackCover(game);
+        game.BackImage = fileName;
+    }
+
+    public static void RemoveBackCover(Game game)
+    {
+        Delete(AppInfo.CoversDirectory, game.BackImage);
+        game.BackImage = null;
     }
 
     public static string? GetFilterImagePath(GameFilter filter) => Resolve(AppInfo.FilterImagesDirectory, filter.Image);
