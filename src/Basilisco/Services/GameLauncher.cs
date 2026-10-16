@@ -6,6 +6,10 @@ namespace Basilisco.Services;
 
 public static class GameLauncher
 {
+    /// <summary>Tipos de archivo que se pueden añadir como juego.</summary>
+    public const string FileFilter =
+        "Juegos y aplicaciones (*.exe;*.lnk;*.url;*.bat;*.cmd)|*.exe;*.lnk;*.url;*.bat;*.cmd|Todos los archivos (*.*)|*.*";
+
     public static void Launch(Game game)
     {
         // UseShellExecute permite abrir .exe, accesos directos (.lnk), .url, .bat y cualquier archivo asociado.

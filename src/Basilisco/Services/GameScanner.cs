@@ -273,10 +273,21 @@ public sealed partial class GameScanner
 
     static string Normalize(string text) => NonAlphanumeric().Replace(text.ToLowerInvariant(), "");
 
-    /// <summary>«Hollow.Knight» o «hollow_knight» → «Hollow Knight».</summary>
+    /// <summary>«Hollow.Knight» o «hollow_knight» → «Hollow Knight»; «ico-pc-v0.7.2» → «Ico-Pc».</summary>
     public static string PrettifyName(string raw)
     {
-        var name = raw.Replace('_', ' ');
+        // Fuera la versión y la plataforma del final («-v0.7.2», «-win32-x86_64»…), que no son parte del nombre.
+        var name = raw;
+        string previous;
+        do
+        {
+            previous = name;
+            name = VersionOrPlatformSuffix().Replace(name, "");
+        } while (name != previous && name.Length > 0);
+        if (name.Length == 0)
+            name = raw;
+
+        name = name.Replace('_', ' ');
         if (!name.Contains(' ') && name.Count(c => c == '.') >= 1)
             name = name.Replace('.', ' ');
         name = Whitespace().Replace(name, " ").Trim();
@@ -291,4 +302,7 @@ public sealed partial class GameScanner
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
+
+    [GeneratedRegex(@"[\s_.-]+(v?\d+(\.\d+)+|v\d+|windows|win32|win64|x86_64|x86|x64|amd64|portable)$", RegexOptions.IgnoreCase)]
+    private static partial Regex VersionOrPlatformSuffix();
 }

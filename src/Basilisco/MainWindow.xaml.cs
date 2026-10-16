@@ -13,9 +13,6 @@ namespace Basilisco;
 
 public partial class MainWindow : Window
 {
-    const string ImportFilter =
-        "Juegos y aplicaciones (*.exe;*.lnk;*.url;*.bat;*.cmd)|*.exe;*.lnk;*.url;*.bat;*.cmd|Todos los archivos (*.*)|*.*";
-
     // El logo se pinta hasta 180 px de ancho; con margen para pantallas con escalado.
     const int FilterIconDecodeWidth = 480;
 
@@ -56,6 +53,119 @@ public partial class MainWindow : Window
         FolderImporter.ImportRequested += ApplyFolderImport;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
+        Loaded += async (_, _) => await RepairMovedGamesAsync();
+    }
+
+    /// <summary>
+    /// Busca los juegos cuyo archivo ya no está donde estaba (porque has movido su carpeta)
+    /// y actualiza su ubicación sin perder portadas, filtros ni partidas.
+    /// </summary>
+    async Task RepairMovedGamesAsync()
+    {
+        var missing = Games.Where(game => !File.Exists(game.Path)).Select(game => (Game: game, game.Path)).ToList();
+        if (missing.Count == 0)
+            return;
+
+        var found = await Task.Run(() => missing
+            .Select(entry => (entry.Game, entry.Path, NewPath: GameRelocator.FindMoved(entry.Path)))
+            .Where(entry => entry.NewPath is not null)
+            .ToList());
+
+        // Mientras buscábamos, el usuario ha podido cambiar o quitar alguno: solo tocamos los que siguen igual.
+        var repaired = found.Where(entry => Games.Contains(entry.Game) && entry.Game.Path == entry.Path).ToList();
+        if (repaired.Count == 0)
+            return;
+
+        var selected = SelectedGame;
+        foreach (var (game, _, newPath) in repaired)
+            Relink(game, newPath!);
+
+        Save();
+        RefreshKeeping(selected);
+        ShowToast(repaired.Count == 1
+            ? $"«{repaired[0].Game.Name}» había cambiado de carpeta: ubicación actualizada"
+            : $"{repaired.Count} juegos habían cambiado de carpeta: ubicaciones actualizadas");
+    }
+
+    Game? SelectedGame => IsAddCard(_flow.SelectedIndex) ? null : _visibleGames[_flow.SelectedIndex];
+
+    /// <summary>Recarga la barra de filtros y el carrusel dejando seleccionado el mismo juego, si sigue visible.</summary>
+    void RefreshKeeping(Game? game)
+    {
+        RefreshFilterTabs();
+        var index = game is null ? -1 : Games.Where(BelongsToActiveFilter).ToList().IndexOf(game);
+        RefreshCarousel(index < 0 ? Math.Min(_flow.SelectedIndex, Games.Count(BelongsToActiveFilter)) : index);
+    }
+
+    /// <summary>
+    /// Cambia la ubicación de un juego. Si ya había otro juego con esa ubicación (lo habías vuelto a importar
+    /// después de moverlo), los junta en uno solo.
+    /// </summary>
+    void Relink(Game game, string newPath)
+    {
+        if (Games.FirstOrDefault(other => other != game && SamePath(other.Path, newPath)) is { } duplicate)
+            MergeInto(game, duplicate);
+        game.Path = newPath;
+    }
+
+    void MergeInto(Game keep, Game duplicate)
+    {
+        // El nombre puesto a mano manda; si era el del archivo, mejor el del duplicado (suele venir de su carpeta).
+        if (keep.Name == Path.GetFileNameWithoutExtension(keep.Path))
+            keep.Name = duplicate.Name;
+
+        if (keep.CoverImage is null)
+            (keep.CoverImage, duplicate.CoverImage) = (duplicate.CoverImage, null);
+        if (keep.BackImage is null)
+            (keep.BackImage, duplicate.BackImage) = (duplicate.BackImage, null);
+        ImageStore.RemoveCover(duplicate);
+        ImageStore.RemoveBackCover(duplicate);
+
+        keep.FilterIds = keep.FilterIds.Union(duplicate.FilterIds).ToList();
+        keep.PlayCount += duplicate.PlayCount;
+        if (duplicate.LastPlayed > (keep.LastPlayed ?? DateTime.MinValue))
+            keep.LastPlayed = duplicate.LastPlayed;
+        if (duplicate.AddedAt < keep.AddedAt)
+            keep.AddedAt = duplicate.AddedAt;
+
+        Games.Remove(duplicate);
+    }
+
+    static bool SamePath(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Juego de la biblioteca cuyo archivo ya no existe y que tenía este mismo ejecutable.</summary>
+    Game? FindMissingWithSameFile(string path) =>
+        Games.FirstOrDefault(game =>
+            string.Equals(Path.GetFileName(game.Path), Path.GetFileName(path), StringComparison.OrdinalIgnoreCase) &&
+            !File.Exists(game.Path));
+
+    FoundStatus StatusOf(string path) =>
+        IsInLibrary(path) ? FoundStatus.InLibrary
+        : FindMissingWithSameFile(path) is not null ? FoundStatus.Moved
+        : FoundStatus.New;
+
+    /// <summary>Pide al usuario que señale dónde está ahora el juego.</summary>
+    void LocateManually(Game game)
+    {
+        var folder = Path.GetDirectoryName(game.Path);
+        while (folder is not null && !Directory.Exists(folder))
+            folder = Path.GetDirectoryName(folder);
+
+        var dialog = new OpenFileDialog
+        {
+            Title = $"¿Dónde está ahora «{game.Name}»?",
+            Filter = GameLauncher.FileFilter,
+            FileName = Path.GetFileName(game.Path),
+            InitialDirectory = folder ?? "",
+            DereferenceLinks = false,
+        };
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        Relink(game, dialog.FileName);
+        Save();
+        RefreshKeeping(game);
+        ShowToast($"Ubicación de «{game.Name}» actualizada");
     }
 
     List<Game> Games => _library.Games;
@@ -232,7 +342,7 @@ public partial class MainWindow : Window
         var dialog = new OpenFileDialog
         {
             Title = _activeFilter is null ? "Importar juego" : $"Importar juego a «{_activeFilter.Name}»",
-            Filter = ImportFilter,
+            Filter = GameLauncher.FileFilter,
             Multiselect = true,
             // Queremos el acceso directo tal cual, no el archivo al que apunta, para conservar sus argumentos.
             DereferenceLinks = false,
@@ -250,7 +360,7 @@ public partial class MainWindow : Window
     }
 
     void OpenFolderImport(string folder) =>
-        FolderImporter.Open(folder, IsInLibrary, _activeFilter?.Name);
+        FolderImporter.Open(folder, StatusOf, _activeFilter?.Name);
 
     bool IsInLibrary(string path) =>
         Games.Any(game => string.Equals(game.Path, path, StringComparison.OrdinalIgnoreCase));
@@ -285,11 +395,19 @@ public partial class MainWindow : Window
     {
         Game? first = null;
         var added = 0;
+        var relinked = 0;
 
         foreach (var (path, name) in games)
         {
-            var game = Games.FirstOrDefault(g => string.Equals(g.Path, path, StringComparison.OrdinalIgnoreCase));
-            if (game is null)
+            var game = Games.FirstOrDefault(g => SamePath(g.Path, path));
+            if (game is null && FindMissingWithSameFile(path) is { } moved)
+            {
+                // Ya lo tenías, pero en otra carpeta: se actualiza su ubicación en lugar de duplicarlo.
+                Relink(moved, path);
+                game = moved;
+                relinked++;
+            }
+            else if (game is null)
             {
                 game = new Game
                 {
@@ -327,16 +445,32 @@ public partial class MainWindow : Window
         _flow.Select(_visibleGames.IndexOf(first));
 
         var target = (_activeFilter ?? groupFilter) is { } shown ? $"«{shown.Name}»" : "la biblioteca";
-        ShowToast(added == 1 ? $"«{first.Name}» añadido a {target}" : $"{added} juegos añadidos a {target}");
+        var message = added == 1 ? $"«{first.Name}» añadido a {target}" : $"{added} juegos añadidos a {target}";
+        if (relinked > 0)
+            message += relinked == 1 ? " (1 ya lo tenías en otra carpeta)" : $" ({relinked} ya los tenías en otra carpeta)";
+        ShowToast(message);
     }
 
     void Launch(Game game)
     {
         if (!File.Exists(game.Path))
         {
-            MessageBox.Show(this, $"No se encuentra «{game.Name}» en:\n\n{game.Path}\n\n¿Se ha movido o desinstalado?",
-                "Basilisco", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            // Lo más probable es que hayas movido su carpeta: primero lo buscamos nosotros.
+            if (GameRelocator.FindMoved(game.Path) is { } moved)
+            {
+                Relink(game, moved);
+                Save();
+                RefreshKeeping(game);
+            }
+            else
+            {
+                var answer = MessageBox.Show(this,
+                    $"No se encuentra «{game.Name}» en:\n\n{game.Path}\n\n¿Se ha movido? ¿Quieres buscarlo tú?",
+                    "Basilisco", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (answer == MessageBoxResult.Yes)
+                    LocateManually(game);
+                return;
+            }
         }
 
         try
@@ -410,10 +544,19 @@ public partial class MainWindow : Window
             message = "No se pudo copiar la imagen; el resto de cambios sí se han guardado";
         }
 
+        var relinked = result.NewPath is { } newPath && !SamePath(newPath, game.Path);
+        if (relinked)
+            Relink(game, result.NewPath!);
+
         Save();
         RefreshFilterTabs();
 
-        if (BelongsToActiveFilter(game))
+        if (relinked)
+        {
+            // Al cambiar de ubicación puede haberse juntado con un duplicado: hay que rehacer el carrusel.
+            RefreshKeeping(game);
+        }
+        else if (BelongsToActiveFilter(game))
         {
             _flow.UpdateItem(index, ToCarouselItem(game));
             ShowDetails(index);

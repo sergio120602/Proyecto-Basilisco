@@ -1,7 +1,9 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Basilisco.Carousel;
 using Basilisco.Models;
@@ -16,8 +18,9 @@ namespace Basilisco.Customization;
 public sealed record ImageChange(string? NewPath, bool Remove);
 
 /// <summary>Lo que el usuario ha decidido en el menú de personalización.</summary>
+/// <param name="NewPath">Nueva ubicación del juego, o null si no ha cambiado.</param>
 /// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
-public sealed record CustomizeResult(Game Game, string Name, ImageChange Front, ImageChange Back, List<string> FilterIds);
+public sealed record CustomizeResult(Game Game, string Name, string? NewPath, ImageChange Front, ImageChange Back, List<string> FilterIds);
 
 /// <summary>
 /// Menú para cambiar el nombre, la portada, la contraportada y los filtros de un juego,
@@ -29,6 +32,9 @@ public partial class CustomizePanel : UserControl
     Game? _game;
     ImageChange _front = new(null, false);
     ImageChange _back = new(null, false);
+    string? _newPath;
+
+    static readonly Brush MutedText = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
 
     public event Action<CustomizeResult>? Saved;
     public event Action? Closed;
@@ -46,9 +52,9 @@ public partial class CustomizePanel : UserControl
     {
         _game = game;
         _front = _back = new ImageChange(null, false);
+        _newPath = null;
         ErrorText.Visibility = Visibility.Collapsed;
-        PathText.Text = game.Path;
-        PathText.ToolTip = game.Path;
+        ShowPath(game.Path);
         NameBox.Text = game.Name;
 
         FilterToggles.Children.Clear();
@@ -147,7 +153,7 @@ public partial class CustomizePanel : UserControl
             .Select(toggle => (string)toggle.Tag)
             .ToList();
 
-        var result = new CustomizeResult(_game, name, _front, _back, filterIds);
+        var result = new CustomizeResult(_game, name, _newPath, _front, _back, filterIds);
         Close();
         Saved?.Invoke(result);
     }
@@ -196,6 +202,37 @@ public partial class CustomizePanel : UserControl
         _back = new ImageChange(null, true);
         UpdatePreview();
         _preview.ShowBack();
+    }
+
+    void ShowPath(string path)
+    {
+        var missing = !File.Exists(path);
+        PathText.Text = missing ? $"No encontrado · {path}" : path;
+        PathText.ToolTip = path;
+        PathText.Foreground = missing ? Brushes.Firebrick : MutedText;
+    }
+
+    void OnChangeLocationClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is null)
+            return;
+
+        var current = _newPath ?? _game.Path;
+        var dialog = new OpenFileDialog
+        {
+            Title = $"¿Dónde está «{_game.Name}»?",
+            Filter = GameLauncher.FileFilter,
+            FileName = Path.GetFileName(current),
+            DereferenceLinks = false,
+        };
+        if (Path.GetDirectoryName(current) is { } folder && Directory.Exists(folder))
+            dialog.InitialDirectory = folder;
+
+        if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+        {
+            _newPath = dialog.FileName;
+            ShowPath(_newPath);
+        }
     }
 
     void OnShowFrontClick(object sender, RoutedEventArgs e) => _preview.ShowFront();

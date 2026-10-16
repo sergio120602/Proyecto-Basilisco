@@ -7,22 +7,36 @@ using Basilisco.Services;
 
 namespace Basilisco.Customization;
 
+/// <summary>Cómo está un juego encontrado respecto a la biblioteca.</summary>
+public enum FoundStatus
+{
+    New,
+    InLibrary,
+    /// <summary>Ya estaba en la biblioteca, pero en otra carpeta que ya no existe.</summary>
+    Moved,
+}
+
 /// <summary>Una fila de la lista de juegos encontrados.</summary>
 /// <param name="root">Carpeta escaneada: la ruta se enseña relativa a ella para que se vea qué ejecutable se ha elegido.</param>
-public sealed class FoundGameRow(FoundGame game, bool alreadyInLibrary, string root) : INotifyPropertyChanged
+public sealed class FoundGameRow(FoundGame game, FoundStatus status, string root) : INotifyPropertyChanged
 {
-    bool _isSelected = !alreadyInLibrary;
+    bool _isSelected = status != FoundStatus.InLibrary;
 
     public FoundGame Game { get; } = game;
     public string Name => Game.Name;
-    public bool CanImport { get; } = !alreadyInLibrary;
+    public bool CanImport { get; } = status != FoundStatus.InLibrary;
 
     public string Detail
     {
         get
         {
             var path = Path.GetRelativePath(root, Game.Path);
-            return CanImport ? path : $"Ya está en tu biblioteca · {path}";
+            return status switch
+            {
+                FoundStatus.InLibrary => $"Ya está en tu biblioteca · {path}",
+                FoundStatus.Moved => $"Lo tenías en otra carpeta: se actualizará su ubicación · {path}",
+                _ => path,
+            };
         }
     }
 
@@ -64,9 +78,9 @@ public partial class FolderImportPanel : UserControl
         Visibility = Visibility.Collapsed;
     }
 
-    /// <param name="isInLibrary">Para marcar los juegos que ya estaban importados.</param>
+    /// <param name="statusOf">Para marcar los juegos que ya estaban importados o que se habían movido.</param>
     /// <param name="activeFilterName">Filtro seleccionado ahora mismo, al que irán también los juegos.</param>
-    public async void Open(string folder, Func<string, bool> isInLibrary, string? activeFilterName)
+    public async void Open(string folder, Func<string, FoundStatus> statusOf, string? activeFilterName)
     {
         _scan?.Cancel();
         var scan = _scan = new CancellationTokenSource();
@@ -101,7 +115,7 @@ public partial class FolderImportPanel : UserControl
         if (scan.IsCancellationRequested)
             return;
 
-        ShowResults(found.Select(game => new FoundGameRow(game, isInLibrary(game.Path), folder)).ToList());
+        ShowResults(found.Select(game => new FoundGameRow(game, statusOf(game.Path), folder)).ToList());
     }
 
     void ShowResults(List<FoundGameRow> rows)
