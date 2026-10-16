@@ -4,3 +4,6 @@ dist/
 .vs/
 *.user
 basilisco-data/
+
+# Copia local del .exe para probar
+/Basilisco-v*.exe
