@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.6] - 2026-10-17
+
+Importación de carpetas enteras.
+
+- **Importar carpeta**: con el botón «+ Importar carpeta», la tecla `C` o arrastrando una carpeta a la ventana. Basilisco la recorre entera y encuentra todos los juegos que tenga, aunque sean decenas.
+- **Detección de juegos**: cada subcarpeta con un juego cuenta como un juego, con el nombre de la carpeta. Se elige su ejecutable principal (el que se llama como la carpeta, el de 64 bits, el menos escondido…), aunque esté en subcarpetas como `bin\x64`. Las colecciones dentro de colecciones (por ejemplo `Juegos\Emuladores\…`) también se detectan.
+- **Se descartan** instaladores, desinstaladores, redistribuibles (`_CommonRedist`, DirectX, vcredist…), *crash reporters*, actualizadores, antitrampas y herramientas.
+- Los accesos directos (`.lnk`, `.url`) sueltos en la carpeta cuentan cada uno como un juego.
+- **Revisión antes de importar**: lista con todo lo encontrado para marcar o desmarcar, indicando qué ejecutable se ha elegido y cuáles ya estaban en tu biblioteca.
+- **Agrupar en un filtro**: opción para meter todos los juegos importados en un filtro nuevo con el nombre de la carpeta.
+- El escaneo va en segundo plano, enseña su progreso y se puede cancelar.
+
 ## [0.0.5] - 2026-10-17
 
 Las cajas pasan a ser modelos 3D completos.
