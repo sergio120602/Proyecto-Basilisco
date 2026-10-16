@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
 using Basilisco.Carousel;
+using Basilisco.Customization;
 using Basilisco.Models;
 using Basilisco.Services;
 using Microsoft.Win32;
@@ -31,6 +32,8 @@ public partial class MainWindow : Window
         _flow.SelectedIndexChanged += ShowDetails;
         RefreshCarousel(0);
 
+        Customizer.Saved += ApplyCustomization;
+
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
     }
 
@@ -39,13 +42,16 @@ public partial class MainWindow : Window
     void RefreshCarousel(int selectedIndex)
     {
         var items = _games
-            .Select(game => new CarouselItem(game.Name, IsAddCard: false))
+            .Select(ToCarouselItem)
             .Append(new CarouselItem("Importar juego", IsAddCard: true))
             .ToList();
 
         AllGamesTab.Text = $"Todos los juegos ({_games.Count})";
         _flow.SetItems(items, selectedIndex);
     }
+
+    static CarouselItem ToCarouselItem(Game game) =>
+        new(game.Name, IsAddCard: false, CoverStore.GetPath(game));
 
     void ShowDetails(int index)
     {
@@ -54,7 +60,7 @@ public partial class MainWindow : Window
             TitleText.Text = "Importar juego";
             Chips.ItemsSource = new[] { "Ejecutables, accesos directos y scripts", "También puedes arrastrar archivos aquí" };
             ActivateHint.Text = "Importar";
-            RemoveHint.Visibility = Visibility.Collapsed;
+            GameHints.Visibility = Visibility.Collapsed;
         }
         else
         {
@@ -62,7 +68,7 @@ public partial class MainWindow : Window
             TitleText.Text = game.Name;
             Chips.ItemsSource = DescribeGame(game);
             ActivateHint.Text = "Jugar";
-            RemoveHint.Visibility = Visibility.Visible;
+            GameHints.Visibility = Visibility.Visible;
         }
 
         TitlePanel.BeginAnimation(OpacityProperty, new DoubleAnimation(0.3, 1, TimeSpan.FromMilliseconds(220))
@@ -226,9 +232,43 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.Yes)
             return;
 
+        CoverStore.RemoveCover(game);
         _games.RemoveAt(index);
         Save();
         RefreshCarousel(index);
+    }
+
+    void OpenCustomizer(int index)
+    {
+        if (!IsAddCard(index))
+            Customizer.Open(_games[index]);
+    }
+
+    void ApplyCustomization(CustomizeResult result)
+    {
+        var game = result.Game;
+        var index = _games.IndexOf(game);
+        if (index < 0)
+            return;
+
+        game.Name = result.Name;
+        var message = "Cambios guardados";
+        try
+        {
+            if (result.NewImagePath is { } image)
+                CoverStore.SetCover(game, image);
+            else if (result.RemoveImage)
+                CoverStore.RemoveCover(game);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            message = "No se pudo copiar la imagen; el resto de cambios sí se han guardado";
+        }
+
+        Save();
+        _flow.UpdateItem(index, ToCarouselItem(game));
+        ShowDetails(index);
+        ShowToast(message);
     }
 
     void Save()
@@ -259,6 +299,10 @@ public partial class MainWindow : Window
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Con el menú abierto las teclas son para él (escribir el nombre, Enter, Esc).
+        if (Customizer.IsOpen)
+            return;
+
         switch (e.Key)
         {
             case Key.Left: _flow.MoveBy(-1); break;
@@ -267,6 +311,7 @@ public partial class MainWindow : Window
             case Key.End: _flow.Select(_flow.Count - 1); break;
             case Key.Enter or Key.Space: Activate(_flow.SelectedIndex); break;
             case Key.Delete: RemoveSelected(); break;
+            case Key.E: OpenCustomizer(_flow.SelectedIndex); break;
             case Key.I: Import(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.Escape when _fullScreen: ToggleFullScreen(); break;
@@ -277,6 +322,9 @@ public partial class MainWindow : Window
 
     void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
+        if (Customizer.IsOpen)
+            return;
+
         // Acumulamos para que los touchpads (que mandan deltas pequeños) no aceleren el carrusel.
         _wheelDelta += e.Delta;
         while (Math.Abs(_wheelDelta) >= Mouse.MouseWheelDeltaForOneLine)
@@ -298,6 +346,15 @@ public partial class MainWindow : Window
             _flow.Select(index);
     }
 
+    void OnViewportRightMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_flow.HitTest(e.GetPosition(Viewport)) is not { } index || IsAddCard(index))
+            return;
+
+        _flow.Select(index);
+        OpenCustomizer(index);
+    }
+
     void OnImportClick(object sender, RoutedEventArgs e) => Import();
 
     void OnDragOver(object sender, DragEventArgs e)
@@ -308,7 +365,17 @@ public partial class MainWindow : Window
 
     void OnDrop(object sender, DragEventArgs e)
     {
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
-            AddGames(paths);
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths)
+            return;
+
+        // Con el menú abierto, soltar una imagen la usa como portada del juego.
+        if (Customizer.IsOpen)
+        {
+            if (paths.FirstOrDefault(CoverStore.IsImage) is { } image)
+                Customizer.SetImage(image);
+            return;
+        }
+
+        AddGames(paths);
     }
 }

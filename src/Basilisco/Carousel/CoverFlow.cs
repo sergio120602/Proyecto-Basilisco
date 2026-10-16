@@ -5,7 +5,7 @@ using System.Windows.Media.Media3D;
 
 namespace Basilisco.Carousel;
 
-public sealed record CarouselItem(string Title, bool IsAddCard);
+public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null);
 
 /// <summary>
 /// Carrusel 3D de portadas: la seleccionada de frente y el resto girado y apilado a los lados,
@@ -90,6 +90,13 @@ public sealed class CoverFlow
         ApplyLayout();
         StartAnimation();
         SelectedIndexChanged?.Invoke(_target);
+    }
+
+    /// <summary>Vuelve a pintar una sola portada (por ejemplo, tras personalizarla).</summary>
+    public void UpdateItem(int index, CarouselItem item)
+    {
+        if (index >= 0 && index < _slots.Count)
+            _slots[index].SetArt(item);
     }
 
     public void MoveBy(int delta) => Select(_target + delta);
@@ -250,14 +257,12 @@ public sealed class CoverFlow
         public readonly TranslateTransform3D Translation = new();
         public double Distance;
 
-        readonly ImageBrush _coverBrush;
-        readonly ImageBrush _reflectionBrush;
+        readonly ImageBrush _coverBrush = new();
+        readonly ImageBrush _reflectionBrush = new();
 
         public Slot(CarouselItem item)
         {
-            var (cover, reflection) = CoverArt.Render(item);
-            _coverBrush = new ImageBrush(cover);
-            _reflectionBrush = new ImageBrush(reflection);
+            SetArt(item);
 
             var transform = new Transform3DGroup();
             transform.Children.Add(new RotateTransform3D(Rotation));
@@ -265,6 +270,13 @@ public sealed class CoverFlow
 
             Cover = new GeometryModel3D(CoverMesh, new DiffuseMaterial(_coverBrush)) { Transform = transform };
             Reflection = new GeometryModel3D(ReflectionMesh, new DiffuseMaterial(_reflectionBrush)) { Transform = transform };
+        }
+
+        public void SetArt(CarouselItem item)
+        {
+            var (cover, reflection) = CoverArt.Render(item);
+            _coverBrush.ImageSource = cover;
+            _reflectionBrush.ImageSource = reflection;
         }
 
         public void SetOpacity(double opacity)
