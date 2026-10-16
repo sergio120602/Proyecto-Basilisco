@@ -38,6 +38,10 @@ if ($LASTEXITCODE) { throw 'Falló la compilación.' }
 $asset = Join-Path $dist "Basilisco-$tag-win-x64.exe"
 Move-Item (Join-Path $dist 'Basilisco.exe') $asset
 
+# Copia para probar en la raíz del proyecto: sustituye a la de la versión anterior.
+Get-ChildItem $root -Filter 'Basilisco-v*.exe' | Remove-Item -Force
+Copy-Item $asset $root
+
 Write-Host 'Subiendo código y etiqueta...' -ForegroundColor Cyan
 git -C $root tag -a $tag -m "Basilisco $tag"
 git -C $root push origin HEAD
