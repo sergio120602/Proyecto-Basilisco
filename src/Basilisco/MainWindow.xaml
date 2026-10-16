@@ -1,0 +1,150 @@
+<Window x:Class="Basilisco.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Basilisco" Width="1280" Height="720" MinWidth="900" MinHeight="520"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized"
+        FontFamily="Segoe UI Variable Display, Segoe UI" Background="#D3D8E0"
+        AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop"
+        PreviewKeyDown="OnPreviewKeyDown" MouseWheel="OnMouseWheel">
+
+    <Window.Resources>
+        <Style x:Key="KeyBadge" TargetType="Border">
+            <Setter Property="Background" Value="#3E6FD8"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="7,2"/>
+            <Setter Property="Margin" Value="0,0,9,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="KeyBadgeText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style x:Key="HintText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#1F2630"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,38,0"/>
+        </Style>
+        <DropShadowEffect x:Key="PillShadow" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.16"/>
+        <Style x:Key="PillButton" TargetType="Button">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#1F2630"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Pill" Background="#EEF1F5" CornerRadius="19" Padding="20,8"
+                                BorderBrush="White" BorderThickness="1" Effect="{StaticResource PillShadow}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#DDE2E9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="Root">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#BFC6D1" Offset="0"/>
+                <GradientStop Color="#DCE0E7" Offset="0.4"/>
+                <GradientStop Color="#EDEFF3" Offset="0.75"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <!-- Suelo brillante sobre el que se reflejan las cajas -->
+        <Border x:Name="Floor" IsHitTestVisible="False">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#00C2C9D3" Offset="0"/>
+                    <GradientStop Color="#C2C9D3" Offset="0.12"/>
+                    <GradientStop Color="#D6DAE1" Offset="0.5"/>
+                    <GradientStop Color="#E3E6EB" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <Viewport3D x:Name="Viewport" ClipToBounds="False" MouseLeftButtonDown="OnViewportMouseDown"/>
+
+        <!-- Cabecera -->
+        <Grid VerticalAlignment="Top" Margin="44,30,44,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Basilisco" FontSize="30" FontWeight="SemiBold" Foreground="#1B222C" VerticalAlignment="Center"/>
+                <TextBlock x:Name="VersionText" FontSize="13" Foreground="#5B6573" Margin="10,6,0,0" VerticalAlignment="Center"/>
+                <Border Background="#F4F6F9" CornerRadius="19" Padding="20,8" Margin="42,0,0,0"
+                        VerticalAlignment="Center" BorderBrush="White" BorderThickness="1" Effect="{StaticResource PillShadow}">
+                    <TextBlock x:Name="AllGamesTab" FontSize="15" FontWeight="SemiBold" Foreground="#1F2630"/>
+                </Border>
+            </StackPanel>
+            <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource PillButton}"
+                    Content="+  Importar juego" Click="OnImportClick"/>
+        </Grid>
+
+        <!-- Título y etiquetas del juego seleccionado -->
+        <StackPanel x:Name="TitlePanel" VerticalAlignment="Bottom" HorizontalAlignment="Center" IsHitTestVisible="False">
+            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="#1B222C"
+                       HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="1000">
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="White" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <ItemsControl x:Name="Chips" HorizontalAlignment="Center" Margin="0,12,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#8D97A6" CornerRadius="14" Padding="14,5" Margin="5,0">
+                            <TextBlock Text="{Binding}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <!-- Avisos breves -->
+        <Border x:Name="Toast" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100"
+                Background="#E61B222C" CornerRadius="10" Padding="18,10" Opacity="0" IsHitTestVisible="False">
+            <TextBlock x:Name="ToastText" Foreground="White" FontSize="15"/>
+        </Border>
+
+        <!-- Barra de controles -->
+        <Grid VerticalAlignment="Bottom" Margin="44,0,44,26">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Border Height="1" Background="#99FFFFFF" Margin="0,0,0,16"/>
+            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="← →"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Enter"/></Border>
+                <TextBlock x:Name="ActivateHint" Style="{StaticResource HintText}" Text="Jugar"/>
+                <StackPanel x:Name="RemoveHint" Orientation="Horizontal">
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>
+                    <TextBlock Style="{StaticResource HintText}" Text="Quitar"/>
+                </StackPanel>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="I"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="F11"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
