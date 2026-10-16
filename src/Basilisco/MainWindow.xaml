@@ -80,17 +80,24 @@
                             <Border x:Name="Pill" CornerRadius="19" Padding="18,7" Margin="0,0,6,0" Background="Transparent"
                                     BorderThickness="1" BorderBrush="Transparent" Cursor="Hand" ToolTip="{Binding ToolTip}"
                                     MouseLeftButtonUp="OnFilterTabClick" MouseRightButtonUp="OnFilterTabRightClick">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{Binding Icon}" Visibility="{Binding IconVisibility}"
-                                           Width="26" Height="26" Stretch="Uniform" Margin="-6,0,9,0"/>
+                                <Grid>
+                                    <!-- Con imagen se ve solo el logo, entero y sin deformar; el nombre queda en el tooltip -->
+                                    <Image x:Name="Logo" Source="{Binding Icon}" Visibility="Collapsed"
+                                           Height="40" MaxWidth="180" Stretch="Uniform"/>
                                     <TextBlock x:Name="Label" Text="{Binding Label}" FontSize="15" FontWeight="SemiBold"
                                                Foreground="#2A313C" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                </Grid>
                             </Border>
                             <DataTemplate.Triggers>
                                 <Trigger SourceName="Pill" Property="IsMouseOver" Value="True">
                                     <Setter TargetName="Pill" Property="Background" Value="#66FFFFFF"/>
                                 </Trigger>
+                                <DataTrigger Binding="{Binding HasLogo}" Value="True">
+                                    <Setter TargetName="Logo" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="Label" Property="Visibility" Value="Collapsed"/>
+                                    <Setter TargetName="Pill" Property="Padding" Value="16,4"/>
+                                    <Setter TargetName="Pill" Property="CornerRadius" Value="24"/>
+                                </DataTrigger>
                                 <DataTrigger Binding="{Binding IsAddButton}" Value="True">
                                     <Setter TargetName="Label" Property="Foreground" Value="#5B6573"/>
                                 </DataTrigger>

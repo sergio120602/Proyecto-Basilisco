@@ -1,4 +1,3 @@
-using System.Windows;
 using System.Windows.Media;
 using Basilisco.Models;
 
@@ -14,7 +13,8 @@ public sealed class FilterTab
     public bool IsSelected { get; init; }
     public bool IsAddButton { get; init; }
 
-    public Visibility IconVisibility => Icon is null ? Visibility.Collapsed : Visibility.Visible;
+    /// <summary>Con imagen, la pestaña muestra solo el logo en lugar del nombre.</summary>
+    public bool HasLogo => Icon is not null;
 
-    public string? ToolTip => Filter is null ? null : "Clic derecho para editar el filtro";
+    public string? ToolTip => Filter is null ? null : $"{Label}\nClic derecho para editar el filtro";
 }
