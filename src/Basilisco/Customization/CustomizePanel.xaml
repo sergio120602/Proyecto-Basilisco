@@ -54,18 +54,22 @@
                     <TextBox x:Name="NameBox" Style="{StaticResource FieldTextBox}" TextChanged="OnNameChanged"/>
 
                     <TextBlock Text="PORTADA" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseImageClick"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseImageClick" Margin="0,0,10,10"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en SteamGridDB" Click="OnSearchFrontClick" Margin="0,0,10,10"
+                                ToolTip="Descarga una carátula de steamgriddb.com"/>
                         <Button x:Name="RemoveImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
-                                Margin="12,0,0,0" Click="OnRemoveImageClick"/>
-                    </StackPanel>
+                                Margin="0,0,10,10" Click="OnRemoveImageClick"/>
+                    </WrapPanel>
 
                     <TextBlock Text="CONTRAPORTADA" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseBackImageClick"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseBackImageClick" Margin="0,0,10,10"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en TheGamesDB" Click="OnSearchBackClick" Margin="0,0,10,10"
+                                ToolTip="Descarga la parte de atrás de la caja desde thegamesdb.net"/>
                         <Button x:Name="RemoveBackImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
-                                Margin="12,0,0,0" Click="OnRemoveBackImageClick"/>
-                    </StackPanel>
+                                Margin="0,0,10,10" Click="OnRemoveBackImageClick"/>
+                    </WrapPanel>
                     <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,10,0,0" TextWrapping="Wrap"
                                Text="También puedes arrastrar una imagen a esta ventana: se pone en la cara de la caja que estés viendo."/>
 

@@ -65,7 +65,8 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] **Paso 3 · v0.0.3** — Filtros personalizados (con nombre e imagen) para agrupar los juegos
 - [x] **Paso 4 · v0.0.5** — Personalización con imagen delantera y trasera de la caja
 - [x] **Paso 5 · v0.0.5** — Girar las cajas como modelos 3D completos, con su grosor
-- [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…)
+- [x] **v0.0.11** — Descargar portadas de SteamGridDB y contraportadas de TheGamesDB desde Personalizar
+- [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -76,6 +77,15 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - Soporte para mando.
 - Soporte para otras plataformas (Epic Games, GOG, Xbox, etc.).
 - Registro de tiempo de juego.
+
+## 🌐 Carátulas desde internet
+
+En Personalizar (`E`) puedes buscar y descargar la portada en **SteamGridDB** y la contraportada en **TheGamesDB**. Cada servicio necesita tu propia clave de API (gratuita), que Basilisco te pide la primera vez:
+
+- **SteamGridDB**: entra en [steamgriddb.com](https://www.steamgriddb.com) con tu cuenta → Preferencias → API → genera la clave. Es inmediata.
+- **TheGamesDB**: entra en [thegamesdb.net](https://thegamesdb.net) con tu cuenta y pulsa «API Access Request» al pie de la página. Tienen que aprobarla y tiene un límite de consultas al mes.
+
+Las claves se guardan en `basilisco-data/settings.json`, junto al `.exe`. No compartas esa carpeta si no quieres compartir tus claves.
 
 ## 🛠️ Tecnologías
 

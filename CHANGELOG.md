@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.11] - 2026-10-17
+
+Descarga de carátulas desde internet.
+
+- **Buscar en SteamGridDB** (en Personalizar → Portada): busca el juego en steamgriddb.com, enseña sus carátulas (primero las cuadradas de 1024 × 1024 y 512 × 512, que llenan la caja) y descarga la que elijas.
+- **Buscar en TheGamesDB** (en Personalizar → Contraportada): busca el juego en thegamesdb.net y enseña las fotos de la parte de atrás de sus cajas, con la plataforma y el año de cada resultado.
+- La primera vez se pide la clave de la API de cada servicio, con el botón «Conseguir clave» que abre su página. Se puede cambiar cuando quieras con «Cambiar clave».
+- Las claves se guardan en `basilisco-data/settings.json`, junto al .exe, para seguir siendo portable.
+- La imagen descargada se comporta igual que una elegida a mano: se ve al momento en la vista previa 3D y solo se guarda al pulsar «Guardar».
+- Mensajes claros si la clave no es válida, se agota el límite de consultas o no hay conexión.
+
 ## [0.0.10] - 2026-10-17
 
 - **Vuelve la franja de la izquierda** típica de las cajas de PlayStation, también en las cajas con carátula.
