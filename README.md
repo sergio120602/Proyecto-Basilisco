@@ -24,8 +24,10 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | --- | --- |
 | Navegar por el carrusel | `←` `→`, rueda del ratón o clic en una caja lateral |
 | Jugar | `Enter` o clic en la caja central |
+| Girar la caja (ver grosor y contraportada) | Arrastrar la caja central con el ratón |
+| Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
-| Personalizar (nombre, portada y filtros) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada, contraportada y filtros) | `E` o clic derecho sobre la caja |
 | Cambiar de filtro | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
 | Crear filtro | «+ Nuevo filtro» en la barra de arriba |
 | Editar o eliminar filtro | Clic derecho sobre su pestaña |
@@ -60,8 +62,8 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] **Paso 1 · v0.0.1** — El `.exe` abre, carrusel 3D con cajas negras, importar y lanzar cualquier juego o aplicación
 - [x] **Paso 2 · v0.0.2** — Menú de personalización: cambiar el nombre y la portada de cada juego
 - [x] **Paso 3 · v0.0.3** — Filtros personalizados (con nombre e imagen) para agrupar los juegos
-- [ ] **Paso 4** — Personalización con imagen delantera y trasera de la caja
-- [ ] **Paso 5** — Poder girar las portadas
+- [x] **Paso 4 · v0.0.5** — Personalización con imagen delantera y trasera de la caja
+- [x] **Paso 5 · v0.0.5** — Girar las cajas como modelos 3D completos, con su grosor
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…)
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -77,7 +79,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 ## 🛠️ Tecnologías
 
 - **C# / .NET 10** con **WPF** para la interfaz.
-- Carrusel 3D hecho con `Viewport3D` de WPF.
+- Carrusel 3D hecho con `Viewport3D` de WPF: cada juego es una caja 3D con sus seis caras y su reflejo.
 - Publicado como `.exe` autocontenido de un solo archivo (`PublishSingleFile`).
 
 ### Compilar desde el código

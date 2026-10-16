@@ -11,6 +11,9 @@ public sealed class Game
     /// <summary>Nombre del archivo de la portada personalizada dentro de basilisco-data/covers, si tiene.</summary>
     public string? CoverImage { get; set; }
 
+    /// <summary>Nombre del archivo de la contraportada personalizada dentro de basilisco-data/covers, si tiene.</summary>
+    public string? BackImage { get; set; }
+
     /// <summary>Filtros a los que pertenece el juego.</summary>
     public List<string> FilterIds { get; set; } = [];
 

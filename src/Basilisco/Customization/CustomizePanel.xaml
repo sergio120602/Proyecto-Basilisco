@@ -16,15 +16,27 @@
                     <ColumnDefinition Width="420"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Vista previa: la misma textura que se verá en el carrusel -->
+                <!-- Vista previa: la misma caja 3D que se verá en el carrusel; se gira arrastrando -->
                 <StackPanel>
-                    <Image x:Name="PreviewImage" Width="340" Height="296" Stretch="Fill">
-                        <Image.Effect>
-                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.3"/>
-                        </Image.Effect>
-                    </Image>
+                    <Border CornerRadius="14" ClipToBounds="True">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#CDD3DC" Offset="0"/>
+                                <GradientStop Color="#E6E9EE" Offset="0.79"/>
+                                <GradientStop Color="#D3D8E0" Offset="0.80"/>
+                                <GradientStop Color="#E3E6EB" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid Width="340" Height="340" Cursor="SizeAll">
+                            <Viewport3D x:Name="PreviewViewport"/>
+                        </Grid>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                        <Button Style="{StaticResource PillButton}" Content="Ver portada" Click="OnShowFrontClick"/>
+                        <Button Style="{StaticResource PillButton}" Content="Ver contraportada" Margin="10,0,0,0" Click="OnShowBackClick"/>
+                    </StackPanel>
                     <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="#5B6573" TextWrapping="Wrap"
-                               Text="La imagen se muestra entera, sin deformarla ni recortarla. Si no tiene la forma de la caja, el hueco que sobra queda en negro."/>
+                               Text="Arrastra la caja para girarla y ver su grosor. Las imágenes se muestran enteras, sin deformarlas ni recortarlas; el hueco que sobra queda en negro."/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
@@ -40,7 +52,15 @@
                         <Button x:Name="RemoveImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
                                 Margin="12,0,0,0" Click="OnRemoveImageClick"/>
                     </StackPanel>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,10,0,0" Text="También puedes arrastrar una imagen a esta ventana."/>
+
+                    <TextBlock Text="CONTRAPORTADA" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseBackImageClick"/>
+                        <Button x:Name="RemoveBackImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
+                                Margin="12,0,0,0" Click="OnRemoveBackImageClick"/>
+                    </StackPanel>
+                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,10,0,0" TextWrapping="Wrap"
+                               Text="También puedes arrastrar una imagen a esta ventana: se pone en la cara de la caja que estés viendo."/>
 
                     <TextBlock Text="FILTROS" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
                     <WrapPanel x:Name="FilterToggles"/>

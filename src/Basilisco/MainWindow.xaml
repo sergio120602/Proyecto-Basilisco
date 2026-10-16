@@ -52,7 +52,9 @@
         </Border>
 
         <Viewport3D x:Name="Viewport" ClipToBounds="False"
-                    MouseLeftButtonDown="OnViewportMouseDown" MouseRightButtonDown="OnViewportRightMouseDown"/>
+                    MouseLeftButtonDown="OnViewportMouseDown" MouseMove="OnViewportMouseMove"
+                    MouseLeftButtonUp="OnViewportMouseUp" MouseRightButtonDown="OnViewportRightMouseDown"
+                    LostMouseCapture="OnViewportLostCapture"/>
 
         <!-- Cabecera -->
         <Grid VerticalAlignment="Top" Margin="44,30,44,0">
@@ -160,6 +162,8 @@
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Enter"/></Border>
                 <TextBlock x:Name="ActivateHint" Style="{StaticResource HintText}" Text="Jugar"/>
                 <StackPanel x:Name="GameHints" Orientation="Horizontal">
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="R"/></Border>
+                    <TextBlock Style="{StaticResource HintText}" Text="Girar"/>
                     <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="E"/></Border>
                     <TextBlock Style="{StaticResource HintText}" Text="Personalizar"/>
                     <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>

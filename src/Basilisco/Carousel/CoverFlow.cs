@@ -5,23 +5,23 @@ using System.Windows.Media.Media3D;
 
 namespace Basilisco.Carousel;
 
-public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null);
+public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null, string? BackImagePath = null);
 
 /// <summary>
-/// Carrusel 3D de portadas: la seleccionada de frente y el resto girado y apilado a los lados,
+/// Carrusel 3D de cajas: la seleccionada de frente y el resto girado y apilado a los lados,
 /// con reflejo en el suelo. La posición es continua y persigue al índice seleccionado,
-/// así que pasar de una portada a otra siempre es un deslizamiento suave.
+/// así que pasar de una caja a otra siempre es un deslizamiento suave.
+/// La caja seleccionada además se puede girar sobre sí misma para ver la contraportada y el grosor.
 /// </summary>
 public sealed class CoverFlow
 {
-    public const double CoverWidth = 1.15;
-    public const double CoverHeight = 1.0;
+    public const double CoverHeight = BoxModel.Height;
 
     static readonly Point3D CameraPosition = new(0, 0.7, 3.7);
     static readonly Point3D CameraTarget = new(0, 0.44, 0);
     const double FieldOfView = 55;
 
-    // Disposición de las portadas laterales.
+    // Disposición de las cajas laterales.
     const double NeighborOffsetX = 1.15;
     const double StackSpacingX = 0.24;
     const double NeighborDepth = 0.55;
@@ -30,21 +30,27 @@ public sealed class CoverFlow
 
     // Cuanto mayor, más rápido llega la animación a su destino.
     const double Stiffness = 9.0;
+    const double InspectStiffness = 12.0;
     const double FadeStart = 4.5;
     const double MaxVisibleDistance = 6.5;
 
-    static readonly MeshGeometry3D CoverMesh = CreateQuad(0, CoverHeight);
-    static readonly MeshGeometry3D ReflectionMesh = CreateQuad(-CoverHeight, 0);
+    /// <summary>Inclinación máxima hacia delante o hacia atrás al inspeccionar, en grados.</summary>
+    public const double MaxPitch = 30;
+
+    /// <summary>Al arrastrar, la inclinación responde más despacio que el giro para que sea fácil de controlar.</summary>
+    public const double PitchDragFactor = 0.5;
 
     readonly Viewport3D _viewport;
     readonly Model3DGroup _scene = new();
     readonly List<Slot> _slots = [];
     readonly List<Slot> _drawOrder = [];
-    readonly List<GeometryModel3D> _desiredModels = [];
+    readonly List<Model3DGroup> _desiredModels = [];
     readonly Dictionary<GeometryModel3D, int> _modelIndex = [];
 
     double _position;
     int _target;
+    double _yawTarget;
+    double _pitchTarget;
     bool _animating;
     TimeSpan _lastFrame;
 
@@ -52,6 +58,9 @@ public sealed class CoverFlow
 
     public int SelectedIndex => _target;
     public int Count => _slots.Count;
+
+    /// <summary>Giro al que va la caja seleccionada (grados alrededor del eje vertical y del horizontal).</summary>
+    public (double Yaw, double Pitch) InspectTarget => (_yawTarget, _pitchTarget);
 
     public CoverFlow(Viewport3D viewport)
     {
@@ -65,7 +74,7 @@ public sealed class CoverFlow
             NearPlaneDistance = 0.1,
             FarPlaneDistance = 100,
         };
-        _viewport.Children.Add(new ModelVisual3D { Content = new AmbientLight(Colors.White) });
+        _viewport.Children.Add(new ModelVisual3D { Content = BoxModel.CreateLighting() });
         _viewport.Children.Add(new ModelVisual3D { Content = _scene });
     }
 
@@ -80,24 +89,25 @@ public sealed class CoverFlow
         {
             var slot = new Slot(items[i]);
             _slots.Add(slot);
-            _modelIndex[slot.Cover] = i;
-            _modelIndex[slot.Reflection] = i;
+            foreach (var face in slot.Model.Faces)
+                _modelIndex[face] = i;
         }
 
         var last = Math.Max(0, _slots.Count - 1);
         _target = Math.Clamp(selectedIndex, 0, last);
         _position = jump ? _target : Math.Clamp(_position, 0, last);
+        _yawTarget = _pitchTarget = 0;
 
         ApplyLayout();
         StartAnimation();
         SelectedIndexChanged?.Invoke(_target);
     }
 
-    /// <summary>Vuelve a pintar una sola portada (por ejemplo, tras personalizarla).</summary>
+    /// <summary>Vuelve a pintar una sola caja (por ejemplo, tras personalizarla).</summary>
     public void UpdateItem(int index, CarouselItem item)
     {
         if (index >= 0 && index < _slots.Count)
-            _slots[index].SetArt(item);
+            _slots[index].SetItem(item);
     }
 
     public void MoveBy(int delta) => Select(_target + delta);
@@ -111,12 +121,32 @@ public sealed class CoverFlow
         if (index == _target)
             return;
 
+        // La caja que dejamos vuelve a ponerse de frente por el camino más corto.
+        _slots[_target].NormalizeYaw();
         _target = index;
+        _yawTarget = _pitchTarget = 0;
         StartAnimation();
         SelectedIndexChanged?.Invoke(_target);
     }
 
-    /// <summary>Índice de la portada bajo el punto dado (en coordenadas del viewport), si hay alguna.</summary>
+    /// <summary>True si la caja seleccionada se puede girar (la tarjeta de importar no tiene contraportada).</summary>
+    public bool CanInspectSelected => _slots.Count > 0 && !_slots[_target].Item.IsAddCard;
+
+    /// <summary>Gira la caja seleccionada hasta el ángulo dado; la caja lo sigue con suavidad.</summary>
+    public void SetInspect(double yaw, double pitch)
+    {
+        if (!CanInspectSelected)
+            return;
+
+        _yawTarget = yaw;
+        _pitchTarget = Math.Clamp(pitch, -MaxPitch, MaxPitch);
+        StartAnimation();
+    }
+
+    /// <summary>Da la vuelta a la caja seleccionada: de la portada a la contraportada y viceversa.</summary>
+    public void FlipSelected() => SetInspect(Math.Round(_yawTarget / 180) * 180 + 180, 0);
+
+    /// <summary>Índice de la caja bajo el punto dado (en coordenadas del viewport), si hay alguna.</summary>
     public int? HitTest(Point point)
     {
         int? hit = null;
@@ -174,15 +204,45 @@ public sealed class CoverFlow
         _lastFrame = now;
 
         // Acercamiento exponencial: independiente de los FPS y sin tirones aunque el destino cambie a mitad.
-        _position += (_target - _position) * (1 - Math.Exp(-Stiffness * dt));
-        if (Math.Abs(_target - _position) < 0.001)
+        var settled = Approach(ref _position, _target, Stiffness, dt, 0.001);
+
+        var inspectStep = 1 - Math.Exp(-InspectStiffness * dt);
+        for (var i = 0; i < _slots.Count; i++)
         {
-            _position = _target;
+            var slot = _slots[i];
+            double yaw = i == _target ? _yawTarget : 0, pitch = i == _target ? _pitchTarget : 0;
+            if (slot.Yaw == yaw && slot.Pitch == pitch)
+                continue;
+
+            slot.Yaw += (yaw - slot.Yaw) * inspectStep;
+            slot.Pitch += (pitch - slot.Pitch) * inspectStep;
+            if (Math.Abs(yaw - slot.Yaw) < 0.05 && Math.Abs(pitch - slot.Pitch) < 0.05)
+            {
+                slot.Yaw = yaw;
+                slot.Pitch = pitch;
+            }
+            else
+            {
+                settled = false;
+            }
+        }
+
+        if (settled)
+        {
             _animating = false;
             CompositionTarget.Rendering -= OnRendering;
         }
 
         ApplyLayout();
+    }
+
+    static bool Approach(ref double value, double target, double stiffness, double dt, double epsilon)
+    {
+        value += (target - value) * (1 - Math.Exp(-stiffness * dt));
+        if (Math.Abs(target - value) >= epsilon)
+            return false;
+        value = target;
+        return true;
     }
 
     void ApplyLayout()
@@ -202,17 +262,19 @@ public sealed class CoverFlow
             var near = Math.Min(distance, 1);
             var stacked = Math.Max(0, distance - 1);
 
-            slot.Translation.OffsetX = side * (near * NeighborOffsetX + stacked * StackSpacingX);
-            slot.Translation.OffsetZ = -(near * NeighborDepth + stacked * StackSpacingDepth);
-            slot.Rotation.Angle = side * near * SideAngle;
-            slot.SetOpacity(distance <= FadeStart
+            var model = slot.Model;
+            model.Position.OffsetX = side * (near * NeighborOffsetX + stacked * StackSpacingX);
+            model.Position.OffsetZ = -(near * NeighborDepth + stacked * StackSpacingDepth);
+            model.SideRotation.Angle = side * near * SideAngle;
+            model.SetInspect(slot.Yaw, slot.Pitch);
+            model.SetOpacity(distance <= FadeStart
                 ? 1
                 : Math.Max(0, (MaxVisibleDistance - distance) / (MaxVisibleDistance - FadeStart)));
 
             _drawOrder.Add(slot);
         }
 
-        // Las partes semitransparentes (reflejos y portadas lejanas) se pintan de atrás hacia delante.
+        // Las partes semitransparentes (reflejos y cajas lejanas) se pintan de atrás hacia delante.
         _drawOrder.Sort((a, b) => b.Distance.CompareTo(a.Distance));
         SyncScene();
     }
@@ -221,9 +283,9 @@ public sealed class CoverFlow
     {
         _desiredModels.Clear();
         foreach (var slot in _drawOrder)
-            _desiredModels.Add(slot.Reflection);
+            _desiredModels.Add(slot.Model.Reflection);
         foreach (var slot in _drawOrder)
-            _desiredModels.Add(slot.Cover);
+            _desiredModels.Add(slot.Model.Box);
 
         var children = _scene.Children;
         var unchanged = children.Count == _desiredModels.Count;
@@ -237,55 +299,21 @@ public sealed class CoverFlow
             children.Add(model);
     }
 
-    static MeshGeometry3D CreateQuad(double bottom, double top)
+    sealed class Slot(CarouselItem item)
     {
-        const double half = CoverWidth / 2;
-        var mesh = new MeshGeometry3D
-        {
-            Positions = [new(-half, bottom, 0), new(half, bottom, 0), new(half, top, 0), new(-half, top, 0)],
-            TextureCoordinates = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)],
-            TriangleIndices = [0, 1, 2, 0, 2, 3],
-        };
-        mesh.Freeze();
-        return mesh;
-    }
-
-    sealed class Slot
-    {
-        public readonly GeometryModel3D Cover;
-        public readonly GeometryModel3D Reflection;
-        public readonly AxisAngleRotation3D Rotation = new(new Vector3D(0, 1, 0), 0);
-        public readonly TranslateTransform3D Translation = new();
+        public BoxModel Model { get; } = new(item);
+        public CarouselItem Item { get; private set; } = item;
         public double Distance;
+        public double Yaw;
+        public double Pitch;
 
-        readonly ImageBrush _coverBrush = new();
-        readonly ImageBrush _reflectionBrush = new();
-
-        public Slot(CarouselItem item)
+        public void SetItem(CarouselItem item)
         {
-            SetArt(item);
-
-            var transform = new Transform3DGroup();
-            transform.Children.Add(new RotateTransform3D(Rotation));
-            transform.Children.Add(Translation);
-
-            Cover = new GeometryModel3D(CoverMesh, new DiffuseMaterial(_coverBrush)) { Transform = transform };
-            Reflection = new GeometryModel3D(ReflectionMesh, new DiffuseMaterial(_reflectionBrush)) { Transform = transform };
+            Item = item;
+            Model.SetArt(item);
         }
 
-        public void SetArt(CarouselItem item)
-        {
-            var (cover, reflection) = CoverArt.Render(item);
-            _coverBrush.ImageSource = cover;
-            _reflectionBrush.ImageSource = reflection;
-        }
-
-        public void SetOpacity(double opacity)
-        {
-            if (_coverBrush.Opacity == opacity)
-                return;
-            _coverBrush.Opacity = opacity;
-            _reflectionBrush.Opacity = opacity;
-        }
+        /// <summary>Deja el giro entre -180° y 180° sin que cambie nada en pantalla.</summary>
+        public void NormalizeYaw() => Yaw -= 360 * Math.Round(Yaw / 360);
     }
 }

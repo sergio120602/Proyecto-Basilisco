@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.5] - 2026-10-17
+
+Las cajas pasan a ser modelos 3D completos.
+
+- **Cajas 3D de verdad**: cada juego es una caja con portada, contraportada, lomo y cantos, con el grosor de una caja de CD de PS1. Las cajas laterales del carrusel enseñan su lomo con el nombre del juego en vertical, y el reflejo del suelo es la caja entera en espejo.
+- **Girar las cajas**: arrastra con el ratón la caja seleccionada para girarla en cualquier dirección y ver su grosor, o pulsa `R` para darle la vuelta y ver la contraportada. Al pasar a otro juego, la caja vuelve a ponerse de frente sola.
+- **Contraportada personalizada**: en Personalizar (`E`) hay una nueva sección «Contraportada» para elegir o quitar la imagen de atrás. Se ve entera, sin deformarla ni recortarla.
+- **Vista previa en 3D** en Personalizar: la misma caja del carrusel, que puedes girar arrastrando o con «Ver portada» / «Ver contraportada». Si sueltas una imagen en la ventana, va a la cara que estés viendo.
+- Luz con volumen: cada cara de la caja tiene su tono, para que se note la forma.
+- Un clic sobre la caja seleccionada sigue lanzando el juego; solo gira si arrastras.
+
 ## [0.0.4] - 2026-10-16
 
 - **Pestañas de filtro con logo**: si un filtro tiene imagen, en la barra de arriba se ve solo el logo, más grande (hasta 40 px de alto), entero y sin deformar. El nombre y el número de juegos aparecen al pasar el ratón por encima.
