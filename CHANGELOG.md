@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.4] - 2026-10-16
+
+- **Pestañas de filtro con logo**: si un filtro tiene imagen, en la barra de arriba se ve solo el logo, más grande (hasta 40 px de alto), entero y sin deformar. El nombre y el número de juegos aparecen al pasar el ratón por encima.
+- La vista previa del editor de filtros muestra la pestaña igual que se verá arriba.
+
 ## [0.0.3] - 2026-10-16
 
 Filtros para agrupar los juegos como quieras.

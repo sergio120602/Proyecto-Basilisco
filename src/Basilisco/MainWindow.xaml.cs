@@ -16,7 +16,8 @@ public partial class MainWindow : Window
     const string ImportFilter =
         "Juegos y aplicaciones (*.exe;*.lnk;*.url;*.bat;*.cmd)|*.exe;*.lnk;*.url;*.bat;*.cmd|Todos los archivos (*.*)|*.*";
 
-    const int FilterIconDecodeWidth = 96;
+    // El logo se pinta hasta 180 px de ancho; con margen para pantallas con escalado.
+    const int FilterIconDecodeWidth = 480;
 
     readonly LibraryStore _store = new();
     readonly Library _library;

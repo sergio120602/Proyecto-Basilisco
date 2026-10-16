@@ -18,7 +18,7 @@ public sealed record FilterResult(GameFilter? Filter, string Name, string? NewIm
 /// <summary>Editor para crear un filtro o cambiar su nombre e imagen. Los cambios solo se aplican al guardar.</summary>
 public partial class FilterPanel : UserControl
 {
-    const int IconDecodeWidth = 96;
+    const int IconDecodeWidth = 480;
 
     GameFilter? _filter;
     string? _newImagePath;
@@ -95,7 +95,12 @@ public partial class FilterPanel : UserControl
         var preview = path is null ? null : CoverArt.LoadImage(path, 440);
         PreviewImage.Source = preview;
         PreviewIcon.Source = path is null ? null : CoverArt.LoadImage(path, IconDecodeWidth);
-        PreviewIcon.Visibility = preview is null ? Visibility.Collapsed : Visibility.Visible;
+        // Igual que en la barra de arriba: con imagen se ve solo el logo, sin el nombre.
+        var hasLogo = preview is not null;
+        PreviewIcon.Visibility = hasLogo ? Visibility.Visible : Visibility.Collapsed;
+        PreviewLabel.Visibility = hasLogo ? Visibility.Collapsed : Visibility.Visible;
+        PreviewPill.Padding = hasLogo ? new Thickness(16, 4, 16, 4) : new Thickness(16, 7, 16, 7);
+        PreviewPill.CornerRadius = new CornerRadius(hasLogo ? 24 : 19);
         PreviewInitial.Text = preview is null && name.Length > 0 ? name[..1].ToUpperInvariant() : "";
         RemoveImageButton.IsEnabled = path is not null;
     }
