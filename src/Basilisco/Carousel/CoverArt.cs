@@ -11,15 +11,16 @@ namespace Basilisco.Carousel;
 /// </summary>
 public static class CoverArt
 {
-    const int Width = 768;
-    const int Height = 668;
+    // Texturas cuadradas de 1024 × 1024, igual que la caja: una carátula de ese tamaño se ve a resolución completa.
+    public const int Width = 1024;
+    public const int Height = 1024;
     const int SpineWidth = (int)(Height * BoxModel.Depth / BoxModel.Height);
     const double Scale = Width / 576.0;
     const double Spine = Width * 0.085;
-    const double Frame = 5;
+    const double Frame = 6;
 
     // Por encima de esto se decodifica reducida: la portada nunca se pinta más grande.
-    const int MaxDecodeWidth = Width * 2;
+    const int MaxDecodeWidth = Width;
 
     static readonly Typeface TitleFace = new(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
 
@@ -99,16 +100,18 @@ public static class CoverArt
 
         if (image is not null)
         {
-            // La imagen se encaja entera conservando su proporción: ni se deforma ni se recorta.
-            // El hueco que sobre se queda en negro.
-            var area = new Rect(Spine + 2, Frame, Width - Spine - 2 - Frame, Height - Frame * 2);
+            // La imagen ocupa toda la cara (la caja ya tiene su lomo de verdad en 3D), así que una carátula
+            // cuadrada la llena entera. Si no es cuadrada se encaja sin deformar ni recortar, con negro en el hueco.
+            var area = new Rect(Frame, Frame, Width - Frame * 2, Height - Frame * 2);
             dc.DrawRectangle(Brushes.Black, null, area);
             dc.DrawImage(image, FitInside(image.Width, image.Height, area));
         }
-
-        // Lomo de la caja.
-        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x0B, 0x0B, 0x0D)), null, new Rect(0, 0, Spine, Height));
-        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2B, 0x2D, 0x33)), null, new Rect(Spine, 0, 2, Height));
+        else
+        {
+            // Sin carátula, la franja del lomo pintada da el aspecto de caja de PS1.
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x0B, 0x0B, 0x0D)), null, new Rect(0, 0, Spine, Height));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2B, 0x2D, 0x33)), null, new Rect(Spine, 0, 2, Height));
+        }
 
         // Brillo del plástico.
         var gloss = new LinearGradientBrush(Color.FromArgb(30, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0.6, 0.6));
