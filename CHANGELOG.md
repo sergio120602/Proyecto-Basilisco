@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.0.9] - 2026-10-17
+
+- **Carátulas cuadradas de 1024 × 1024**: las cajas pasan a ser cuadradas y sus texturas de 1024 × 1024, así que una carátula de ese tamaño llena la cara entera y se ve a resolución completa, sin franjas negras.
+- Con carátula, la imagen ocupa toda la cara: la franja de lomo pintada ya no hace falta porque la caja tiene su lomo de verdad en 3D (las cajas sin carátula la conservan).
+- Las imágenes con otras proporciones se siguen mostrando enteras, sin deformar ni recortar.
+- Ajustada la separación del carrusel a las cajas cuadradas, manteniendo el margen para que no reaparezca la raya negra al deslizar.
+
 ## [0.0.8] - 2026-10-17
 
 - Arreglado: al pasar de un juego a otro se veía durante unos instantes una raya negra cruzando la portada de la caja de al lado. Era el lomo de la caja de detrás, que atravesaba la portada de la de delante mientras cada una giraba con un ángulo distinto. Ahora las cajas apiladas tienen más separación en profundidad y nunca se tocan durante la animación.

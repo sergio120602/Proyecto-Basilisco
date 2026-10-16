@@ -36,7 +36,7 @@
                         <Button Style="{StaticResource PillButton}" Content="Ver contraportada" Margin="10,0,0,0" Click="OnShowBackClick"/>
                     </StackPanel>
                     <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="#5B6573" TextWrapping="Wrap"
-                               Text="Arrastra la caja para girarla y ver su grosor. Las imágenes se muestran enteras, sin deformarlas ni recortarlas; el hueco que sobra queda en negro."/>
+                               Text="Arrastra la caja para girarla y ver su grosor. Las cajas son cuadradas: las carátulas de 1024 × 1024 las llenan enteras. Otras medidas se muestran enteras, sin deformar ni recortar, con negro en el hueco que sobra."/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
