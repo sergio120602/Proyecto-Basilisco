@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.1] - 2026-10-17
+
+- **Botón «Apariencia»** en la barra de arriba (o tecla `A`): fondo estático (imagen) o dinámico (vídeo) y color de las letras **para todos los juegos**, con vista previa.
+- Si un juego tiene fondo o color propios (Personalizar), se usan los suyos; si no, los generales. «Quitar las de cada juego» deja que todos usen la apariencia general.
+
 ## [0.3.0] - 2026-10-17
 
 Apariencia de cada juego y tiempo de juego.

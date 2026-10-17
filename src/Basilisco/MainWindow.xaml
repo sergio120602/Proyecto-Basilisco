@@ -123,6 +123,8 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource PillButton}" Content="Apariencia" Click="OnThemeClick" Margin="0,0,10,0"
+                        ToolTip="Fondo (imagen o vídeo) y color de las letras para todos los juegos (A)"/>
                 <Button Style="{StaticResource PillButton}" Content="Steam" Click="OnSteamClick" Margin="0,0,10,0"
                         ToolTip="Importa tu cuenta de Steam: instalados, toda la biblioteca y Steam Familiar (S)"/>
                 <Button Style="{StaticResource PillButton}" Content="Formato" Click="OnFormatClick" Margin="0,0,10,0"
@@ -238,5 +240,6 @@
         <customization:PlatformPickerPanel x:Name="PlatformPicker"/>
         <customization:FormatPanel x:Name="FormatEditor"/>
         <customization:SteamPanel x:Name="SteamImporter"/>
+        <customization:ThemePanel x:Name="ThemeEditor"/>
     </Grid>
 </Window>

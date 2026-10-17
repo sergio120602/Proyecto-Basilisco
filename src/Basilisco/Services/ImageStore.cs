@@ -62,6 +62,24 @@ public static class ImageStore
         game.BackgroundIsVideo = false;
     }
 
+    public static string? GetGlobalBackgroundPath(AppSettings settings) => Resolve(AppInfo.BackgroundsDirectory, settings.Background);
+
+    /// <summary>Copia la imagen o el vídeo como fondo general y borra el anterior.</summary>
+    public static void SetGlobalBackground(AppSettings settings, string sourcePath)
+    {
+        var fileName = Import(sourcePath, AppInfo.BackgroundsDirectory, "global-bg");
+        RemoveGlobalBackground(settings);
+        settings.Background = fileName;
+        settings.BackgroundIsVideo = IsVideo(sourcePath);
+    }
+
+    public static void RemoveGlobalBackground(AppSettings settings)
+    {
+        Delete(AppInfo.BackgroundsDirectory, settings.Background);
+        settings.Background = null;
+        settings.BackgroundIsVideo = false;
+    }
+
     /// <summary>Borra todas las imágenes del juego, de todos los formatos (al quitarlo de la biblioteca).</summary>
     public static void RemoveAll(Game game)
     {
