@@ -74,6 +74,8 @@
                         <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseImageClick" Margin="0,0,10,10"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en SteamGridDB" Click="OnSearchFrontClick" Margin="0,0,10,10"
                                 ToolTip="Descarga una carátula de steamgriddb.com"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxFrontClick" Margin="0,0,10,10"
+                                ToolTip="Fotos reales de la caja, de varias regiones (gamesdb.launchbox-app.com)"/>
                         <Button x:Name="FrameFrontButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameFrontClick" ToolTip="Amplía y mueve la portada para que cuadre en la caja"/>
                         <Button x:Name="RemoveImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
@@ -85,6 +87,8 @@
                         <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseBackImageClick" Margin="0,0,10,10"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en TheGamesDB" Click="OnSearchBackClick" Margin="0,0,10,10"
                                 ToolTip="Descarga la parte de atrás de la caja desde thegamesdb.net"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxBackClick" Margin="0,0,10,10"
+                                ToolTip="Fotos reales de la parte de atrás de la caja (gamesdb.launchbox-app.com)"/>
                         <Button x:Name="FrameBackButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameBackClick" ToolTip="Amplía y mueve la contraportada para que cuadre en la caja"/>
                         <Button x:Name="RemoveBackImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
@@ -96,6 +100,8 @@
                         <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseSpineImageClick" Margin="0,0,10,10"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en TheGamesDB" Click="OnSearchSpineClick" Margin="0,0,10,10"
                                 ToolTip="Usa un banner de thegamesdb.net, girado para que quepa en el lomo"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxSpineClick" Margin="0,0,10,10"
+                                ToolTip="Fotos reales del lomo de la caja (gamesdb.launchbox-app.com)"/>
                         <Button x:Name="FrameSpineButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameSpineClick" ToolTip="Amplía y mueve la imagen para que cuadre en el lomo"/>
                         <Button x:Name="RemoveSpineImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"

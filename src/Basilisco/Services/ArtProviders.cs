@@ -11,9 +11,10 @@ namespace Basilisco.Services;
 public sealed record ArtGame(string Id, string Name, string? Detail);
 
 /// <summary>Una imagen disponible para un juego.</summary>
-public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height)
+/// <param name="Label">Texto bajo la miniatura cuando no se saben las medidas (por ejemplo, la región).</param>
+public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null)
 {
-    public string SizeText => Width > 0 && Height > 0 ? $"{Width} × {Height}" : "";
+    public string SizeText => Width > 0 && Height > 0 ? $"{Width} × {Height}" : Label ?? "";
 }
 
 /// <summary>Error que se le puede enseñar al usuario tal cual.</summary>
@@ -37,6 +38,17 @@ public abstract class ArtProvider
 
     public abstract string? GetKey(AppSettings settings);
     public abstract void SetKey(AppSettings settings, string? key);
+
+    /// <summary>False para servicios que no necesitan clave (LaunchBox).</summary>
+    public virtual bool RequiresKey => true;
+
+    /// <summary>Preparación antes de buscar (LaunchBox descarga aquí su base de datos la primera vez).</summary>
+    public virtual Task PrepareAsync(IProgress<string> status, CancellationToken cancellation) => Task.CompletedTask;
+
+    /// <summary>Botón extra del buscador (por ejemplo, «Actualizar base de datos»), o null si no tiene.</summary>
+    public virtual string? MaintenanceLabel => null;
+
+    public virtual Task RunMaintenanceAsync(IProgress<string> status, CancellationToken cancellation) => Task.CompletedTask;
 
     public abstract Task<List<ArtGame>> SearchAsync(string term, string key, CancellationToken cancellation);
     public abstract Task<List<ArtImage>> GetImagesAsync(ArtGame game, string key, CancellationToken cancellation);

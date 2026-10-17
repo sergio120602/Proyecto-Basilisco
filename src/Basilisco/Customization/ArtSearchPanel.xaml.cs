@@ -45,7 +45,7 @@ public partial class ArtSearchPanel : UserControl
         SetStatus("");
         Visibility = Visibility.Visible;
 
-        if (string.IsNullOrWhiteSpace(provider.GetKey(settings)))
+        if (provider.RequiresKey && string.IsNullOrWhiteSpace(provider.GetKey(settings)))
         {
             ShowKeyView(true);
         }
@@ -60,7 +60,10 @@ public partial class ArtSearchPanel : UserControl
     {
         KeyView.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         SearchView.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
-        ChangeKeyButton.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        // Con clave: «Cambiar clave». Sin clave (LaunchBox): su botón propio, como «Actualizar base de datos».
+        var extra = _provider is { RequiresKey: false } ? _provider.MaintenanceLabel : "Cambiar clave";
+        ChangeKeyButton.Content = extra;
+        ChangeKeyButton.Visibility = show || extra is null ? Visibility.Collapsed : Visibility.Visible;
         if (show)
             KeyBox.Text = _provider?.GetKey(_settings) ?? "";
 
@@ -92,6 +95,14 @@ public partial class ArtSearchPanel : UserControl
 
         try
         {
+            // LaunchBox descarga aquí su base de datos la primera vez, enseñando el progreso.
+            await provider.PrepareAsync(new Progress<string>(text =>
+            {
+                if (!cancellation.IsCancellationRequested)
+                    SetStatus(text);
+            }), cancellation);
+            SetStatus($"Buscando «{term}» en {provider.Name}…");
+
             var games = await provider.SearchAsync(term, key, cancellation);
             if (cancellation.IsCancellationRequested)
                 return;
@@ -108,6 +119,10 @@ public partial class ArtSearchPanel : UserControl
         catch (ArtProviderException ex)
         {
             SetStatus(ex.Message, error: true);
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or System.IO.InvalidDataException or System.Xml.XmlException or UnauthorizedAccessException)
+        {
+            SetStatus($"No se ha podido preparar la base de datos: {ex.Message}", error: true);
         }
         catch (OperationCanceledException)
         {
@@ -217,7 +232,46 @@ public partial class ArtSearchPanel : UserControl
 
     void OnSaveKeyClick(object sender, RoutedEventArgs e) => SaveKey();
 
-    void OnChangeKeyClick(object sender, RoutedEventArgs e) => ShowKeyView(true);
+    void OnChangeKeyClick(object sender, RoutedEventArgs e)
+    {
+        if (_provider is { RequiresKey: false })
+            _ = RunMaintenanceAsync();
+        else
+            ShowKeyView(true);
+    }
+
+    /// <summary>Botón propio del servicio (en LaunchBox, volver a descargar la base de datos) y buscar de nuevo.</summary>
+    async Task RunMaintenanceAsync()
+    {
+        if (_provider is not { } provider)
+            return;
+
+        var cancellation = Restart();
+        GamesList.ItemsSource = null;
+        ImagesList.ItemsSource = null;
+        ChangeKeyButton.IsEnabled = false;
+        try
+        {
+            await provider.RunMaintenanceAsync(new Progress<string>(text =>
+            {
+                if (!cancellation.IsCancellationRequested)
+                    SetStatus(text);
+            }), cancellation);
+            if (!cancellation.IsCancellationRequested)
+                await SearchAsync();
+        }
+        catch (ArtProviderException ex)
+        {
+            SetStatus(ex.Message, error: true);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            ChangeKeyButton.IsEnabled = true;
+        }
+    }
 
     void OnGetKeyClick(object sender, RoutedEventArgs e)
     {
