@@ -3,6 +3,15 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.7] - 2026-10-17
+
+Nuevas consolas: Nintendo 64, GameCube y Game Boy Advance.
+
+- **Nintendo 64**, **GameCube** y **Game Boy Advance** en el menú de consolas, en Personalizar y en las pestañas de arriba, con su franja dibujada (vertical y horizontal), su color de plástico y su plataforma en LaunchBox.
+- Medidas de sus cajas rectangulares (aproximadas): Nintendo 64, caja de cartón apaisada de 12,7 × 18,0 × 3,4 cm · GameCube, estuche de mini-DVD de 18,7 × 13,5 × 1,4 cm · Game Boy Advance, caja de cartón de 12,5 × 12,5 × 2,0 cm.
+- La **Game Boy** y la **Game Boy Advance** pasan a ser consolas distintas. Los juegos que tenías como Game Boy siguen siéndolo (se migran solos, igual que su franja orders/gba.png, que pasa a llamarse gb.png).
+- Las franjas de arriba reducen el nombre de la consola si no cabe en cajas estrechas.
+
 ## [0.1.6] - 2026-10-17
 
 Las cajas rectangulares tienen las medidas reales de cada consola.
