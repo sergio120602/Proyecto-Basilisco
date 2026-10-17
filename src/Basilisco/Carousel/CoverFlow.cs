@@ -9,8 +9,11 @@ namespace Basilisco.Carousel;
 /// <param name="SpineImagePath">Imagen del lomo, o null para el lomo con el nombre.</param>
 /// <param name="BackFrame">Encuadre de la contraportada; null para verla entera.</param>
 /// <param name="SpineFrame">Encuadre de la imagen del lomo; null para verla entera.</param>
+/// <param name="Format">Formato de la caja: cuadrada (franja a la izquierda) o rectangular (franja arriba).</param>
+/// <param name="FrontFrame">Encuadre de la portada; null para verla entera.</param>
 public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null, string? BackImagePath = null, string? Platform = null,
-                                  string? SpineImagePath = null, Models.ImageFrame? BackFrame = null, Models.ImageFrame? SpineFrame = null);
+                                  string? SpineImagePath = null, Models.ImageFrame? BackFrame = null, Models.ImageFrame? SpineFrame = null,
+                                  Models.CoverFormat Format = Models.CoverFormat.Square, Models.ImageFrame? FrontFrame = null);
 
 /// <summary>
 /// Carrusel 3D de cajas: la seleccionada de frente y el resto girado y apilado a los lados,
@@ -253,9 +256,29 @@ public sealed class CoverFlow
         return true;
     }
 
+    /// <summary>Ancho de la caja que está en el centro, interpolado durante el deslizamiento.</summary>
+    double CenterWidth()
+    {
+        if (_slots.Count == 0)
+            return BoxModel.WidthOf(Models.CoverFormat.Square);
+
+        var left = Math.Clamp((int)Math.Floor(_position), 0, _slots.Count - 1);
+        var right = Math.Min(left + 1, _slots.Count - 1);
+        var t = Math.Clamp(_position - left, 0, 1);
+        return WidthOf(_slots[left]) * (1 - t) + WidthOf(_slots[right]) * t;
+
+        static double WidthOf(Slot slot) =>
+            BoxModel.WidthOf(slot.Item.IsAddCard ? Models.CoverFormat.Square : slot.Item.Format);
+    }
+
     void ApplyLayout()
     {
         _drawOrder.Clear();
+
+        // Las vecinas se separan según lo ancha que sea la caja del centro (más juntas si es rectangular).
+        // Se interpola entre las dos cajas más cercanas al centro para que no haya saltos al deslizar; y como
+        // la separación es la misma para todas las laterales, nunca se cruzan entre ellas.
+        var neighborOffset = NeighborOffsetX * (0.5 + 0.5 * CenterWidth() / BoxModel.WidthOf(Models.CoverFormat.Square));
 
         for (var i = 0; i < _slots.Count; i++)
         {
@@ -271,7 +294,7 @@ public sealed class CoverFlow
             var stacked = Math.Max(0, distance - 1);
 
             var model = slot.Model;
-            model.Position.OffsetX = side * (near * NeighborOffsetX + stacked * StackSpacingX);
+            model.Position.OffsetX = side * (near * neighborOffset + stacked * StackSpacingX);
             model.Position.OffsetZ = -(near * NeighborDepth + stacked * StackSpacingDepth);
             model.SideRotation.Angle = side * near * SideAngle;
             model.SetInspect(slot.Yaw, slot.Pitch);

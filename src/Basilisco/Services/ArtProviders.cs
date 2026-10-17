@@ -112,11 +112,15 @@ public abstract class ArtProvider
 }
 
 /// <summary>
-/// SteamGridDB (steamgriddb.com): carátulas hechas por la comunidad. Se piden primero las cuadradas
-/// de 1024 × 1024 y 512 × 512, que encajan con las cajas de Basilisco.
+/// SteamGridDB (steamgriddb.com): carátulas hechas por la comunidad. Se piden primero las del formato de la caja:
+/// cuadradas (1024 × 1024 y 512 × 512) o verticales (600 × 900 y similares, las más parecidas a 600 × 800).
 /// </summary>
-public sealed class SteamGridDbProvider : ArtProvider
+public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square) : ArtProvider
 {
+    string Dimensions => format == Models.CoverFormat.Portrait
+        ? "600x900,342x482,660x930"
+        : "1024x1024,512x512";
+
     const string BaseUrl = "https://www.steamgriddb.com/api/v2";
 
     public override string Name => "SteamGridDB";
@@ -146,8 +150,8 @@ public sealed class SteamGridDbProvider : ArtProvider
 
     public override async Task<List<ArtImage>> GetImagesAsync(ArtGame game, string key, CancellationToken cancellation)
     {
-        // Primero las cuadradas; si el juego no tiene, todas las demás (se enseñarán enteras, sin recortar).
-        var images = await GetGridsAsync(game, key, "&dimensions=1024x1024,512x512", cancellation);
+        // Primero las del formato de la caja; si el juego no tiene, todas las demás (se enseñarán enteras, sin recortar).
+        var images = await GetGridsAsync(game, key, $"&dimensions={Dimensions}", cancellation);
         if (images.Count == 0)
             images = await GetGridsAsync(game, key, "", cancellation);
         return images;

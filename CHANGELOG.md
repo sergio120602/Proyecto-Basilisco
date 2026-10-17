@@ -3,6 +3,19 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.3] - 2026-10-17
+
+Dos formatos de caja: cuadrada y rectangular.
+
+- **Formato por juego**: cada caja puede ser **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (carátula de 600 × 800, franja de la consola arriba, como las cajas de PS3, Xbox 360 o Wii).
+- **Cada formato guarda sus imágenes**: portada, contraportada, lomo y encuadres van por separado; al volver al otro formato, el juego recupera las que tenía.
+- **Cambiar el formato de uno, varios o todos**: botón «Formato» arriba (o tecla `F`), con la lista de juegos para marcar, «Marcar todos» y la opción de poner imágenes por defecto. También desde Personalizar (`E`), sección «Formato de la caja».
+- **Imágenes por defecto**: al pasar a un formato que aún no tiene imágenes, Basilisco intenta poner la portada de SteamGridDB (con las medidas del formato) y la contraportada de TheGamesDB, si tienes sus claves y las páginas responden. Si no, la caja se queda vacía para que la elijas tú.
+- **Franjas de arriba**: la de PS3 es la oficial de tu ejemplo; las demás las dibuja Basilisco. Se pueden sustituir con `basilisco-data/borders/<consola>-top.png`.
+- «Ajustar…» también en la **portada**, con el mismo editor de encuadre que la contraportada y el lomo.
+- El carrusel junta más las cajas cuando la del centro es rectangular.
+- Las bibliotecas de versiones anteriores se migran solas: sus imágenes pasan a la caja cuadrada.
+
 ## [0.1.2] - 2026-10-17
 
 - **Editor de encuadre** («Ajustar…» en Personalizar → Contraportada): amplía la contraportada con la rueda del ratón o la barra de zoom (del 50 % al 1200 %) y muévela arrastrando para que cuadre en la caja. «Entera» la deja completa sin recortar y «Llenar» hace que ocupe toda la cara. Lo que queda fuera se recorta.

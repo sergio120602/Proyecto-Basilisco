@@ -21,6 +21,28 @@ public static class CoverArt
     const int SpineWidth = (int)(Height * BoxModel.Depth / BoxModel.Height);
     const double Scale = Height / 576.0;
 
+    // Caja rectangular: la franja de la consola arriba y, debajo, una zona 3:4 para carátulas de 600 × 800.
+    const int PortraitWidth = 768;
+    const int TopBand = 112;
+    const int PortraitArtWidth = PortraitWidth - Frame * 2;
+    const int PortraitArtHeight = PortraitArtWidth * 4 / 3;
+    const int PortraitHeight = TopBand + 2 + PortraitArtHeight + Frame;
+
+    /// <summary>Medidas en píxeles de la portada y la contraportada de cada formato.</summary>
+    public static Size FaceSize(CoverFormat format) =>
+        format == CoverFormat.Portrait ? new Size(PortraitWidth, PortraitHeight) : new Size(Width, Height);
+
+    /// <summary>Ancho de la caja en la escena 3D (el alto es siempre 1).</summary>
+    public static double BoxWidth(CoverFormat format)
+    {
+        var size = FaceSize(format);
+        return size.Width / size.Height;
+    }
+
+    /// <summary>Medidas de la zona de la carátula en la portada, para calcular el zoom de «Llenar».</summary>
+    public static Size FrontArtSize(CoverFormat format) =>
+        format == CoverFormat.Portrait ? new Size(PortraitArtWidth, PortraitArtHeight) : new Size(Height - Frame, Height - Frame * 2);
+
     // El lomo con imagen se pinta al doble de resolución; un banner girado no necesita más que esto de ancho.
     const int SpineDecodeWidth = 2048;
 
@@ -32,19 +54,20 @@ public static class CoverArt
     public static BitmapSource RenderCover(CarouselItem item)
     {
         var image = item.ImagePath is null ? null : LoadImage(item.ImagePath);
-        return Rasterize(Width, Height, dc =>
-        {
-            if (item.IsAddCard)
-                DrawAddCard(dc);
-            else
-                DrawCase(dc, item.Title, image, item.Platform);
-        });
+        var frame = item.FrontFrame ?? ImageFrame.Default;
+        if (item.IsAddCard)
+            return Rasterize(Width, Height, DrawAddCard);
+        if (item.Format == CoverFormat.Portrait)
+            return Rasterize(PortraitWidth, PortraitHeight, dc => DrawPortraitCase(dc, item.Title, image, item.Platform, frame));
+        return Rasterize(Width, Height, dc => DrawCase(dc, item.Title, image, item.Platform, frame));
     }
 
     public static BitmapSource RenderBack(CarouselItem item)
     {
         var image = item.BackImagePath is null ? null : LoadImage(item.BackImagePath);
-        return Rasterize(Width, Height, dc => DrawBack(dc, item.Title, image, item.Platform, item.BackFrame ?? ImageFrame.Default));
+        var size = FaceSize(item.IsAddCard ? CoverFormat.Square : item.Format);
+        return Rasterize((int)size.Width, (int)size.Height,
+            dc => DrawBack(dc, size, item.Title, image, item.Platform, item.BackFrame ?? ImageFrame.Default));
     }
 
     /// <summary>
@@ -63,8 +86,7 @@ public static class CoverArt
         });
     }
 
-    /// <summary>Medidas de cada cara, para que el editor de encuadre enseñe la cara con su forma real.</summary>
-    public static Size BackSize => new(Width, Height);
+    /// <summary>Medidas del lomo (igual en los dos formatos: la caja siempre mide lo mismo de alto y de grosor).</summary>
     public static Size SpineSize => new(SpineWidth, Height);
 
     /// <summary>
@@ -153,7 +175,7 @@ public static class CoverArt
         return image;
     }
 
-    static void DrawCase(DrawingContext dc, string title, BitmapSource? image, string? platform)
+    static void DrawCase(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame)
     {
         var bounds = new Rect(0, 0, Width, Height);
 
@@ -168,10 +190,10 @@ public static class CoverArt
 
         if (image is not null)
         {
-            // La carátula va a la derecha de la franja, entera, sin deformar ni recortar, con negro en el hueco.
+            // La carátula va a la derecha de la franja; por defecto entera, sin deformar ni recortar, con negro en el hueco.
             var area = new Rect(bandWidth, Frame, Width - bandWidth - Frame, Height - Frame * 2);
             dc.DrawRectangle(Brushes.Black, null, area);
-            dc.DrawImage(image, FitInside(image.Width, image.Height, area));
+            DrawFramed(dc, image, area, frame);
         }
 
         if (bandImage is not null)
@@ -192,8 +214,44 @@ public static class CoverArt
         }
     }
 
-    static void DrawBack(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame)
+    /// <summary>Caja rectangular: la franja de la consola arriba y la carátula 3:4 debajo.</summary>
+    static void DrawPortraitCase(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame)
     {
+        var bounds = new Rect(0, 0, PortraitWidth, PortraitHeight);
+        dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x17, 0x18, 0x1C), Color.FromRgb(0x05, 0x05, 0x07), 45), null, bounds);
+
+        // Franja de arriba: la del usuario (basilisco-data/borders/<consola>-top.png) con su proporción, o la dibujada.
+        var bandImage = PlatformArt.TopBandImage(platform);
+        var bandHeight = bandImage is null
+            ? TopBand + 2
+            : Math.Clamp(PortraitWidth * bandImage.Height / bandImage.Width, 40, PortraitHeight * 0.25);
+
+        var area = new Rect(Frame, bandHeight, PortraitWidth - Frame * 2, PortraitHeight - bandHeight - Frame);
+        if (image is not null)
+        {
+            dc.DrawRectangle(Brushes.Black, null, area);
+            DrawFramed(dc, image, area, frame);
+        }
+
+        if (bandImage is not null)
+            dc.DrawImage(bandImage, new Rect(0, 0, PortraitWidth, bandHeight));
+        else
+            PlatformArt.DrawTopBand(dc, platform, new Rect(0, 0, PortraitWidth, TopBand));
+
+        var gloss = new LinearGradientBrush(Color.FromArgb(30, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0.6, 0.6));
+        dc.DrawRectangle(gloss, null, bounds);
+        dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2.0, Frame / 2.0, PortraitWidth - Frame, PortraitHeight - Frame));
+
+        if (image is null)
+        {
+            var text = CreateText(title, 30 * Scale, Color.FromArgb(150, 255, 255, 255), PortraitWidth - 56 * Scale, TextAlignment.Left);
+            dc.DrawText(text, new Point(28 * Scale, PortraitHeight - 28 * Scale - text.Height));
+        }
+    }
+
+    static void DrawBack(DrawingContext dc, Size size, string title, BitmapSource? image, string? platform, ImageFrame frame)
+    {
+        double Width = size.Width, Height = size.Height;
         var bounds = new Rect(0, 0, Width, Height);
         // La trasera sin imagen es del color del plástico de la consola.
         var plastic = PlatformArt.Plastic(platform);
@@ -217,7 +275,7 @@ public static class CoverArt
 
         var gloss = new LinearGradientBrush(Color.FromArgb(24, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(1, 0), new Point(0.4, 0.6));
         dc.DrawRectangle(gloss, null, bounds);
-        dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2, Frame / 2, Width - Frame, Height - Frame));
+        dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2.0, Frame / 2.0, Width - Frame, Height - Frame));
     }
 
     static void DrawSpine(DrawingContext dc, string title, string? platform, BitmapSource? image, ImageFrame frame)

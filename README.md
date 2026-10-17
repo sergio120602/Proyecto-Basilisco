@@ -29,7 +29,8 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
 | Personalizar (nombre, portada, contraportada, lomo, consola y filtros) | `E` o clic derecho sobre la caja |
-| Encuadrar contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
+| Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
+| Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
 | Cambiar de filtro o de consola | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
 | Crear filtro | «+ Nuevo filtro» en la barra de arriba |
 | Editar o eliminar filtro | Clic derecho sobre su pestaña |
@@ -69,6 +70,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] **v0.0.11** — Descargar portadas de SteamGridDB y contraportadas de TheGamesDB desde Personalizar
 - [x] **v0.1.0** — Consolas (PS1, PS2, PS3, PSP, Xbox, Xbox 360, GBA, Wii, Wii U, DS y PC): menú al importar y caja con el borde de cada consola
 - [x] **v0.1.2** — Editor de encuadre para la contraportada y lomo personalizado (imagen propia o banner de TheGamesDB)
+- [x] **v0.1.3** — Formatos de caja cuadrada (1024 × 1024) y rectangular (600 × 800), cada uno con sus imágenes
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -86,6 +88,10 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, Game Boy, Wii, Wii U, Nintendo DS o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
 
 Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gba.png` (Game Boy), `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
+
+## 📦 Formatos de caja
+
+Cada juego puede usar una caja **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (carátula de 600 × 800, franja arriba). Cada formato guarda sus propias imágenes, así que puedes cambiar de uno a otro sin perder nada. Las franjas de arriba se pueden sustituir con `basilisco-data/borders/<consola>-top.png`.
 
 ## 🌐 Carátulas desde internet
 
