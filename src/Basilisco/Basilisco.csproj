@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Windows 10 (2004) o posterior: hace falta para convertir vídeos de fondo con el conversor de Windows. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -11,7 +13,7 @@
     <!-- SDL3 (mandos de Xbox, PS5 y Switch Pro) se usa con punteros. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
     <Product>Proyecto Basilisco</Product>
     <Description>Launcher de videojuegos portable</Description>
 

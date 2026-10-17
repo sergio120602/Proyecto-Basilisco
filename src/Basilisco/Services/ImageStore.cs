@@ -38,9 +38,9 @@ public static class ImageStore
         faces.SetFrame(face, null);
     }
 
-    public static readonly string[] VideoExtensions = [".mp4", ".wmv", ".avi", ".mov", ".m4v", ".mkv"];
+    public static readonly string[] VideoExtensions = [".mp4", ".wmv", ".avi", ".mov", ".m4v", ".mkv", ".webm"];
 
-    public const string VideoFilter = "Vídeos (*.mp4;*.wmv;*.avi;*.mov;*.m4v;*.mkv)|*.mp4;*.wmv;*.avi;*.mov;*.m4v;*.mkv";
+    public const string VideoFilter = "Vídeos (*.mp4;*.webm;*.mkv;*.mov;*.m4v;*.wmv;*.avi)|*.mp4;*.webm;*.mkv;*.mov;*.m4v;*.wmv;*.avi";
 
     public static bool IsVideo(string path) => VideoExtensions.Contains(Path.GetExtension(path).ToLowerInvariant());
 

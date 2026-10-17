@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.3] - 2026-10-18
+
+- Arreglado: algunos vídeos de fondo no cargaban. Eran vídeos en **VP9, AV1 o HEVC** (lo habitual en descargas de YouTube), que el reproductor de Basilisco no sabe abrir aunque Windows tenga sus extensiones. Ahora Basilisco los **convierte una sola vez a H.264** con el conversor de Windows (unos segundos) y sustituye el archivo por el convertido; después cargan al momento. Los fondos que ya tenías se arreglan solos.
+- Se aceptan vídeos `.webm`.
+- Si un vídeo no se puede reproducir ni convertir, se avisa en lugar de dejar el fondo vacío.
+- Basilisco necesita ahora Windows 10 (versión 2004) o posterior.
+
 ## [0.3.2] - 2026-10-17
 
 - Arreglado: con el mando, a veces el carrusel avanzaba dos puestos. Con Steam abierto, su configuración de escritorio convierte el mando en teclas (cruceta en flechas, A en Enter, B en Esc), y la misma pulsación llegaba dos veces: por el mando y como tecla. Ahora, si llegan las dos casi a la vez, solo cuenta una.
