@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.2.2] - 2026-10-17
+
+El orden personalizado pasa a ser una estantería.
+
+- **Estantería**: al elegir «Orden → Personalizado», las cajas giran y se colocan una junto a otra enseñando el lomo, como en una estantería de verdad (cada una con su grosor real).
+- **↑** coge el juego del centro (sube), **← →** lo lleva entre los demás (que se apartan deslizándose) y **↓** lo suelta en ese sitio. **Esc** termina y vuelve al carrusel con el nuevo orden guardado.
+- Sin coger nada, **← →**, la rueda o un clic en un lomo recorren la estantería.
+- Con mando: cruceta o stick arriba y abajo para coger y soltar, izquierda y derecha para mover, A para coger o soltar y B para terminar.
+- La barra de abajo enseña los controles de la estantería mientras está abierta.
+- Se quita el «Ctrl + ← →» de la versión anterior.
+
 ## [0.2.1] - 2026-10-17
 
 Barra de arriba agrupada y orden de los juegos.

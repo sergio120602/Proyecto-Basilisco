@@ -41,6 +41,7 @@ public sealed unsafe class GamepadService : IDisposable
 
     double _sinceHotplug = HotplugInterval;
     int _heldDirection;
+    int _heldVertical;
     double _repeatIn;
 
     /// <summary>Solo se lee el mando cuando esto devuelve true (Basilisco en primer plano), para no reaccionar mientras juegas.</summary>
@@ -50,6 +51,9 @@ public sealed unsafe class GamepadService : IDisposable
 
     /// <summary>-1 izquierda, +1 derecha; se repite mientras se mantiene la cruceta o el stick.</summary>
     public event Action<int>? Navigate;
+
+    /// <summary>-1 arriba, +1 abajo (cruceta o stick izquierdo); un aviso por pulsación, sin repetición.</summary>
+    public event Action<int>? NavigateVertical;
 
     /// <summary>Stick derecho (de -1 a 1), en cada fotograma en que está inclinado.</summary>
     public event Action<double, double>? RightStick;
@@ -106,11 +110,13 @@ public sealed unsafe class GamepadService : IDisposable
             // Sin foco (por ejemplo, jugando): se olvida lo pulsado para no disparar nada al volver.
             _held.Clear();
             _heldDirection = 0;
+            _heldVertical = 0;
             return;
         }
 
         ReadButtons();
         ReadNavigation();
+        ReadVertical();
         ReadRightStick();
     }
 
@@ -197,6 +203,26 @@ public sealed unsafe class GamepadService : IDisposable
                 return (true, raw);
         }
         return (false, null);
+    }
+
+    void ReadVertical()
+    {
+        var direction = 0;
+        foreach (var raw in _pads.Values)
+        {
+            var pad = (SDL_Gamepad*)raw;
+            var y = Axis(pad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTY);
+            if (Button(pad, SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_UP) || y < -0.6)
+                direction = -1;
+            else if (Button(pad, SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_DOWN) || y > 0.6)
+                direction = 1;
+            if (direction != 0)
+                break;
+        }
+
+        if (direction != 0 && direction != _heldVertical)
+            NavigateVertical?.Invoke(direction);
+        _heldVertical = direction;
     }
 
     void ReadNavigation()

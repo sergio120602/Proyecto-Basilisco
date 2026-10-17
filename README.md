@@ -34,7 +34,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
 | Cambiar de filtro o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** y **Filtros** de arriba |
 | Ordenar los juegos (personalizado, alfabético, lanzamiento, adición) | Menú **Orden** de arriba |
-| Mover un juego (orden personalizado) | `Ctrl + ← →` |
+| Colocar los juegos a tu gusto | «Orden → Personalizado» abre la estantería: `↑` coger, `← →` mover, `↓` soltar, `Esc` terminar |
 | Crear filtro | Menú **Filtros** → «+ Nuevo filtro…» |
 | Editar o eliminar filtro | Menú **Filtros** → «Editar filtro», o clic derecho en Filtros |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
@@ -100,6 +100,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.1.8** — Cajas rectangulares sin franja, para portadas reales de LaunchBox
 - [x] **v0.2.0** — Importar la cuenta de Steam: instalados, toda la biblioteca y Steam Familiar
 - [x] **v0.2.1** — Consolas y filtros agrupados arriba, y orden personalizado, alfabético, por lanzamiento y por adición
+- [x] **v0.2.2** — Orden personalizado en modo estantería: coger, mover y soltar los juegos por su lomo
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

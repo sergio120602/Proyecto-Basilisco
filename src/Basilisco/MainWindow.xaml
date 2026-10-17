@@ -160,7 +160,19 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Border Height="1" Background="#99FFFFFF" Margin="0,0,0,16"/>
-            <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <!-- Pistas de la estantería (orden personalizado) -->
+            <StackPanel x:Name="ShelfHints" Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
+                <TextBlock Style="{StaticResource HintText}" Text="Estantería" Foreground="#3E6FD8"/>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="↑"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Coger"/>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="← →"/></Border>
+                <TextBlock x:Name="ShelfMoveHint" Style="{StaticResource HintText}" Text="Recorrer"/>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="↓"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Soltar"/>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock x:Name="ShelfDoneKey" Style="{StaticResource KeyBadgeText}" Text="Esc"/></Border>
+                <TextBlock Style="{StaticResource HintText}" Text="Terminar"/>
+            </StackPanel>
+            <StackPanel x:Name="MainHints" Grid.Row="1" Orientation="Horizontal">
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="NavKey" Text="← →"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="ConfirmKey" Text="Enter"/></Border>
@@ -186,10 +198,7 @@
                 <TextBlock Style="{StaticResource HintText}" Text="Formato"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FilterKey" Text="Tab"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
-                <StackPanel x:Name="MoveHint" Orientation="Horizontal" Visibility="Collapsed">
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Ctrl ← →"/></Border>
-                    <TextBlock Style="{StaticResource HintText}" Text="Mover"/>
-                </StackPanel>
+
             </StackPanel>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
