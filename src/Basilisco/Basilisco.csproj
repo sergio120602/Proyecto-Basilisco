@@ -8,8 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Basilisco</RootNamespace>
     <AssemblyName>Basilisco</AssemblyName>
+    <!-- SDL3 (mandos de Xbox, PS5 y Switch Pro) se usa con punteros. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <Product>Proyecto Basilisco</Product>
     <Description>Launcher de videojuegos portable</Description>
 
@@ -24,5 +26,10 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>none</DebugType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lectura de mandos con los mapeos correctos de Xbox, DualSense y Switch Pro; trae SDL3.dll. -->
+    <PackageReference Include="ppy.SDL3-CS" Version="2026.1002.1" />
+  </ItemGroup>
 
 </Project>

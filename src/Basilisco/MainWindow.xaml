@@ -163,29 +163,34 @@
             </Grid.RowDefinitions>
             <Border Height="1" Background="#99FFFFFF" Margin="0,0,0,16"/>
             <StackPanel Grid.Row="1" Orientation="Horizontal">
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="← →"/></Border>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="NavKey" Text="← →"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Enter"/></Border>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="ConfirmKey" Text="Enter"/></Border>
                 <TextBlock x:Name="ActivateHint" Style="{StaticResource HintText}" Text="Jugar"/>
                 <StackPanel x:Name="GameHints" Orientation="Horizontal">
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="R"/></Border>
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="RotateKey" Text="R"/></Border>
                     <TextBlock Style="{StaticResource HintText}" Text="Girar"/>
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="E"/></Border>
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="CustomizeKey" Text="E"/></Border>
                     <TextBlock Style="{StaticResource HintText}" Text="Personalizar"/>
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>
-                    <TextBlock Style="{StaticResource HintText}" Text="Quitar"/>
+                    <StackPanel x:Name="RemoveHint" Orientation="Horizontal">
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Quitar"/>
+                    </StackPanel>
                 </StackPanel>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="I"/></Border>
-                <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="C"/></Border>
-                <TextBlock Style="{StaticResource HintText}" Text="Carpeta"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="F"/></Border>
+                <!-- Importar se hace con teclado y ratón (abre el explorador de archivos): se oculta al usar el mando -->
+                <StackPanel x:Name="ImportHints" Orientation="Horizontal">
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="I"/></Border>
+                    <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="C"/></Border>
+                    <TextBlock Style="{StaticResource HintText}" Text="Carpeta"/>
+                </StackPanel>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FormatKey" Text="F"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Formato"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Tab"/></Border>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FilterKey" Text="Tab"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
             </StackPanel>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="F11"/></Border>
+                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
             </StackPanel>
         </Grid>

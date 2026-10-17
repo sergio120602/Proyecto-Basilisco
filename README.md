@@ -37,6 +37,25 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
 | Pantalla completa | `F11` (`Esc` para salir) |
 
+### 🕹️ Con mando
+
+Funcionan los mandos de **Xbox One / Series / 360**, **PS5 (DualSense)** y **Nintendo Switch Pro** (también DualShock 4 y Joy-Con), por cable o Bluetooth.
+
+| Acción | Xbox | PlayStation | Switch Pro |
+| --- | --- | --- | --- |
+| Navegar | Cruceta / stick izquierdo | Cruceta / stick izquierdo | Cruceta / stick izquierdo |
+| Jugar / aceptar | A | ✕ | A |
+| Volver / cancelar | B | ○ | B |
+| Dar la vuelta a la caja | X | □ | Y |
+| Personalizar | Y | △ | X |
+| Girar la caja | Stick derecho | Stick derecho | Stick derecho |
+| Cambiar de filtro | LB / RB | L1 / R1 | L / R |
+| Saltar de 5 en 5 | LT / RT | L2 / R2 | ZL / ZR |
+| Formato | View | Create | − |
+| Pantalla completa | Menu | Options | + |
+
+Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
+
 ## ✨ Funcionalidades previstas
 
 ### 📚 Biblioteca de Steam
@@ -71,6 +90,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] **v0.1.0** — Consolas (PS1, PS2, PS3, PSP, Xbox, Xbox 360, GBA, Wii, Wii U, DS y PC): menú al importar y caja con el borde de cada consola
 - [x] **v0.1.2** — Editor de encuadre para la contraportada y lomo personalizado (imagen propia o banner de TheGamesDB)
 - [x] **v0.1.3** — Formatos de caja cuadrada (1024 × 1024) y rectangular (600 × 800), cada uno con sus imágenes
+- [x] **v0.1.4** — Compatibilidad con mandos de Xbox One, PS5 y Switch Pro
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -79,7 +99,6 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 ### 💡 Ideas para el futuro
 - Información de cada juego (descripción, año, género…).
 - Búsqueda, filtros y categorías (jugados recientemente, favoritos…).
-- Soporte para mando.
 - Soporte para otras plataformas (Epic Games, GOG, Xbox, etc.).
 - Registro de tiempo de juego.
 
@@ -107,6 +126,7 @@ Las claves se guardan en `basilisco-data/settings.json`, junto al `.exe`. No com
 - **C# / .NET 10** con **WPF** para la interfaz.
 - Carrusel 3D hecho con `Viewport3D` de WPF: cada juego es una caja 3D con sus seis caras y su reflejo.
 - Publicado como `.exe` autocontenido de un solo archivo (`PublishSingleFile`).
+- Mandos con [SDL3](https://www.libsdl.org/) a través de [SDL3-CS](https://github.com/ppy/SDL3-CS).
 
 ### Compilar desde el código
 

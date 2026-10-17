@@ -45,6 +45,13 @@ public partial class MainWindow : Window
     int _wheelDelta;
     bool _fullScreen;
 
+    // Mandos de Xbox, PS5 y Switch Pro.
+    readonly GamepadService _gamepad = new();
+    bool _padMode;
+    bool _injectingKey;
+    const double StickYawSpeed = 220;
+    const double StickPitchSpeed = 110;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -66,6 +73,18 @@ public partial class MainWindow : Window
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
+
+        _gamepad.IsActive = () => IsActive && WindowState != WindowState.Minimized;
+        _gamepad.Pressed += OnPadPressed;
+        _gamepad.Navigate += OnPadNavigate;
+        _gamepad.RightStick += OnPadRightStick;
+        _gamepad.Connected += (name, style) =>
+        {
+            SetPadMode(true);
+            ShowToast($"Mando conectado: {name}");
+        };
+        _gamepad.Disconnected += () => ShowToast("Mando desconectado");
+        Closed += (_, _) => _gamepad.Dispose();
         Loaded += async (_, _) => await RepairMovedGamesAsync();
     }
 
@@ -832,8 +851,100 @@ public partial class MainWindow : Window
         WindowState = WindowState.Maximized;
     }
 
+    /// <summary>
+    /// Botón del mando. Con un menú abierto solo se acepta (como Enter) o se cancela (como Esc);
+    /// en el carrusel cada botón hace su acción directamente.
+    /// </summary>
+    void OnPadPressed(PadAction action)
+    {
+        SetPadMode(true);
+        if (IsPanelOpen)
+        {
+            if (action == PadAction.Confirm)
+                InjectKey(Key.Enter);
+            else if (action == PadAction.Back)
+                InjectKey(Key.Escape);
+            return;
+        }
+
+        switch (action)
+        {
+            case PadAction.Confirm: Activate(_flow.SelectedIndex); break;
+            case PadAction.Back when _fullScreen: ToggleFullScreen(); break;
+            case PadAction.Rotate: _flow.FlipSelected(); break;
+            case PadAction.Customize: OpenCustomizer(_flow.SelectedIndex); break;
+            case PadAction.PreviousFilter: CycleFilter(-1); break;
+            case PadAction.NextFilter: CycleFilter(1); break;
+            case PadAction.Format: OpenFormatEditor(); break;
+            case PadAction.FullScreen: ToggleFullScreen(); break;
+            case PadAction.PageLeft: _flow.MoveBy(-5); break;
+            case PadAction.PageRight: _flow.MoveBy(5); break;
+        }
+    }
+
+    void OnPadNavigate(int direction)
+    {
+        SetPadMode(true);
+        if (IsPanelOpen)
+            return;
+        _flow.MoveBy(direction);
+    }
+
+    /// <summary>El stick derecho gira la caja seleccionada, como arrastrarla con el ratón.</summary>
+    void OnPadRightStick(double x, double y)
+    {
+        if (IsPanelOpen || !_flow.CanInspectSelected)
+            return;
+        SetPadMode(true);
+        var (yaw, pitch) = _flow.InspectTarget;
+        _flow.SetInspect(yaw + x * StickYawSpeed / 60, pitch + y * StickPitchSpeed / 60);
+    }
+
+    /// <summary>Envía una tecla al elemento con el foco, para que los menús reaccionen al mando igual que al teclado.</summary>
+    void InjectKey(Key key)
+    {
+        if (PresentationSource.FromVisual(this) is not { } source)
+            return;
+
+        var target = Keyboard.FocusedElement ?? this;
+        _injectingKey = true;
+        try
+        {
+            var preview = new KeyEventArgs(Keyboard.PrimaryDevice, source, 0, key) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+            target.RaiseEvent(preview);
+            if (!preview.Handled)
+                target.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, source, 0, key) { RoutedEvent = Keyboard.KeyDownEvent });
+        }
+        finally
+        {
+            _injectingKey = false;
+        }
+    }
+
+    /// <summary>La barra de abajo enseña los botones del mando (con los símbolos de su familia) o las teclas.</summary>
+    void SetPadMode(bool pad)
+    {
+        var style = _gamepad.Style;
+        if (_padMode == pad && (!pad || ConfirmKey.Text == GamepadService.Label(PadAction.Confirm, style)))
+            return;
+
+        _padMode = pad;
+        NavKey.Text = pad ? "◀ ▶" : "← →";
+        ConfirmKey.Text = pad ? GamepadService.Label(PadAction.Confirm, style) : "Enter";
+        RotateKey.Text = pad ? GamepadService.Label(PadAction.Rotate, style) : "R";
+        CustomizeKey.Text = pad ? GamepadService.Label(PadAction.Customize, style) : "E";
+        FormatKey.Text = pad ? GamepadService.Label(PadAction.Format, style) : "F";
+        FilterKey.Text = pad ? GamepadService.Label(PadAction.NextFilter, style) : "Tab";
+        FullScreenKey.Text = pad ? GamepadService.Label(PadAction.FullScreen, style) : "F11";
+        RemoveHint.Visibility = ImportHints.Visibility = pad ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Al volver al teclado, la barra de abajo vuelve a enseñar las teclas.
+        if (!_injectingKey)
+            SetPadMode(false);
+
         // Con un menú abierto las teclas son para él (escribir el nombre, Enter, Esc).
         if (IsPanelOpen)
             return;
