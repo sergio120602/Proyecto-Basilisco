@@ -94,6 +94,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.1.5** — LaunchBox como segunda opción para portadas, contraportadas y lomos
 - [x] **v0.1.6** — Cajas rectangulares con las medidas reales de cada consola
 - [x] **v0.1.7** — Nintendo 64, GameCube y Game Boy Advance
+- [x] **v0.1.8** — Cajas rectangulares sin franja, para portadas reales de LaunchBox
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -113,7 +114,7 @@ Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-dat
 
 ## 📦 Formatos de caja
 
-Cada juego puede usar una caja **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (franja arriba y las medidas reales de la caja de su consola: jewel case en PS1, DVD en PS2/Xbox/Wii/PC, Blu-ray en PS3 y Wii U, UMD en PSP, cartón en Game Boy y estuche de DS). Cada formato guarda sus propias imágenes, así que puedes cambiar de uno a otro sin perder nada. Las franjas de arriba se pueden sustituir con `basilisco-data/borders/<consola>-top.png`.
+Cada juego puede usar una caja **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (sin franja: la carátula ocupa toda la portada, ideal para las portadas reales de LaunchBox, y con las medidas reales de la caja de su consola: jewel case en PS1, DVD en PS2/Xbox/Wii/PC, Blu-ray en PS3 y Wii U, UMD en PSP, cartón en Game Boy y estuche de DS). Cada formato guarda sus propias imágenes, así que puedes cambiar de uno a otro sin perder nada.
 
 ## 🌐 Carátulas desde internet
 
