@@ -31,6 +31,9 @@ public sealed class Game
     /// <summary>Filtros a los que pertenece el juego.</summary>
     public List<string> FilterIds { get; set; } = [];
 
+    /// <summary>Fecha de lanzamiento (de LaunchBox o puesta a mano), para ordenar por ella. Null si no se sabe.</summary>
+    public DateTime? ReleaseDate { get; set; }
+
     public DateTime AddedAt { get; set; }
     public DateTime? LastPlayed { get; set; }
     public int PlayCount { get; set; }

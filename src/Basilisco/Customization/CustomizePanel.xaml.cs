@@ -46,9 +46,10 @@ public sealed class PendingFaces
 /// <param name="Faces">Cambios de imágenes de cada formato.</param>
 /// <param name="Platform">Consola elegida para el juego (null: sin consola).</param>
 /// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
+/// <param name="ReleaseDate">Fecha de lanzamiento (null si se ha dejado en blanco).</param>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
-    string? Platform, List<string> FilterIds);
+    string? Platform, List<string> FilterIds, DateTime? ReleaseDate);
 
 /// <summary>Cara de la caja para la que se busca una imagen en internet.</summary>
 public enum ArtTarget { Front, Back, Spine }
@@ -107,6 +108,9 @@ public partial class CustomizePanel : UserControl
         AutoFetchText.Visibility = Visibility.Collapsed;
         ShowPath(game.Path);
         NameBox.Text = game.Name;
+        ReleaseBox.Text = game.ReleaseDate is { } released
+            ? released is { Month: 1, Day: 1 } ? released.Year.ToString() : released.ToString("dd/MM/yyyy")
+            : "";
         SyncFormatToggles();
 
         _platform = game.Platform;
@@ -346,15 +350,43 @@ public partial class CustomizePanel : UserControl
             return;
         }
 
+        if (!TryParseRelease(ReleaseBox.Text, out var releaseDate))
+        {
+            ShowError("La fecha de lanzamiento no se entiende. Escríbela como 20/09/2013, o solo el año (2013).");
+            ReleaseBox.Focus();
+            return;
+        }
+
         var filterIds = FilterToggles.Children
             .OfType<ToggleButton>()
             .Where(toggle => toggle.IsChecked == true)
             .Select(toggle => (string)toggle.Tag)
             .ToList();
 
-        var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds);
+        var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate);
         Close();
         Saved?.Invoke(result);
+    }
+
+    /// <summary>«20/09/2013», «2013-09-20» o «2013» (el 1 de enero). En blanco: sin fecha.</summary>
+    static bool TryParseRelease(string text, out DateTime? date)
+    {
+        date = null;
+        text = text.Trim();
+        if (text.Length == 0)
+            return true;
+        if (text.Length == 4 && int.TryParse(text, out var year) && year is > 1950 and < 2100)
+        {
+            date = new DateTime(year, 1, 1);
+            return true;
+        }
+        string[] formats = ["dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy-MM-dd", "dd.MM.yyyy"];
+        if (DateTime.TryParseExact(text, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed))
+        {
+            date = parsed;
+            return true;
+        }
+        return false;
     }
 
     void Close()

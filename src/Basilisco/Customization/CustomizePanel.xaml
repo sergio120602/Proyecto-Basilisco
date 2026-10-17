@@ -57,6 +57,13 @@
                     <TextBlock Text="NOMBRE" Style="{StaticResource FieldLabel}" Margin="2,26,0,8"/>
                     <TextBox x:Name="NameBox" Style="{StaticResource FieldTextBox}" TextChanged="OnNameChanged"/>
 
+                    <TextBlock Text="FECHA DE LANZAMIENTO" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center" Margin="12,0,0,0"
+                                   Text="dd/mm/aaaa o solo el año · para ordenar"/>
+                        <TextBox x:Name="ReleaseBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="170" HorizontalAlignment="Left"/>
+                    </DockPanel>
+
                     <TextBlock Text="FORMATO DE LA CAJA" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
                     <WrapPanel>
                         <ToggleButton x:Name="SquareToggle" Style="{StaticResource FilterToggle}" Content="Cuadrada · 1024 × 1024"

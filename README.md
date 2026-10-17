@@ -32,9 +32,11 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Personalizar (nombre, portada, contraportada, lomo, consola y filtros) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
 | Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
-| Cambiar de filtro o de consola | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
-| Crear filtro | «+ Nuevo filtro» en la barra de arriba |
-| Editar o eliminar filtro | Clic derecho sobre su pestaña |
+| Cambiar de filtro o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** y **Filtros** de arriba |
+| Ordenar los juegos (personalizado, alfabético, lanzamiento, adición) | Menú **Orden** de arriba |
+| Mover un juego (orden personalizado) | `Ctrl + ← →` |
+| Crear filtro | Menú **Filtros** → «+ Nuevo filtro…» |
+| Editar o eliminar filtro | Menú **Filtros** → «Editar filtro», o clic derecho en Filtros |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
 | Pantalla completa | `F11` (`Esc` para salir) |
 
@@ -97,13 +99,14 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.1.7** — Nintendo 64, GameCube y Game Boy Advance
 - [x] **v0.1.8** — Cajas rectangulares sin franja, para portadas reales de LaunchBox
 - [x] **v0.2.0** — Importar la cuenta de Steam: instalados, toda la biblioteca y Steam Familiar
+- [x] **v0.2.1** — Consolas y filtros agrupados arriba, y orden personalizado, alfabético, por lanzamiento y por adición
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
 
 ### 💡 Ideas para el futuro
 - Información de cada juego (descripción, año, género…).
-- Búsqueda, filtros y categorías (jugados recientemente, favoritos…).
+- Búsqueda por nombre y categorías automáticas (jugados recientemente, favoritos…).
 - Soporte para otras plataformas (Epic Games, GOG, Xbox, etc.).
 - Registro de tiempo de juego.
 
