@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.5] - 2026-10-17
+
+LaunchBox como segunda opción para las imágenes.
+
+- **Buscar en LaunchBox** en Personalizar, para la **portada**, la **contraportada** y el **lomo**: fotos reales de las cajas de casi 200 000 juegos de la base de datos de LaunchBox, de varias regiones (España, Europa, Norteamérica, Japón…).
+- No necesita clave. La primera vez descarga su base de datos (unos 100 MB) y la guarda resumida en `basilisco-data/launchbox/`, junto al .exe; después las búsquedas son locales e instantáneas, también sin internet (solo hace falta para bajar la imagen elegida).
+- Los resultados ponen primero los juegos de la consola del tuyo, y las imágenes de España y Europa antes que las de otras regiones. Cada miniatura indica su región, y las rehechas por la comunidad salen al final.
+- Busca también por los nombres alternativos de cada juego y sin tener en cuenta tildes ni signos.
+- Botón «Actualizar base de datos» en el buscador de LaunchBox para descargar la versión más reciente.
+- Imágenes por defecto: si SteamGridDB o TheGamesDB no encuentran nada y la base de datos de LaunchBox ya está descargada, se usa como respaldo.
+
 ## [0.1.4] - 2026-10-17
 
 Compatibilidad con mandos.

@@ -71,15 +71,18 @@ public partial class CustomizePanel : UserControl
 
     public event Action<CustomizeResult>? Saved;
 
-    /// <summary>El usuario quiere buscar en internet una imagen para esa cara de la caja, con este nombre y formato.</summary>
-    public event Action<string, ArtTarget, CoverFormat>? ArtSearchRequested;
+    /// <summary>
+    /// El usuario quiere buscar en internet una imagen para esa cara de la caja: nombre, cara, formato,
+    /// consola del juego y si es en LaunchBox (la segunda opción) en lugar del servicio habitual.
+    /// </summary>
+    public event Action<string, ArtTarget, CoverFormat, string?, bool>? ArtSearchRequested;
     public event Action? Closed;
 
     /// <summary>
     /// Descarga sin preguntar una imagen por defecto para una cara (la pone la ventana principal, que tiene
     /// las claves de las APIs). Devuelve la ruta descargada, o null si no hay o el servicio no responde.
     /// </summary>
-    public Func<string, CoverFormat, Face, CancellationToken, Task<string?>>? AutoFetch { get; set; }
+    public Func<string, string?, CoverFormat, Face, CancellationToken, Task<string?>>? AutoFetch { get; set; }
 
     public bool IsOpen => Visibility == Visibility.Visible;
 
@@ -305,7 +308,7 @@ public partial class CustomizePanel : UserControl
         var found = 0;
         foreach (var face in new[] { Face.Front, Face.Back })
         {
-            var path = await AutoFetch(name, format, face, cancellation);
+            var path = await AutoFetch(name, _platform, format, face, cancellation);
             // Si mientras tanto has cerrado, cambiado de juego o puesto una imagen tú, no se toca nada.
             if (cancellation.IsCancellationRequested || _game != game || path is null || CurrentPath(format, face) is not null)
                 continue;
@@ -461,11 +464,20 @@ public partial class CustomizePanel : UserControl
         _preview.ShowFront();
     }
 
-    void OnSearchFrontClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), ArtTarget.Front, _format);
+    void RequestSearch(ArtTarget target, bool launchBox) =>
+        ArtSearchRequested?.Invoke(NameBox.Text.Trim(), target, _format, _platform, launchBox);
 
-    void OnSearchBackClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), ArtTarget.Back, _format);
+    void OnSearchFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, launchBox: false);
 
-    void OnSearchSpineClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), ArtTarget.Spine, _format);
+    void OnSearchBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, launchBox: false);
+
+    void OnSearchSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, launchBox: false);
+
+    void OnLaunchBoxFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, launchBox: true);
+
+    void OnLaunchBoxBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, launchBox: true);
+
+    void OnLaunchBoxSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, launchBox: true);
 
     // El lado derecho ocupa lo que permita la ventana; si no cabe, se desplaza.
     void OnSizeChanged(object sender, SizeChangedEventArgs e) => SideScroll.MaxHeight = Math.Max(300, ActualHeight - 200);

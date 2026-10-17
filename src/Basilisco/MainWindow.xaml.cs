@@ -22,6 +22,9 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbPortrait = new(CoverFormat.Portrait);
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
+    readonly LaunchBoxProvider _launchBoxFront = new(Face.Front);
+    readonly LaunchBoxProvider _launchBoxBack = new(Face.Back);
+    readonly LaunchBoxProvider _launchBoxSpine = new(Face.Spine);
     readonly Library _library;
     readonly CoverFlow _flow;
 
@@ -672,8 +675,22 @@ public partial class MainWindow : Window
     /// Busca en internet una imagen para el juego que se está personalizando: la portada en SteamGridDB,
     /// y la contraportada y el lomo (a partir de sus banners) en TheGamesDB.
     /// </summary>
-    void OpenArtSearch(string gameName, ArtTarget target, CoverFormat format)
+    void OpenArtSearch(string gameName, ArtTarget target, CoverFormat format, string? platform, bool launchBox)
     {
+        if (launchBox)
+        {
+            // LaunchBox: la segunda opción, con fotos reales de las tres caras de la caja.
+            var (provider, onChosen) = target switch
+            {
+                ArtTarget.Front => (_launchBoxFront, (Action<string>)Customizer.SetFrontImage),
+                ArtTarget.Back => (_launchBoxBack, Customizer.SetBackImage),
+                _ => (_launchBoxSpine, Customizer.SetSpineImage),
+            };
+            provider.PlatformHint = platform;
+            ArtSearch.Open(provider, _settings, gameName, onChosen);
+            return;
+        }
+
         switch (target)
         {
             case ArtTarget.Front:
@@ -688,7 +705,8 @@ public partial class MainWindow : Window
     /// Imagen por defecto para una cara de un formato: la portada de SteamGridDB (con las medidas del formato)
     /// y la contraportada de TheGamesDB. Null si falta la clave, no hay resultados o el servicio no responde.
     /// </summary>
-    Task<string?> AutoFetchAsync(string name, CoverFormat format, Face face, CancellationToken cancellation)
+    /// <remarks>Si no hay resultado y la base de datos de LaunchBox ya está descargada, se prueba con ella.</remarks>
+    async Task<string?> AutoFetchAsync(string name, string? platform, CoverFormat format, Face face, CancellationToken cancellation)
     {
         ArtProvider? provider = face switch
         {
@@ -696,7 +714,14 @@ public partial class MainWindow : Window
             Face.Back => _theGamesDb,
             _ => null,
         };
-        return provider is null ? Task.FromResult<string?>(null) : ArtAutoFetch.FirstImageAsync(provider, _settings, name, cancellation);
+        if (provider is not null && await ArtAutoFetch.FirstImageAsync(provider, _settings, name, cancellation) is { } path)
+            return path;
+
+        if (!LaunchBoxDatabase.IsDownloaded || face == Face.Spine)
+            return null;
+        var launchBox = face == Face.Front ? _launchBoxFront : _launchBoxBack;
+        launchBox.PlatformHint = platform;
+        return await ArtAutoFetch.FirstImageAsync(launchBox, _settings, name, cancellation);
     }
 
     void OpenFormatEditor() => FormatEditor.Open(_visibleGames, SelectedGame);
@@ -735,7 +760,7 @@ public partial class MainWindow : Window
             var changed = false;
             foreach (var face in new[] { Face.Front, Face.Back })
             {
-                var path = await AutoFetchAsync(game.Name, result.Format, face, CancellationToken.None);
+                var path = await AutoFetchAsync(game.Name, game.Platform, result.Format, face, CancellationToken.None);
                 // Mientras buscábamos ha podido quitarse el juego, cambiar de formato o recibir otra imagen.
                 if (path is null || !Games.Contains(game) || game.Format != result.Format || game.Faces(result.Format).Get(face) is not null)
                     continue;
