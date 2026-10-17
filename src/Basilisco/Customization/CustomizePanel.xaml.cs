@@ -176,7 +176,7 @@ public partial class CustomizePanel : UserControl
         Pending.SetChange(face, new ImageChange(path, false));
         // Una imagen nueva empieza entera; un banner girado queda muy estrecho entero, así que en el lomo se llena.
         Pending.SetFrame(face, face == Face.Spine && CoverArt.LoadImage(path) is { } image
-            ? new ImageFrame(CoverArt.FillZoom(new Size(image.Width, image.Height), CoverArt.SpineSize, rotateWide: true))
+            ? new ImageFrame(CoverArt.FillZoom(new Size(image.Width, image.Height), CoverArt.SpineSize(_format, _platform), rotateWide: true))
             : ImageFrame.Default);
         UpdatePreview();
         ShowFace(face);
@@ -256,17 +256,17 @@ public partial class CustomizePanel : UserControl
         {
             case Face.Front:
                 title = "Ajustar portada";
-                fill = CoverArt.FillZoom(size, CoverArt.FrontArtSize(_format), rotateWide: false);
+                fill = CoverArt.FillZoom(size, CoverArt.FrontArtSize(_format, _platform), rotateWide: false);
                 render = frame => CoverArt.RenderCover(item with { FrontFrame = frame });
                 break;
             case Face.Back:
                 title = "Ajustar contraportada";
-                fill = CoverArt.FillZoom(size, CoverArt.FaceSize(_format), rotateWide: false);
+                fill = CoverArt.FillZoom(size, CoverArt.FaceSize(_format, _platform), rotateWide: false);
                 render = frame => CoverArt.RenderBack(item with { BackFrame = frame });
                 break;
             default:
                 title = "Ajustar lomo";
-                fill = CoverArt.FillZoom(size, CoverArt.SpineSize, rotateWide: true);
+                fill = CoverArt.FillZoom(size, CoverArt.SpineSize(_format, _platform), rotateWide: true);
                 render = frame => CoverArt.RenderSpine(item with { SpineFrame = frame });
                 break;
         }

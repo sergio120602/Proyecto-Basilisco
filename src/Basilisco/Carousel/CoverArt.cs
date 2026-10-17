@@ -18,30 +18,47 @@ public static class CoverArt
     const int Frame = 6;
     const int Spine = 144;
     public const int Width = Spine + 2 + Height - Frame;
-    const int SpineWidth = (int)(Height * BoxModel.Depth / BoxModel.Height);
+    const int SpineWidth = 81; // Grosor de la caja cuadrada (0,08) a la misma escala que su alto (1024 px).
     const double Scale = Height / 576.0;
 
-    // Caja rectangular: la franja de la consola arriba y, debajo, una zona 3:4 para carátulas de 600 × 800.
-    const int PortraitWidth = 768;
-    const int TopBand = 112;
-    const int PortraitArtWidth = PortraitWidth - Frame * 2;
-    const int PortraitArtHeight = PortraitArtWidth * 4 / 3;
-    const int PortraitHeight = TopBand + 2 + PortraitArtHeight + Frame;
+    // Cajas rectangulares: cada consola tiene las medidas de su caja real (ver BoxShape). Las texturas se pintan
+    // a 1128 px por unidad de alto, así que una caja de DVD (1 de alto) mide lo mismo que antes.
+    const double PortraitPixelsPerUnit = 1128;
 
-    /// <summary>Medidas en píxeles de la portada y la contraportada de cada formato.</summary>
-    public static Size FaceSize(CoverFormat format) =>
-        format == CoverFormat.Portrait ? new Size(PortraitWidth, PortraitHeight) : new Size(Width, Height);
+    // La franja de arriba ocupa la misma proporción del ancho en todas las cajas rectangulares.
+    const double TopBandShare = 112 / 768.0;
 
-    /// <summary>Ancho de la caja en la escena 3D (el alto es siempre 1).</summary>
-    public static double BoxWidth(CoverFormat format)
+    /// <summary>Medidas en píxeles de la portada y la contraportada de una caja.</summary>
+    public static Size FaceSize(CoverFormat format, string? platform)
     {
-        var size = FaceSize(format);
-        return size.Width / size.Height;
+        if (format == CoverFormat.Square)
+            return new Size(Width, Height);
+        var shape = BoxShape.Of(format, platform);
+        return new Size(Math.Round(shape.Width * PortraitPixelsPerUnit), Math.Round(shape.Height * PortraitPixelsPerUnit));
     }
 
+    static Size FaceSize(CarouselItem item) =>
+        item.IsAddCard ? new Size(Width, Height) : FaceSize(item.Format, item.Platform);
+
+    static double TopBandHeight(double faceWidth) => Math.Round(faceWidth * TopBandShare);
+
     /// <summary>Medidas de la zona de la carátula en la portada, para calcular el zoom de «Llenar».</summary>
-    public static Size FrontArtSize(CoverFormat format) =>
-        format == CoverFormat.Portrait ? new Size(PortraitArtWidth, PortraitArtHeight) : new Size(Height - Frame, Height - Frame * 2);
+    public static Size FrontArtSize(CoverFormat format, string? platform)
+    {
+        if (format == CoverFormat.Square)
+            return new Size(Height - Frame, Height - Frame * 2);
+        var face = FaceSize(format, platform);
+        return new Size(face.Width - Frame * 2, face.Height - TopBandHeight(face.Width) - 2 - Frame);
+    }
+
+    /// <summary>Medidas del lomo: tan alto como la caja y tan ancho como su grosor.</summary>
+    public static Size SpineSize(CoverFormat format, string? platform)
+    {
+        if (format == CoverFormat.Square)
+            return new Size(SpineWidth, Height);
+        var shape = BoxShape.Of(format, platform);
+        return new Size(Math.Max(8, Math.Round(shape.Depth * PortraitPixelsPerUnit)), Math.Round(shape.Height * PortraitPixelsPerUnit));
+    }
 
     // El lomo con imagen se pinta al doble de resolución; un banner girado no necesita más que esto de ancho.
     const int SpineDecodeWidth = 2048;
@@ -58,14 +75,17 @@ public static class CoverArt
         if (item.IsAddCard)
             return Rasterize(Width, Height, DrawAddCard);
         if (item.Format == CoverFormat.Portrait)
-            return Rasterize(PortraitWidth, PortraitHeight, dc => DrawPortraitCase(dc, item.Title, image, item.Platform, frame));
+        {
+            var size = FaceSize(item);
+            return Rasterize((int)size.Width, (int)size.Height, dc => DrawPortraitCase(dc, size, item.Title, image, item.Platform, frame));
+        }
         return Rasterize(Width, Height, dc => DrawCase(dc, item.Title, image, item.Platform, frame));
     }
 
     public static BitmapSource RenderBack(CarouselItem item)
     {
         var image = item.BackImagePath is null ? null : LoadImage(item.BackImagePath);
-        var size = FaceSize(item.IsAddCard ? CoverFormat.Square : item.Format);
+        var size = FaceSize(item);
         return Rasterize((int)size.Width, (int)size.Height,
             dc => DrawBack(dc, size, item.Title, image, item.Platform, item.BackFrame ?? ImageFrame.Default));
     }
@@ -78,16 +98,15 @@ public static class CoverArt
     {
         var image = item.SpineImagePath is null || item.IsAddCard ? null : LoadImage(item.SpineImagePath, SpineDecodeWidth);
         var scale = image is null ? 1 : 2;
-        return Rasterize(SpineWidth * scale, Height * scale, dc =>
+        var size = item.IsAddCard ? SpineSize(CoverFormat.Square, null) : SpineSize(item.Format, item.Platform);
+        return Rasterize((int)size.Width * scale, (int)size.Height * scale, dc =>
         {
             dc.PushTransform(new ScaleTransform(scale, scale));
-            DrawSpine(dc, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default);
+            DrawSpine(dc, size, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default);
             dc.Pop();
         });
     }
 
-    /// <summary>Medidas del lomo (igual en los dos formatos: la caja siempre mide lo mismo de alto y de grosor).</summary>
-    public static Size SpineSize => new(SpineWidth, Height);
 
     /// <summary>
     /// Pinta una imagen dentro de su cara con el encuadre elegido. Con el encuadre por defecto la imagen
@@ -215,8 +234,10 @@ public static class CoverArt
     }
 
     /// <summary>Caja rectangular: la franja de la consola arriba y la carátula 3:4 debajo.</summary>
-    static void DrawPortraitCase(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame)
+    static void DrawPortraitCase(DrawingContext dc, Size size, string title, BitmapSource? image, string? platform, ImageFrame frame)
     {
+        double PortraitWidth = size.Width, PortraitHeight = size.Height;
+        var TopBand = TopBandHeight(PortraitWidth);
         var bounds = new Rect(0, 0, PortraitWidth, PortraitHeight);
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x17, 0x18, 0x1C), Color.FromRgb(0x05, 0x05, 0x07), 45), null, bounds);
 
@@ -278,8 +299,9 @@ public static class CoverArt
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2.0, Frame / 2.0, Width - Frame, Height - Frame));
     }
 
-    static void DrawSpine(DrawingContext dc, string title, string? platform, BitmapSource? image, ImageFrame frame)
+    static void DrawSpine(DrawingContext dc, Size size, string title, string? platform, BitmapSource? image, ImageFrame frame)
     {
+        double SpineWidth = size.Width, Height = size.Height;
         // El lomo es del plástico de la consola (verde en Xbox 360, blanco en Wii…).
         var plastic = PlatformArt.Plastic(platform);
         var bounds = new Rect(0, 0, SpineWidth, Height);

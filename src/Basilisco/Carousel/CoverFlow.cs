@@ -68,6 +68,9 @@ public sealed class CoverFlow
     public event Action<int>? SelectedIndexChanged;
 
     public int SelectedIndex => _target;
+
+    /// <summary>Alto de la caja seleccionada (para poner el título justo encima).</summary>
+    public double SelectedHeight => _slots.Count == 0 ? BoxShape.Square.Height : BoxShape.Of(_slots[_target].Item).Height;
     public int Count => _slots.Count;
 
     /// <summary>Giro al que va la caja seleccionada (grados alrededor del eje vertical y del horizontal).</summary>
@@ -260,15 +263,14 @@ public sealed class CoverFlow
     double CenterWidth()
     {
         if (_slots.Count == 0)
-            return BoxModel.WidthOf(Models.CoverFormat.Square);
+            return BoxShape.Square.Width;
 
         var left = Math.Clamp((int)Math.Floor(_position), 0, _slots.Count - 1);
         var right = Math.Min(left + 1, _slots.Count - 1);
         var t = Math.Clamp(_position - left, 0, 1);
         return WidthOf(_slots[left]) * (1 - t) + WidthOf(_slots[right]) * t;
 
-        static double WidthOf(Slot slot) =>
-            BoxModel.WidthOf(slot.Item.IsAddCard ? Models.CoverFormat.Square : slot.Item.Format);
+        static double WidthOf(Slot slot) => BoxModel.WidthOf(slot.Item);
     }
 
     void ApplyLayout()
@@ -278,7 +280,7 @@ public sealed class CoverFlow
         // Las vecinas se separan según lo ancha que sea la caja del centro (más juntas si es rectangular).
         // Se interpola entre las dos cajas más cercanas al centro para que no haya saltos al deslizar; y como
         // la separación es la misma para todas las laterales, nunca se cruzan entre ellas.
-        var neighborOffset = NeighborOffsetX * (0.5 + 0.5 * CenterWidth() / BoxModel.WidthOf(Models.CoverFormat.Square));
+        var neighborOffset = NeighborOffsetX * (0.5 + 0.5 * CenterWidth() / BoxShape.Square.Width);
 
         for (var i = 0; i < _slots.Count; i++)
         {
