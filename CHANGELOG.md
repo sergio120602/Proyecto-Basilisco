@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.4] - 2026-10-17
+
+Compatibilidad con mandos.
+
+- **Mandos de Xbox One / Series / 360, PS5 (DualSense) y Nintendo Switch Pro**, por cable o Bluetooth, gracias a SDL3 (incluida en el .exe: sigue sin instalarse nada). También funcionan el DualShock 4 y los Joy-Con.
+- **Controles**: cruceta o stick izquierdo para navegar (mantenido, avanza solo), aceptar para jugar, X/□/Y para dar la vuelta a la caja, Y/△/X para personalizar, stick derecho para girar la caja y ver su grosor, LB/RB (L1/R1, L/R) para cambiar de filtro, LT/RT (L2/R2, ZL/ZR) para saltar de 5 en 5, View/Create/− para el formato y Menu/Options/+ para pantalla completa.
+- En los mandos de Nintendo se acepta con A (derecha) y se vuelve con B (abajo), como en la consola.
+- En los menús, el botón de aceptar guarda (como `Enter`) y el de volver cancela (como `Esc`).
+- La barra de abajo enseña los botones del mando que estés usando, con sus nombres o símbolos (✕ ○ □ △ en PlayStation), y vuelve a las teclas al usar el teclado.
+- El mando solo actúa con Basilisco en primer plano: mientras juegas no mueve nada por detrás.
+- Aviso al conectar o desconectar un mando.
+
 ## [0.1.3] - 2026-10-17
 
 Dos formatos de caja: cuadrada y rectangular.
