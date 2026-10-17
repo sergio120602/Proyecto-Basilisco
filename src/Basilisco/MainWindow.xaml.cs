@@ -85,6 +85,7 @@ public partial class MainWindow : Window
         _gamepad.Pressed += OnPadPressed;
         _gamepad.Navigate += OnPadNavigate;
         _gamepad.RightStick += OnPadRightStick;
+        _gamepad.NavigateVertical += OnPadVertical;
         _gamepad.Connected += (name, style) =>
         {
             SetPadMode(true);
@@ -291,7 +292,6 @@ public partial class MainWindow : Window
 
         SortTab.Content = $"Orden: {SortModes.Short(_settings.SortMode)}  ▾";
         SortTab.IsChecked = false;
-        MoveHint.Visibility = _settings.SortMode == SortMode.Custom && !_padMode ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Abre un menú desplegable debajo de un botón de la barra de arriba.</summary>
@@ -396,9 +396,7 @@ public partial class MainWindow : Window
                 menu.Items.Add(new Separator());
         }
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item(_settings.SortMode == SortMode.Custom
-            ? "En «Personalizado», mueve el juego del centro con Ctrl + ← →"
-            : "Elige «Personalizado» para colocar los juegos a tu gusto", null, enabled: false));
+        menu.Items.Add(Item("«Personalizado» abre la estantería: ↑ coge un juego, ← → lo mueve y ↓ lo suelta", null, enabled: false));
 
         ShowMenu(SortTab, menu);
     }
@@ -413,6 +411,12 @@ public partial class MainWindow : Window
             await FillReleaseDatesAsync();
 
         RefreshKeeping(selected);
+        if (mode == SortMode.Custom)
+        {
+            EnterShelf();
+            return;
+        }
+        ExitShelf();
         ShowToast($"Orden: {SortModes.Label(mode)}");
     }
 
@@ -450,29 +454,95 @@ public partial class MainWindow : Window
             ShowToast($"{left} juegos sin fecha de lanzamiento (van al final). Puedes ponerla en Personalizar (E)");
     }
 
-    /// <summary>En el orden personalizado, mueve el juego del centro una posición a la izquierda o a la derecha.</summary>
-    void MoveSelected(int direction)
+    /// <summary>
+    /// Estantería del orden personalizado: las cajas se giran para enseñar el lomo. ↑ coge el juego del centro,
+    /// ← → lo lleva entre los demás y ↓ lo suelta ahí. Esc (o B en el mando) termina y guarda el orden.
+    /// </summary>
+    void EnterShelf()
     {
-        if (SelectedGame is not { } game)
+        if (_flow.ShelfMode)
             return;
-        if (_settings.SortMode != SortMode.Custom)
+        _flow.ShelfMode = true;
+        UpdateShelfHints();
+        ShowToast("Estantería: ↑ coge un juego, ← → muévelo y ↓ suéltalo donde quieras");
+    }
+
+    void ExitShelf()
+    {
+        if (!_flow.ShelfMode)
+            return;
+        _flow.ShelfMode = false;
+        Save();
+        UpdateShelfHints();
+        ShowToast("Orden guardado");
+    }
+
+    void ShelfLift()
+    {
+        if (SelectedGame is null)
+            return;
+        _flow.SetHolding(true);
+        UpdateShelfHints();
+    }
+
+    void ShelfDrop()
+    {
+        if (!_flow.Holding)
+            return;
+        _flow.SetHolding(false);
+        Save();
+        UpdateShelfHints();
+    }
+
+    /// <summary>← → en la estantería: recorrerla, o llevar el juego cogido entre los demás.</summary>
+    void ShelfMove(int direction)
+    {
+        if (!_flow.Holding)
         {
-            ShowToast("Para colocar los juegos a tu gusto, elige «Personalizado» en Orden");
+            _flow.MoveBy(direction);
             return;
         }
 
-        var index = _visibleGames.IndexOf(game);
+        var index = _flow.SelectedIndex;
         var target = index + direction;
-        if (target < 0 || target >= _visibleGames.Count)
+        if (index < 0 || index >= _visibleGames.Count || target < 0 || target >= _visibleGames.Count)
             return;
 
-        // Se cambia en la biblioteca completa: el juego pasa a ocupar el sitio de su vecino visible.
+        // En la biblioteca completa el juego pasa a ocupar el sitio de su vecino visible (aunque haya un filtro activo).
+        var game = _visibleGames[index];
         var neighbor = _visibleGames[target];
         Games.Remove(game);
         var at = Games.IndexOf(neighbor);
         Games.Insert(direction > 0 ? at + 1 : at, game);
-        Save();
-        RefreshCarousel(target);
+        (_visibleGames[index], _visibleGames[target]) = (_visibleGames[target], _visibleGames[index]);
+        _flow.MoveHeld(direction);
+    }
+
+    void UpdateShelfHints()
+    {
+        var shelf = _flow.ShelfMode;
+        ShelfHints.Visibility = shelf ? Visibility.Visible : Visibility.Collapsed;
+        MainHints.Visibility = shelf ? Visibility.Collapsed : Visibility.Visible;
+        ShelfMoveHint.Text = _flow.Holding ? "Mover" : "Recorrer";
+        ShelfDoneKey.Text = _padMode ? GamepadService.Label(PadAction.Back, _gamepad.Style) : "Esc";
+    }
+
+    bool HandleShelfKey(Key key)
+    {
+        switch (key)
+        {
+            case Key.Up: ShelfLift(); break;
+            case Key.Down: ShelfDrop(); break;
+            case Key.Left: ShelfMove(-1); break;
+            case Key.Right: ShelfMove(1); break;
+            case Key.Home when !_flow.Holding: _flow.Select(0); break;
+            case Key.End when !_flow.Holding: _flow.Select(_flow.Count - 1); break;
+            case Key.Escape or Key.Enter when _flow.Holding: ShelfDrop(); break;
+            case Key.Escape or Key.Enter: ExitShelf(); break;
+            case Key.F11: ToggleFullScreen(); break;
+            default: return false;
+        }
+        return true;
     }
 
     void SelectFilter(GameFilter? filter) => SelectView(null, filter);
@@ -1133,6 +1203,19 @@ public partial class MainWindow : Window
     void OnPadPressed(PadAction action)
     {
         SetPadMode(true);
+        if (_flow.ShelfMode && !IsPanelOpen)
+        {
+            // En la estantería: aceptar coge o suelta, volver suelta o termina.
+            if (action == PadAction.Confirm)
+            {
+                if (_flow.Holding) ShelfDrop(); else ShelfLift();
+            }
+            else if (action == PadAction.Back)
+            {
+                if (_flow.Holding) ShelfDrop(); else ExitShelf();
+            }
+            return;
+        }
         if (IsPanelOpen)
         {
             if (action == PadAction.Confirm)
@@ -1162,13 +1245,28 @@ public partial class MainWindow : Window
         SetPadMode(true);
         if (IsPanelOpen)
             return;
-        _flow.MoveBy(direction);
+        if (_flow.ShelfMode)
+            ShelfMove(direction);
+        else
+            _flow.MoveBy(direction);
+    }
+
+    /// <summary>Arriba y abajo del mando: en la estantería, coger y soltar.</summary>
+    void OnPadVertical(int direction)
+    {
+        SetPadMode(true);
+        if (IsPanelOpen || !_flow.ShelfMode)
+            return;
+        if (direction < 0)
+            ShelfLift();
+        else
+            ShelfDrop();
     }
 
     /// <summary>El stick derecho gira la caja seleccionada, como arrastrarla con el ratón.</summary>
     void OnPadRightStick(double x, double y)
     {
-        if (IsPanelOpen || !_flow.CanInspectSelected)
+        if (IsPanelOpen || _flow.ShelfMode || !_flow.CanInspectSelected)
             return;
         SetPadMode(true);
         var (yaw, pitch) = _flow.InspectTarget;
@@ -1212,7 +1310,7 @@ public partial class MainWindow : Window
         FilterKey.Text = pad ? GamepadService.Label(PadAction.NextFilter, style) : "Tab";
         FullScreenKey.Text = pad ? GamepadService.Label(PadAction.FullScreen, style) : "F11";
         RemoveHint.Visibility = ImportHints.Visibility = pad ? Visibility.Collapsed : Visibility.Visible;
-        MoveHint.Visibility = !pad && _settings.SortMode == SortMode.Custom ? Visibility.Visible : Visibility.Collapsed;
+        UpdateShelfHints();
     }
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -1225,10 +1323,15 @@ public partial class MainWindow : Window
         if (IsPanelOpen)
             return;
 
+        if (_flow.ShelfMode)
+        {
+            if (HandleShelfKey(e.Key))
+                e.Handled = true;
+            return;
+        }
+
         switch (e.Key)
         {
-            case Key.Left when Keyboard.Modifiers.HasFlag(ModifierKeys.Control): MoveSelected(-1); break;
-            case Key.Right when Keyboard.Modifiers.HasFlag(ModifierKeys.Control): MoveSelected(1); break;
             case Key.Left: _flow.MoveBy(-1); break;
             case Key.Right: _flow.MoveBy(1); break;
             case Key.Home: _flow.Select(0); break;
@@ -1259,7 +1362,10 @@ public partial class MainWindow : Window
         while (Math.Abs(_wheelDelta) >= Mouse.MouseWheelDeltaForOneLine)
         {
             var step = Math.Sign(_wheelDelta);
-            _flow.MoveBy(-step);
+            if (_flow.ShelfMode)
+                ShelfMove(-step);
+            else
+                _flow.MoveBy(-step);
             _wheelDelta -= step * Mouse.MouseWheelDeltaForOneLine;
         }
     }
@@ -1268,6 +1374,14 @@ public partial class MainWindow : Window
     {
         if (_flow.HitTest(e.GetPosition(Viewport)) is not { } index)
             return;
+
+        // En la estantería, un clic solo elige el lomo (con un juego cogido no se cambia de juego).
+        if (_flow.ShelfMode)
+        {
+            if (!_flow.Holding)
+                _flow.Select(index);
+            return;
+        }
 
         if (index != _flow.SelectedIndex)
         {
@@ -1312,6 +1426,8 @@ public partial class MainWindow : Window
 
     void OnViewportRightMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (_flow.ShelfMode)
+            return;
         if (_flow.HitTest(e.GetPosition(Viewport)) is not { } index || IsAddCard(index))
             return;
 
