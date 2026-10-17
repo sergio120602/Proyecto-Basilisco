@@ -99,17 +99,25 @@ public static class CoverArt
 
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x17, 0x18, 0x1C), Color.FromRgb(0x05, 0x05, 0x07), 45), null, bounds);
 
+        // Franja oficial de la consola si está en basilisco-data/borders; su ancho sale de su propia proporción
+        // para no deformarla. Si no, la dibujada por Basilisco, de ancho fijo.
+        var bandImage = PlatformArt.BandImage(platform);
+        var bandWidth = bandImage is null
+            ? Spine + 2
+            : Math.Clamp(Height * bandImage.Width / bandImage.Height, 40, Width * 0.3);
+
         if (image is not null)
         {
-            // La zona de la carátula, a la derecha de la franja, es cuadrada: una imagen cuadrada la llena entera.
-            // Si no lo es, se encaja sin deformar ni recortar, con negro en el hueco.
-            var area = new Rect(Spine + 2, Frame, Width - Spine - 2 - Frame, Height - Frame * 2);
+            // La carátula va a la derecha de la franja, entera, sin deformar ni recortar, con negro en el hueco.
+            var area = new Rect(bandWidth, Frame, Width - bandWidth - Frame, Height - Frame * 2);
             dc.DrawRectangle(Brushes.Black, null, area);
             dc.DrawImage(image, FitInside(image.Width, image.Height, area));
         }
 
-        // Franja de la izquierda, con el estilo de la consola del juego (con o sin carátula).
-        PlatformArt.DrawBand(dc, platform, new Rect(0, 0, Spine, Height));
+        if (bandImage is not null)
+            dc.DrawImage(bandImage, new Rect(0, 0, bandWidth, Height));
+        else
+            PlatformArt.DrawBand(dc, platform, new Rect(0, 0, Spine, Height));
 
         // Brillo del plástico.
         var gloss = new LinearGradientBrush(Color.FromArgb(30, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0.6, 0.6));
@@ -119,8 +127,8 @@ public static class CoverArt
 
         if (image is null)
         {
-            var text = CreateText(title, 30 * Scale, Color.FromArgb(150, 255, 255, 255), Width - Spine - 56 * Scale, TextAlignment.Left);
-            dc.DrawText(text, new Point(Spine + 28 * Scale, Height - 28 * Scale - text.Height));
+            var text = CreateText(title, 30 * Scale, Color.FromArgb(150, 255, 255, 255), Width - bandWidth - 56 * Scale, TextAlignment.Left);
+            dc.DrawText(text, new Point(bandWidth + 28 * Scale, Height - 28 * Scale - text.Height));
         }
     }
 

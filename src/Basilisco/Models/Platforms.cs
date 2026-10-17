@@ -13,7 +13,7 @@ public static class Platforms
         new("psp", "PSP"),
         new("xbox", "Xbox"),
         new("x360", "Xbox 360"),
-        new("gba", "Game Boy Advance"),
+        new("gba", "Game Boy"), // El id se mantiene para no perder los juegos ya asignados.
         new("wii", "Wii"),
         new("wiiu", "Wii U"),
         new("nds", "Nintendo DS"),

@@ -14,4 +14,7 @@ public static class AppInfo
     public static string CoversDirectory { get; } = Path.Combine(DataDirectory, "covers");
 
     public static string FilterImagesDirectory { get; } = Path.Combine(DataDirectory, "filters");
+
+    /// <summary>Franjas de cada consola (ps1.png, ps2.png…). Si falta alguna, Basilisco dibuja la suya.</summary>
+    public static string BordersDirectory { get; } = Path.Combine(DataDirectory, "borders");
 }
