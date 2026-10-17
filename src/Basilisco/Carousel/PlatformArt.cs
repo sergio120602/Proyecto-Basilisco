@@ -22,7 +22,9 @@ public static class PlatformArt
         "psp" => Color.FromRgb(0x14, 0x14, 0x16),
         "xbox" => Color.FromRgb(0x10, 0x13, 0x10),
         "x360" => Color.FromRgb(0x5D, 0xAA, 0x2E),
-        "gba" => Color.FromRgb(0xE9, 0xE7, 0xE1),
+        "gb" or "gba" => Color.FromRgb(0xE9, 0xE7, 0xE1),
+        "n64" => Color.FromRgb(0x1A, 0x1A, 0x1C),
+        "gc" => Color.FromRgb(0x14, 0x12, 0x1A),
         "wii" => Color.FromRgb(0xF3, 0xF3, 0xF3),
         "wiiu" => Color.FromRgb(0x2E, 0x9F, 0xD0),
         "nds" => Color.FromRgb(0xD8, 0xD9, 0xDB),
@@ -86,7 +88,10 @@ public static class PlatformArt
             "psp" => (Solid(0x0A, 0x0A, 0x0B), White, "PSP", Face("Segoe UI", FontWeights.Black, FontStyles.Italic)),
             "xbox" => (Solid(0x0A, 0x0C, 0x0A), new SolidColorBrush(Color.FromRgb(0x7F, 0xBA, 0x00)), "XBOX", Face("Segoe UI", FontWeights.Black)),
             "x360" => (Gradient(0x4C, 0xA8, 0x23, 0x9A, 0xD3, 0x5A), White, "XBOX 360", Face("Segoe UI", FontWeights.Light)),
-            "gba" => (Solid(0xB4, 0xB4, 0xB8), new SolidColorBrush(Color.FromRgb(0x3B, 0x3F, 0xA8)), "GAME BOY", Face("Segoe UI", FontWeights.Black, FontStyles.Italic)),
+            "gb" => (Solid(0xB4, 0xB4, 0xB8), new SolidColorBrush(Color.FromRgb(0x3B, 0x3F, 0xA8)), "GAME BOY", Face("Segoe UI", FontWeights.Black, FontStyles.Italic)),
+            "gba" => (Gradient(0x3E, 0x39, 0x9E, 0x26, 0x22, 0x6E), White, "GAME BOY ADVANCE", Face("Segoe UI", FontWeights.Black, FontStyles.Italic)),
+            "n64" => (Solid(0x10, 0x10, 0x12), White, "NINTENDO 64", Face("Segoe UI", FontWeights.Black)),
+            "gc" => (Gradient(0x0A, 0x0A, 0x0C, 0x3B, 0x2C, 0x75), White, "NINTENDO GAMECUBE", Face("Segoe UI", FontWeights.Bold)),
             "wii" => (Solid(0xFF, 0xFF, 0xFF), Gray(0x8E), "Wii", Face("Segoe UI", FontWeights.SemiBold)),
             "wiiu" => (Gradient(0x00, 0xAA, 0xDA, 0x00, 0x84, 0xB4), White, "Wii U", Face("Segoe UI", FontWeights.SemiBold)),
             "nds" => (Solid(0xF0, 0xF1, 0xF2), Gray(0x3C), "NINTENDO DS", Face("Segoe UI", FontWeights.Black)),
@@ -103,6 +108,13 @@ public static class PlatformArt
         const double probe = 100;
         var size = probe * band.Height * 0.55 / Math.Max(1, Text(label, probe, ink, face).Extent);
         var text = Text(label, size, ink, face);
+        // En cajas estrechas (Game Boy Advance, DS…) los nombres largos se reducen hasta caber en el ancho.
+        var room = band.Width - band.Height * 0.8;
+        if (text.Width > room)
+        {
+            size *= room / text.Width;
+            text = Text(label, size, ink, face);
+        }
         var inkTop = text.Height + text.OverhangAfter - text.Extent;
         dc.DrawText(text, new Point(band.Left + band.Height * 0.4, band.Top + band.Height / 2 - (inkTop + text.Extent / 2)));
     }
@@ -123,7 +135,10 @@ public static class PlatformArt
             case "psp": DrawPsp(dc, band); break;
             case "xbox": DrawXbox(dc, band); break;
             case "x360": DrawXbox360(dc, band); break;
+            case "gb": DrawGb(dc, band); break;
             case "gba": DrawGba(dc, band); break;
+            case "n64": DrawN64(dc, band); break;
+            case "gc": DrawGameCube(dc, band); break;
             case "wii": DrawWii(dc, band); break;
             case "wiiu": DrawWiiU(dc, band); break;
             case "nds": DrawNds(dc, band); break;
@@ -211,12 +226,52 @@ public static class PlatformArt
         Separator(dc, band, Color.FromRgb(0xC8, 0xC8, 0xC8));
     }
 
-    // Game Boy: franja añil con «GAME BOY» en cursiva.
+    // Game Boy: franja gris con «GAME BOY» en azul y en cursiva, como las cajas originales.
+    static void DrawGb(DrawingContext dc, Rect band)
+    {
+        Fill(dc, band, Color.FromRgb(0xB4, 0xB4, 0xB8));
+        VerticalText(dc, "GAME BOY", TextArea(band, band.Width * 0.5, band.Width * 0.5),
+            new SolidColorBrush(Color.FromRgb(0x3B, 0x3F, 0xA8)), Face("Segoe UI", FontWeights.Black, FontStyles.Italic), maxFill: 0.72);
+        Separator(dc, band, Color.FromRgb(0x8E, 0x8E, 0x94));
+    }
+
+    // Game Boy Advance: franja añil con «GAME BOY ADVANCE» en cursiva.
     static void DrawGba(DrawingContext dc, Rect band)
     {
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x3E, 0x39, 0x9E), Color.FromRgb(0x26, 0x22, 0x6E), 90), null, band);
-        VerticalText(dc, "GAME BOY", TextArea(band, band.Width * 0.5, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Black, FontStyles.Italic), maxFill: 0.72);
+        VerticalText(dc, "GAME BOY ADVANCE", TextArea(band, band.Width * 0.5, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Black, FontStyles.Italic), maxFill: 0.72);
         Separator(dc, band, Color.FromRgb(0x1C, 0x19, 0x55));
+    }
+
+    // Nintendo 64: franja negra con «NINTENDO 64» y los cuatro colores del logo arriba.
+    static void DrawN64(DrawingContext dc, Rect band)
+    {
+        Fill(dc, band, Color.FromRgb(0x10, 0x10, 0x12));
+        var logo = LogoArea(band);
+        var half = logo.Width / 2;
+        Color[] colors = [Color.FromRgb(0xE4, 0x1F, 0x26), Color.FromRgb(0x00, 0x9B, 0x48), Color.FromRgb(0x00, 0x5B, 0xAC), Color.FromRgb(0xF6, 0xB1, 0x00)];
+        for (var i = 0; i < 4; i++)
+        {
+            var cell = new Rect(logo.X + (i % 2) * half, logo.Y + (i / 2) * half, half - 3, half - 3);
+            dc.DrawRoundedRectangle(new SolidColorBrush(colors[i]), null, cell, half * 0.12, half * 0.12);
+        }
+        VerticalText(dc, "NINTENDO 64", TextArea(band, logo.Bottom + band.Width * 0.3, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Black), maxFill: 0.6);
+        Separator(dc, band, Color.FromRgb(0x30, 0x30, 0x34));
+    }
+
+    // GameCube: franja negra que se vuelve morada abajo, con «GAMECUBE» y el cubo del logo arriba.
+    static void DrawGameCube(DrawingContext dc, Rect band)
+    {
+        dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x0A, 0x0A, 0x0C), Color.FromRgb(0x3B, 0x2C, 0x75), 90), null, band);
+        var logo = LogoArea(band);
+        logo.Inflate(-logo.Width * 0.12, -logo.Height * 0.12);
+        var purple = new SolidColorBrush(Color.FromRgb(0x6A, 0x5A, 0xCD));
+        dc.DrawRectangle(null, new Pen(purple, logo.Width * 0.16), logo);
+        var inner = logo;
+        inner.Inflate(-logo.Width * 0.3, -logo.Height * 0.3);
+        dc.DrawRectangle(purple, null, inner);
+        VerticalText(dc, "GAMECUBE", TextArea(band, logo.Bottom + band.Width * 0.4, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Bold), maxFill: 0.62);
+        Separator(dc, band, Color.FromRgb(0x2A, 0x20, 0x55));
     }
 
     // Wii: franja blanca con «Wii» en gris.

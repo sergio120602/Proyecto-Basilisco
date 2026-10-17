@@ -18,7 +18,13 @@ public sealed class LibraryStore
         try
         {
             var json = File.ReadAllText(FilePath);
-            return JsonSerializer.Deserialize<Library>(json, Options) ?? new Library();
+            var library = JsonSerializer.Deserialize<Library>(json, Options) ?? new Library();
+            if (library.Version < Library.CurrentVersion)
+            {
+                Migrate(library);
+                Save(library);
+            }
+            return library;
         }
         catch (Exception)
         {
@@ -27,6 +33,32 @@ public sealed class LibraryStore
             catch (IOException) { }
             return new Library();
         }
+    }
+
+    /// <summary>Pone al día una biblioteca de una versión anterior de Basilisco.</summary>
+    static void Migrate(Library library)
+    {
+        if (library.Version < 2)
+        {
+            // Hasta la 0.1.6, «gba» era la Game Boy (se llamó Game Boy Advance al principio y luego se renombró).
+            // Ahora la Game Boy es «gb» y «gba» queda para la Game Boy Advance de verdad.
+            foreach (var game in library.Games.Where(game => game.Platform == "gba"))
+                game.Platform = "gb";
+
+            // Sus franjas también: borders/gba.png era la de Game Boy.
+            foreach (var suffix in new[] { "", "-top" })
+            {
+                var from = Path.Combine(AppInfo.BordersDirectory, $"gba{suffix}.png");
+                var to = Path.Combine(AppInfo.BordersDirectory, $"gb{suffix}.png");
+                try
+                {
+                    if (File.Exists(from) && !File.Exists(to))
+                        File.Move(from, to);
+                }
+                catch (IOException) { }
+            }
+        }
+        library.Version = Library.CurrentVersion;
     }
 
     public bool Save(Library library)

@@ -28,7 +28,10 @@ public sealed record BoxShape(double Width, double Height, double Depth)
             "psp" => Cm(18.0, 10.5, 1.5),   // Caja de UMD
             "xbox" => Dvd,                  // Caja de DVD verde
             "x360" => Dvd,                  // Caja de DVD verde transparente
-            "gba" => Cm(12.8, 12.8, 2.5),   // Caja de cartón de Game Boy
+            "gb" => Cm(12.8, 12.8, 2.5),    // Caja de cartón de Game Boy
+            "gba" => Cm(12.5, 12.5, 2.0),   // Caja de cartón de Game Boy Advance (aprox.)
+            "n64" => Cm(12.7, 18.0, 3.4),   // Caja de cartón apaisada de Nintendo 64 (aprox.)
+            "gc" => Cm(18.7, 13.5, 1.4),    // Estuche de mini-DVD de GameCube (aprox.)
             "wii" => Dvd,                   // Caja de DVD blanca
             "wiiu" => Cm(17.0, 13.5, 1.5),  // Caja de Blu-ray azul
             "nds" => Cm(13.6, 12.4, 1.9),   // Estuche de DS (Europa)

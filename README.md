@@ -93,6 +93,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.1.4** — Compatibilidad con mandos de Xbox One, PS5 y Switch Pro
 - [x] **v0.1.5** — LaunchBox como segunda opción para portadas, contraportadas y lomos
 - [x] **v0.1.6** — Cajas rectangulares con las medidas reales de cada consola
+- [x] **v0.1.7** — Nintendo 64, GameCube y Game Boy Advance
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -106,9 +107,9 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 
 ## 🎮 Consolas
 
-Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, Game Boy, Wii, Wii U, Nintendo DS o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
+Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, Nintendo 64, GameCube, Wii, Wii U, Game Boy, Game Boy Advance, Nintendo DS o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
 
-Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gba.png` (Game Boy), `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
+Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gb.png` (Game Boy), `gba.png` (Game Boy Advance), `n64.png`, `gc.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
 
 ## 📦 Formatos de caja
 
