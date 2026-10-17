@@ -11,7 +11,7 @@
     <!-- SDL3 (mandos de Xbox, PS5 y Switch Pro) se usa con punteros. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <Version>0.1.8</Version>
+    <Version>0.2.0</Version>
     <Product>Proyecto Basilisco</Product>
     <Description>Launcher de videojuegos portable</Description>
 

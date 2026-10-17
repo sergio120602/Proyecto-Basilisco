@@ -73,6 +73,7 @@ public partial class MainWindow : Window
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
         FolderImporter.ImportRequested += ApplyFolderImport;
+        SteamImporter.ImportRequested += ApplySteamImport;
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
@@ -97,7 +98,7 @@ public partial class MainWindow : Window
     /// </summary>
     async Task RepairMovedGamesAsync()
     {
-        var missing = Games.Where(game => !File.Exists(game.Path)).Select(game => (Game: game, game.Path)).ToList();
+        var missing = Games.Where(game => !GameLauncher.IsLink(game.Path) && !File.Exists(game.Path)).Select(game => (Game: game, game.Path)).ToList();
         if (missing.Count == 0)
             return;
 
@@ -184,7 +185,7 @@ public partial class MainWindow : Window
     Game? FindMissingWithSameFile(string path) =>
         Games.FirstOrDefault(game =>
             string.Equals(Path.GetFileName(game.Path), Path.GetFileName(path), StringComparison.OrdinalIgnoreCase) &&
-            !File.Exists(game.Path));
+            !GameLauncher.IsLink(game.Path) && !GameLauncher.IsLink(path) && !File.Exists(game.Path));
 
     FoundStatus StatusOf(string path) =>
         IsInLibrary(path) ? FoundStatus.InLibrary
@@ -219,7 +220,7 @@ public partial class MainWindow : Window
     List<GameFilter> Filters => _library.Filters;
 
     bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
-                        FormatEditor.IsOpen;
+                        FormatEditor.IsOpen || SteamImporter.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
@@ -344,7 +345,9 @@ public partial class MainWindow : Window
     {
         var chips = new List<string>
         {
-            Path.GetExtension(game.Path).ToLowerInvariant() switch
+            game.SteamAppId is { } appId
+                ? (SteamLocal.IsInstalled(appId) ? "Steam · instalado" : "Steam · no instalado")
+                : Path.GetExtension(game.Path).ToLowerInvariant() switch
             {
                 ".exe" => "Ejecutable",
                 ".lnk" => "Acceso directo",
@@ -379,11 +382,14 @@ public partial class MainWindow : Window
             chips.AddRange(Filters.Where(filter => game.FilterIds.Contains(filter.Id)).Select(filter => filter.Name));
         }
 
-        var folder = Path.GetFileName(Path.GetDirectoryName(game.Path));
+        if (game.SteamOwner is { } owner)
+            chips.Add($"Steam Familiar · de {owner}");
+
+        var folder = GameLauncher.IsLink(game.Path) ? null : Path.GetFileName(Path.GetDirectoryName(game.Path));
         if (!string.IsNullOrEmpty(folder))
             chips.Add($"Carpeta: '{folder}'");
 
-        if (!File.Exists(game.Path))
+        if (!GameLauncher.IsLink(game.Path) && !File.Exists(game.Path))
             chips.Add("Archivo no encontrado");
 
         return chips;
@@ -465,7 +471,10 @@ public partial class MainWindow : Window
 
     /// <param name="games">Ruta de cada juego y, si se conoce, su nombre (si no, el del archivo).</param>
     /// <param name="groupFilter">Filtro extra al que añadir los juegos, además del seleccionado.</param>
-    void AddGames(IEnumerable<(string Path, string? Name)> games, GameFilter? groupFilter = null)
+    /// <param name="configure">Ajustes extra para cada juego nuevo (por ejemplo, sus datos de Steam).</param>
+    /// <param name="askPlatform">Preguntar después la consola de cada juego (no hace falta con los de Steam, que son de PC).</param>
+    void AddGames(IEnumerable<(string Path, string? Name)> games, GameFilter? groupFilter = null,
+                  Action<Game>? configure = null, bool askPlatform = true)
     {
         Game? first = null;
         var added = 0;
@@ -490,6 +499,7 @@ public partial class MainWindow : Window
                     Path = path,
                     AddedAt = DateTime.Now,
                 };
+                configure?.Invoke(game);
                 Games.Add(game);
             }
             else if (BelongsToActiveFilter(game) && (groupFilter is null || game.FilterIds.Contains(groupFilter.Id)))
@@ -529,7 +539,49 @@ public partial class MainWindow : Window
         ShowToast(message);
 
         // Y ahora, de qué consola es cada uno (decide el borde de su caja).
-        PlatformPicker.Open(imported, _activePlatform);
+        if (askPlatform)
+            PlatformPicker.Open(imported, _activePlatform);
+    }
+
+    void OpenSteamImport() => SteamImporter.Open(_settings, IsSteamAppInLibrary);
+
+    /// <summary>
+    /// Un juego de Steam ya está en la biblioteca si se importó desde Steam o si ya tenías su ejecutable
+    /// (importado de la carpeta del juego dentro de steamapps).
+    /// </summary>
+    bool IsSteamAppInLibrary(SteamApp app) =>
+        Games.Any(game => game.SteamAppId == app.AppId || SamePath(game.Path, app.LaunchUri) ||
+                          app.InstallDir is { } dir && game.Path.StartsWith(dir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase));
+
+    void ApplySteamImport(SteamImportResult result)
+    {
+        var familyFilter = result.FamilyFilter && result.Apps.Any(app => app.Source == SteamSource.Family)
+            ? FilterNamed("Steam Familiar")
+            : null;
+        var byLink = result.Apps.ToDictionary(app => app.LaunchUri, StringComparer.OrdinalIgnoreCase);
+
+        AddGames(result.Apps.Select(app => (app.LaunchUri, (string?)app.Name)), configure: game =>
+        {
+            if (!byLink.TryGetValue(game.Path, out var app))
+                return;
+            game.SteamAppId = app.AppId;
+            game.SteamOwner = app.Source == SteamSource.Family ? app.Owner ?? "otro miembro" : null;
+            game.Platform ??= "pc";
+            if (familyFilter is not null && app.Source == SteamSource.Family && !game.FilterIds.Contains(familyFilter.Id))
+                game.FilterIds.Add(familyFilter.Id);
+        }, askPlatform: false);
+    }
+
+    /// <summary>El filtro con ese nombre; si no existe, se crea.</summary>
+    GameFilter FilterNamed(string name)
+    {
+        var filter = Filters.FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.CurrentCultureIgnoreCase));
+        if (filter is null)
+        {
+            filter = new GameFilter { Name = name };
+            Filters.Add(filter);
+        }
+        return filter;
     }
 
     void ApplyPlatforms(List<(Game Game, string? Platform)> choices)
@@ -549,7 +601,7 @@ public partial class MainWindow : Window
 
     void Launch(Game game)
     {
-        if (!File.Exists(game.Path))
+        if (!GameLauncher.IsLink(game.Path) && !File.Exists(game.Path))
         {
             // Lo más probable es que hayas movido su carpeta: primero lo buscamos nosotros.
             if (GameRelocator.FindMoved(game.Path) is { } moved)
@@ -998,6 +1050,7 @@ public partial class MainWindow : Window
             case Key.I: Import(); break;
             case Key.C: ImportFolder(); break;
             case Key.F: OpenFormatEditor(); break;
+            case Key.S: OpenSteamImport(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.Escape when _fullScreen: ToggleFullScreen(); break;
             default: return;
@@ -1097,6 +1150,8 @@ public partial class MainWindow : Window
     void OnImportFolderClick(object sender, RoutedEventArgs e) => ImportFolder();
 
     void OnFormatClick(object sender, RoutedEventArgs e) => OpenFormatEditor();
+
+    void OnSteamClick(object sender, RoutedEventArgs e) => OpenSteamImport();
 
     void OnDragOver(object sender, DragEventArgs e)
     {

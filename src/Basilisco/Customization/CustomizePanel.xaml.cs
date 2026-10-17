@@ -422,7 +422,7 @@ public partial class CustomizePanel : UserControl
 
     void ShowPath(string path)
     {
-        var missing = !File.Exists(path);
+        var missing = !GameLauncher.IsLink(path) && !File.Exists(path);
         PathText.Text = missing ? $"No encontrado · {path}" : path;
         PathText.ToolTip = path;
         PathText.Foreground = missing ? Brushes.Firebrick : MutedText;

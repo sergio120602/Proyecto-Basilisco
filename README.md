@@ -27,6 +27,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Girar la caja (ver grosor y contraportada) | Arrastrar la caja central con el ratón |
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
+| Importar tu cuenta de Steam (instalados, toda la biblioteca y Steam Familiar) | `S` o botón «Steam» |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
 | Personalizar (nombre, portada, contraportada, lomo, consola y filtros) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
@@ -95,9 +96,9 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.1.6** — Cajas rectangulares con las medidas reales de cada consola
 - [x] **v0.1.7** — Nintendo 64, GameCube y Game Boy Advance
 - [x] **v0.1.8** — Cajas rectangulares sin franja, para portadas reales de LaunchBox
+- [x] **v0.2.0** — Importar la cuenta de Steam: instalados, toda la biblioteca y Steam Familiar
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
-- [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
 
 ### 💡 Ideas para el futuro
@@ -111,6 +112,16 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, Nintendo 64, GameCube, Wii, Wii U, Game Boy, Game Boy Advance, Nintendo DS o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
 
 Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gb.png` (Game Boy), `gba.png` (Game Boy Advance), `n64.png`, `gc.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
+
+## 🎮 Steam
+
+Con el botón **Steam** (o la tecla `S`) importas tu cuenta de Steam:
+
+- **Juegos instalados**: se leen de tu instalación de Steam, sin clave ni internet.
+- **Toda la biblioteca** (también lo no instalado): con tu [clave de la Web API de Steam](https://steamcommunity.com/dev/apikey) (gratuita; tu perfil debe tener los «Detalles de juegos» públicos) o con el token de sesión.
+- **Steam Familiar**: los juegos que te comparte tu familia. Steam solo los da con un **token de sesión**: con la sesión de Steam iniciada en el navegador, abre [esta página](https://store.steampowered.com/pointssummary/ajaxgetasyncconfig), copia todo el texto y pégalo en Basilisco. Dura unas 24 horas y Basilisco no lo guarda en ningún archivo.
+
+Los juegos de Steam se lanzan a través de Steam; si no están instalados, Steam ofrece instalarlos. Puedes volver a importar cuando quieras: lo que ya tenías no se duplica.
 
 ## 📦 Formatos de caja
 

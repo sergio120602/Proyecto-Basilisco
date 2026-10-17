@@ -17,6 +17,9 @@ public sealed class AppSettings
     /// <summary>Clave de la API de TheGamesDB, para descargar contraportadas.</summary>
     public string? TheGamesDbApiKey { get; set; }
 
+    /// <summary>Clave de la Web API de Steam, para importar la biblioteca completa. El token de sesión no se guarda nunca.</summary>
+    public string? SteamApiKey { get; set; }
+
     public static AppSettings Load()
     {
         try
