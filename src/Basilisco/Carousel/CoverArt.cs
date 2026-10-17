@@ -15,7 +15,7 @@ public static class CoverArt
     // una zona cuadrada para la carátula: así una imagen de 1024 × 1024 la llena entera sin recortarla.
     public const int Height = 1024;
     const int Frame = 6;
-    const int Spine = 96;
+    const int Spine = 144;
     public const int Width = Spine + 2 + Height - Frame;
     const int SpineWidth = (int)(Height * BoxModel.Depth / BoxModel.Height);
     const double Scale = Height / 576.0;
@@ -33,19 +33,19 @@ public static class CoverArt
             if (item.IsAddCard)
                 DrawAddCard(dc);
             else
-                DrawCase(dc, item.Title, image);
+                DrawCase(dc, item.Title, image, item.Platform);
         });
     }
 
     public static BitmapSource RenderBack(CarouselItem item)
     {
         var image = item.BackImagePath is null ? null : LoadImage(item.BackImagePath);
-        return Rasterize(Width, Height, dc => DrawBack(dc, item.Title, image));
+        return Rasterize(Width, Height, dc => DrawBack(dc, item.Title, image, item.Platform));
     }
 
     /// <summary>Lomo de la caja: tan alto como la portada y tan ancho como el grosor, con el nombre en vertical.</summary>
     public static BitmapSource RenderSpine(CarouselItem item) =>
-        Rasterize(SpineWidth, Height, dc => DrawSpine(dc, item.IsAddCard ? "" : item.Title));
+        Rasterize(SpineWidth, Height, dc => DrawSpine(dc, item.IsAddCard ? "" : item.Title, item.Platform));
 
     /// <summary>
     /// Versión para el reflejo en el suelo: a media resolución y desvaneciéndose desde el borde de abajo,
@@ -93,7 +93,7 @@ public static class CoverArt
         return image;
     }
 
-    static void DrawCase(DrawingContext dc, string title, BitmapSource? image)
+    static void DrawCase(DrawingContext dc, string title, BitmapSource? image, string? platform)
     {
         var bounds = new Rect(0, 0, Width, Height);
 
@@ -108,9 +108,8 @@ public static class CoverArt
             dc.DrawImage(image, FitInside(image.Width, image.Height, area));
         }
 
-        // Franja de la izquierda típica de las cajas de PlayStation, con o sin carátula.
-        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x0B, 0x0B, 0x0D)), null, new Rect(0, 0, Spine, Height));
-        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2B, 0x2D, 0x33)), null, new Rect(Spine, 0, 2, Height));
+        // Franja de la izquierda, con el estilo de la consola del juego (con o sin carátula).
+        PlatformArt.DrawBand(dc, platform, new Rect(0, 0, Spine, Height));
 
         // Brillo del plástico.
         var gloss = new LinearGradientBrush(Color.FromArgb(30, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0.6, 0.6));
@@ -125,10 +124,13 @@ public static class CoverArt
         }
     }
 
-    static void DrawBack(DrawingContext dc, string title, BitmapSource? image)
+    static void DrawBack(DrawingContext dc, string title, BitmapSource? image, string? platform)
     {
         var bounds = new Rect(0, 0, Width, Height);
-        dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x12, 0x13, 0x17), Color.FromRgb(0x05, 0x05, 0x07), 135), null, bounds);
+        // La trasera sin imagen es del color del plástico de la consola.
+        var plastic = PlatformArt.Plastic(platform);
+        dc.DrawRectangle(new LinearGradientBrush(Shade(plastic, 1.12), Shade(plastic, 0.75), 135), null, bounds);
+        var ink = PlatformArt.TextOnPlastic(platform);
 
         if (image is not null)
         {
@@ -139,9 +141,9 @@ public static class CoverArt
         }
         else
         {
-            var text = CreateText(title, 26 * Scale, Color.FromArgb(110, 255, 255, 255), Width - 80 * Scale, TextAlignment.Center);
+            var text = CreateText(title, 26 * Scale, Color.FromArgb(150, ink.R, ink.G, ink.B), Width - 80 * Scale, TextAlignment.Center);
             dc.DrawText(text, new Point(40 * Scale, 40 * Scale));
-            var hint = CreateText("Contraportada", 18 * Scale, Color.FromArgb(60, 255, 255, 255), Width, TextAlignment.Center);
+            var hint = CreateText("Contraportada", 18 * Scale, Color.FromArgb(80, ink.R, ink.G, ink.B), Width, TextAlignment.Center);
             dc.DrawText(hint, new Point(0, Height - 40 * Scale - hint.Height));
         }
 
@@ -150,20 +152,30 @@ public static class CoverArt
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2, Frame / 2, Width - Frame, Height - Frame));
     }
 
-    static void DrawSpine(DrawingContext dc, string title)
+    static void DrawSpine(DrawingContext dc, string title, string? platform)
     {
-        dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x1C, 0x1D, 0x22), Color.FromRgb(0x0A, 0x0A, 0x0C), 0), null, new Rect(0, 0, SpineWidth, Height));
+        // El lomo es del plástico de la consola (verde en Xbox 360, blanco en Wii…).
+        var plastic = PlatformArt.Plastic(platform);
+        dc.DrawRectangle(new LinearGradientBrush(Shade(plastic, 1.25), Shade(plastic, 0.8), 0), null, new Rect(0, 0, SpineWidth, Height));
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), 3), new Rect(1.5, 1.5, SpineWidth - 3, Height - 3));
 
         if (title.Length == 0)
             return;
 
         // Texto girado 90° para leerse de arriba abajo, como en el lomo de las cajas reales.
-        var text = CreateText(title, SpineWidth * 0.5, Color.FromArgb(170, 255, 255, 255), Height - 48, TextAlignment.Left);
+        var text = CreateText(title, SpineWidth * 0.5, PlatformArt.TextOnPlastic(platform), Height - 48, TextAlignment.Left);
         text.MaxLineCount = 1;
         dc.PushTransform(new MatrixTransform(0, 1, -1, 0, SpineWidth / 2.0 + text.Height / 2, 24));
         dc.DrawText(text, new Point(0, 0));
         dc.Pop();
+    }
+
+    /// <summary>Aclara (factor &gt; 1) u oscurece (factor &lt; 1) un color, para dar volumen al plástico.</summary>
+    static Color Shade(Color color, double factor)
+    {
+        static byte Channel(byte value, double factor) =>
+            (byte)Math.Clamp(factor >= 1 ? value + (255 - value) * (factor - 1) : value * factor, 0, 255);
+        return Color.FromRgb(Channel(color.R, factor), Channel(color.G, factor), Channel(color.B, factor));
     }
 
     static Rect FitInside(double width, double height, Rect area)

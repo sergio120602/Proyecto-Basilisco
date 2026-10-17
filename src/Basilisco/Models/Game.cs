@@ -14,6 +14,9 @@ public sealed class Game
     /// <summary>Nombre del archivo de la contraportada personalizada dentro de basilisco-data/covers, si tiene.</summary>
     public string? BackImage { get; set; }
 
+    /// <summary>Consola del juego (ver <see cref="Platforms"/>); decide el borde de su caja. Null si no tiene.</summary>
+    public string? Platform { get; set; }
+
     /// <summary>Filtros a los que pertenece el juego.</summary>
     public List<string> FilterIds { get; set; } = [];
 

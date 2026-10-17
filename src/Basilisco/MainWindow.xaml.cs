@@ -23,8 +23,12 @@ public partial class MainWindow : Window
     readonly Library _library;
     readonly CoverFlow _flow;
 
-    /// <summary>Filtro seleccionado arriba; null es «Todos los juegos».</summary>
+    // Lo seleccionado arriba: una consola, un filtro o ninguno de los dos («Todos los juegos»).
+    string? _activePlatform;
     GameFilter? _activeFilter;
+
+    /// <summary>Nombre de lo que se está viendo, para los textos («PS2», «RPG»…), o null en «Todos los juegos».</summary>
+    string? ActiveViewName => _activeFilter?.Name ?? Platforms.Find(_activePlatform)?.Name;
 
     /// <summary>Juegos que se ven en el carrusel con el filtro actual, en el mismo orden.</summary>
     List<Game> _visibleGames = [];
@@ -55,6 +59,7 @@ public partial class MainWindow : Window
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
         FolderImporter.ImportRequested += ApplyFolderImport;
+        PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
         Loaded += async (_, _) => await RepairMovedGamesAsync();
@@ -118,6 +123,7 @@ public partial class MainWindow : Window
         if (keep.Name == Path.GetFileNameWithoutExtension(keep.Path))
             keep.Name = duplicate.Name;
 
+        keep.Platform ??= duplicate.Platform;
         if (keep.CoverImage is null)
             (keep.CoverImage, duplicate.CoverImage) = (duplicate.CoverImage, null);
         if (keep.BackImage is null)
@@ -175,13 +181,17 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen;
+    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
-    bool BelongsToActiveFilter(Game game) => _activeFilter is null || game.FilterIds.Contains(_activeFilter.Id);
+    bool BelongsToActiveFilter(Game game) =>
+        (_activePlatform is null || game.Platform == _activePlatform) &&
+        (_activeFilter is null || game.FilterIds.Contains(_activeFilter.Id));
 
     int CountGames(GameFilter filter) => Games.Count(game => game.FilterIds.Contains(filter.Id));
+
+    int CountGames(Platform platform) => Games.Count(game => game.Platform == platform.Id);
 
     void RefreshCarousel(int selectedIndex, bool jump = false)
     {
@@ -195,14 +205,22 @@ public partial class MainWindow : Window
     }
 
     static CarouselItem ToCarouselItem(Game game) =>
-        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game), ImageStore.GetBackCoverPath(game));
+        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game), ImageStore.GetBackCoverPath(game), game.Platform);
 
     void RefreshFilterTabs()
     {
         var tabs = new List<FilterTab>
         {
-            new() { Label = $"Todos los juegos ({Games.Count})", IsSelected = _activeFilter is null },
+            new() { Label = $"Todos los juegos ({Games.Count})", IsSelected = _activeFilter is null && _activePlatform is null },
         };
+
+        // Las consolas solo salen arriba si tienen algún juego (o si es la que estás viendo).
+        foreach (var platform in Platforms.All)
+        {
+            var count = CountGames(platform);
+            if (count > 0 || platform.Id == _activePlatform)
+                tabs.Add(new FilterTab { Platform = platform, Label = $"{platform.Name} ({count})", IsSelected = platform.Id == _activePlatform });
+        }
 
         foreach (var filter in Filters)
         {
@@ -228,8 +246,11 @@ public partial class MainWindow : Window
         });
     }
 
-    void SelectFilter(GameFilter? filter)
+    void SelectFilter(GameFilter? filter) => SelectView(null, filter);
+
+    void SelectView(string? platform, GameFilter? filter)
     {
+        _activePlatform = platform;
         _activeFilter = filter;
         RefreshFilterTabs();
         RefreshCarousel(0, jump: true);
@@ -242,10 +263,13 @@ public partial class MainWindow : Window
 
     void CycleFilter(int direction)
     {
-        var options = new List<GameFilter?> { null };
-        options.AddRange(Filters);
-        var current = options.IndexOf(_activeFilter);
-        SelectFilter(options[(current + direction + options.Count) % options.Count]);
+        // El mismo orden que la barra de arriba: todos, consolas con juegos y filtros.
+        var options = new List<(string? Platform, GameFilter? Filter)> { (null, null) };
+        options.AddRange(Platforms.All.Where(platform => CountGames(platform) > 0).Select(platform => ((string?)platform.Id, (GameFilter?)null)));
+        options.AddRange(Filters.Select(filter => ((string?)null, (GameFilter?)filter)));
+        var current = Math.Max(0, options.IndexOf((_activePlatform, _activeFilter)));
+        var next = options[(current + direction + options.Count) % options.Count];
+        SelectView(next.Platform, next.Filter);
     }
 
     void ShowDetails(int index)
@@ -253,8 +277,8 @@ public partial class MainWindow : Window
         if (IsAddCard(index))
         {
             TitleText.Text = "Importar juego";
-            Chips.ItemsSource = _activeFilter is { } filter && _visibleGames.Count == 0
-                ? new[] { $"«{filter.Name}» está vacío", "Asigna juegos con E desde «Todos los juegos»", "o importa juegos nuevos aquí" }
+            Chips.ItemsSource = ActiveViewName is { } view && _visibleGames.Count == 0
+                ? new[] { $"«{view}» está vacío", "Asigna juegos con E desde «Todos los juegos»", "o importa juegos nuevos aquí" }
                 : new[] { "Ejecutables, accesos directos y scripts", "C para importar una carpeta entera", "También puedes arrastrar archivos o carpetas aquí" };
             ActivateHint.Text = "Importar";
             GameHints.Visibility = Visibility.Collapsed;
@@ -304,6 +328,9 @@ public partial class MainWindow : Window
             });
         }
 
+        if (_activePlatform is null)
+            chips.Add(Platforms.Find(game.Platform)?.Name ?? "Sin consola");
+
         // En «Todos los juegos» enseñamos a qué filtros pertenece; dentro de un filtro ya se sabe.
         if (_activeFilter is null)
         {
@@ -345,7 +372,7 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = _activeFilter is null ? "Importar juego" : $"Importar juego a «{_activeFilter.Name}»",
+            Title = ActiveViewName is { } view ? $"Importar juego a «{view}»" : "Importar juego",
             Filter = GameLauncher.FileFilter,
             Multiselect = true,
             // Queremos el acceso directo tal cual, no el archivo al que apunta, para conservar sus argumentos.
@@ -364,7 +391,7 @@ public partial class MainWindow : Window
     }
 
     void OpenFolderImport(string folder) =>
-        FolderImporter.Open(folder, StatusOf, _activeFilter?.Name);
+        FolderImporter.Open(folder, StatusOf, ActiveViewName);
 
     bool IsInLibrary(string path) =>
         Games.Any(game => string.Equals(game.Path, path, StringComparison.OrdinalIgnoreCase));
@@ -400,6 +427,7 @@ public partial class MainWindow : Window
         Game? first = null;
         var added = 0;
         var relinked = 0;
+        var imported = new List<Game>();
 
         foreach (var (path, name) in games)
         {
@@ -426,13 +454,16 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            // Lo que se importa dentro de un filtro entra directamente en él.
+            // Lo que se importa dentro de un filtro o de una consola entra directamente en él.
             foreach (var filter in new[] { _activeFilter, groupFilter })
             {
                 if (filter is not null && !game.FilterIds.Contains(filter.Id))
                     game.FilterIds.Add(filter.Id);
             }
+            if (_activePlatform is not null)
+                game.Platform = _activePlatform;
 
+            imported.Add(game);
             first ??= game;
             added++;
         }
@@ -448,11 +479,29 @@ public partial class MainWindow : Window
         RefreshCarousel(0);
         _flow.Select(_visibleGames.IndexOf(first));
 
-        var target = (_activeFilter ?? groupFilter) is { } shown ? $"«{shown.Name}»" : "la biblioteca";
+        var target = (ActiveViewName ?? groupFilter?.Name) is { } shown ? $"«{shown}»" : "la biblioteca";
         var message = added == 1 ? $"«{first.Name}» añadido a {target}" : $"{added} juegos añadidos a {target}";
         if (relinked > 0)
             message += relinked == 1 ? " (1 ya lo tenías en otra carpeta)" : $" ({relinked} ya los tenías en otra carpeta)";
         ShowToast(message);
+
+        // Y ahora, de qué consola es cada uno (decide el borde de su caja).
+        PlatformPicker.Open(imported, _activePlatform);
+    }
+
+    void ApplyPlatforms(List<(Game Game, string? Platform)> choices)
+    {
+        var selected = SelectedGame;
+        foreach (var (game, platform) in choices)
+            game.Platform = platform;
+
+        Save();
+        RefreshKeeping(selected);
+
+        var assigned = choices.Where(choice => choice.Platform is not null).Select(choice => choice.Platform).Distinct().ToList();
+        ShowToast(assigned.Count == 1 && Platforms.Find(assigned[0]) is { } only
+            ? $"Consola guardada: {only.Name}"
+            : "Consolas guardadas");
     }
 
     void Launch(Game game)
@@ -529,6 +578,7 @@ public partial class MainWindow : Window
             return;
 
         game.Name = result.Name;
+        game.Platform = result.Platform;
         game.FilterIds = result.FilterIds;
         var message = "Cambios guardados";
         try
@@ -567,9 +617,9 @@ public partial class MainWindow : Window
         }
         else
         {
-            // Lo has sacado del filtro que estás viendo: desaparece del carrusel.
+            // Lo has sacado del filtro o de la consola que estás viendo: desaparece del carrusel.
             RefreshCarousel(index);
-            message = $"«{game.Name}» ya no está en «{_activeFilter!.Name}»";
+            message = $"«{game.Name}» ya no está en «{ActiveViewName}»";
         }
         ShowToast(message);
     }
@@ -635,7 +685,7 @@ public partial class MainWindow : Window
         Save();
 
         if (filter == _activeFilter)
-            SelectFilter(null);
+            SelectView(null, null);
         else
             RefreshFilterTabs();
         ShowToast($"Filtro «{filter.Name}» eliminado");
@@ -770,8 +820,8 @@ public partial class MainWindow : Window
 
         if (tab.IsAddButton)
             OpenFilterEditor(null);
-        else if (tab.Filter != _activeFilter)
-            SelectFilter(tab.Filter);
+        else if (tab.Filter != _activeFilter || tab.Platform?.Id != _activePlatform)
+            SelectView(tab.Platform?.Id, tab.Filter);
     }
 
     void OnFilterTabRightClick(object sender, MouseButtonEventArgs e)

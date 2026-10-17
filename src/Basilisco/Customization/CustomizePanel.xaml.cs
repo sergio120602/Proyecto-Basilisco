@@ -19,8 +19,9 @@ public sealed record ImageChange(string? NewPath, bool Remove);
 
 /// <summary>Lo que el usuario ha decidido en el menú de personalización.</summary>
 /// <param name="NewPath">Nueva ubicación del juego, o null si no ha cambiado.</param>
+/// <param name="Platform">Consola elegida para el juego (null: sin consola).</param>
 /// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
-public sealed record CustomizeResult(Game Game, string Name, string? NewPath, ImageChange Front, ImageChange Back, List<string> FilterIds);
+public sealed record CustomizeResult(Game Game, string Name, string? NewPath, ImageChange Front, ImageChange Back, string? Platform, List<string> FilterIds);
 
 /// <summary>
 /// Menú para cambiar el nombre, la portada, la contraportada y los filtros de un juego,
@@ -33,6 +34,7 @@ public partial class CustomizePanel : UserControl
     ImageChange _front = new(null, false);
     ImageChange _back = new(null, false);
     string? _newPath;
+    string? _platform;
 
     static readonly Brush MutedText = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
 
@@ -59,6 +61,21 @@ public partial class CustomizePanel : UserControl
         ErrorText.Visibility = Visibility.Collapsed;
         ShowPath(game.Path);
         NameBox.Text = game.Name;
+
+        _platform = game.Platform;
+        PlatformToggles.Children.Clear();
+        foreach (var option in PlatformOption.All)
+        {
+            var toggle = new ToggleButton
+            {
+                Content = option.Name,
+                Tag = option,
+                IsChecked = option.Id == _platform,
+                Style = (Style)FindResource("FilterToggle"),
+            };
+            toggle.Click += OnPlatformClick;
+            PlatformToggles.Children.Add(toggle);
+        }
 
         FilterToggles.Children.Clear();
         foreach (var filter in filters)
@@ -132,7 +149,7 @@ public partial class CustomizePanel : UserControl
 
         var front = Resolve(_front, ImageStore.GetCoverPath(_game));
         var back = Resolve(_back, ImageStore.GetBackCoverPath(_game));
-        _preview.SetItem(new CarouselItem(NameBox.Text, IsAddCard: false, front, back));
+        _preview.SetItem(new CarouselItem(NameBox.Text, IsAddCard: false, front, back, _platform));
         RemoveImageButton.IsEnabled = front is not null;
         RemoveBackImageButton.IsEnabled = back is not null;
     }
@@ -156,7 +173,7 @@ public partial class CustomizePanel : UserControl
             .Select(toggle => (string)toggle.Tag)
             .ToList();
 
-        var result = new CustomizeResult(_game, name, _newPath, _front, _back, filterIds);
+        var result = new CustomizeResult(_game, name, _newPath, _front, _back, _platform, filterIds);
         Close();
         Saved?.Invoke(result);
     }
@@ -236,6 +253,19 @@ public partial class CustomizePanel : UserControl
             _newPath = dialog.FileName;
             ShowPath(_newPath);
         }
+    }
+
+    /// <summary>Solo una consola a la vez: al elegir una se desmarcan las demás y la caja cambia de borde.</summary>
+    void OnPlatformClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleButton { Tag: PlatformOption option })
+            return;
+
+        _platform = option.Id;
+        foreach (var toggle in PlatformToggles.Children.OfType<ToggleButton>())
+            toggle.IsChecked = Equals(toggle.Tag, option);
+        UpdatePreview();
+        _preview.ShowFront();
     }
 
     void OnSearchFrontClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), false);
