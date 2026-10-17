@@ -34,6 +34,18 @@ public sealed class Game
     /// <summary>Fecha de lanzamiento (de LaunchBox o puesta a mano), para ordenar por ella. Null si no se sabe.</summary>
     public DateTime? ReleaseDate { get; set; }
 
+    /// <summary>Minutos jugados (se cuentan solos al jugar desde Basilisco, vienen de Steam o se ponen a mano).</summary>
+    public int PlayMinutes { get; set; }
+
+    /// <summary>Fondo propio del juego, dentro de basilisco-data/backgrounds: una imagen o un vídeo. Null: el de siempre.</summary>
+    public string? Background { get; set; }
+
+    /// <summary>True si el fondo es un vídeo (fondo dinámico).</summary>
+    public bool BackgroundIsVideo { get; set; }
+
+    /// <summary>Color de las letras con este juego seleccionado (#RRGGBB). Null: el de siempre.</summary>
+    public string? TextColor { get; set; }
+
     public DateTime AddedAt { get; set; }
     public DateTime? LastPlayed { get; set; }
     public int PlayCount { get; set; }

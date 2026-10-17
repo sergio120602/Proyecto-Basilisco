@@ -80,6 +80,8 @@ public partial class MainWindow : Window
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
+        Activated += (_, _) => { if (BackgroundVideo.Source is not null) BackgroundVideo.Play(); EndPlaySession(returned: true); };
+        Deactivated += (_, _) => BackgroundVideo.Pause();
         ZoomSlider.Value = Math.Clamp(_settings.Zoom, CoverFlow.MinZoom, CoverFlow.MaxZoom);
         ApplyZoom(ZoomSlider.Value, save: false);
 
@@ -593,11 +595,129 @@ public partial class MainWindow : Window
             GameHints.Visibility = Visibility.Visible;
         }
 
+        var selectedGame = IsAddCard(index) ? null : _visibleGames[index];
+        ApplyLook(selectedGame);
+        PlayTimeText.Text = selectedGame is null ? "" : PlayTimeLabel(selectedGame.PlayMinutes);
+        PlayTimeText.Visibility = selectedGame is null || _flow.ShelfMode ? Visibility.Collapsed : Visibility.Visible;
+
         UpdateOverlayLayout();
         TitlePanel.BeginAnimation(OpacityProperty, new DoubleAnimation(0.3, 1, TimeSpan.FromMilliseconds(220))
         {
             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
         });
+    }
+
+    static string PlayTimeLabel(int minutes) => minutes switch
+    {
+        <= 0 => "⏱  Aún sin tiempo de juego",
+        < 60 => $"⏱  {minutes} min jugados",
+        _ when minutes % 60 == 0 => $"⏱  {minutes / 60} h jugadas",
+        _ => $"⏱  {minutes / 60} h {minutes % 60} min jugadas",
+    };
+
+    string? _lookBackground;
+
+    /// <summary>
+    /// Fondo y color de letras del juego seleccionado (o los de siempre). El fondo cambia con un fundido y solo
+    /// se vuelve a cargar si es otro archivo.
+    /// </summary>
+    void ApplyLook(Game? game)
+    {
+        var color = game?.TextColor is { } hex && ColorConverter.ConvertFromString(hex) is Color custom ? custom : Color.FromRgb(0x1F, 0x26, 0x30);
+        Resources["UiText"] = new SolidColorBrush(color);
+        // Con letras claras, el halo alrededor del título pasa a ser oscuro para que se lean.
+        var light = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255 > 0.6;
+        var glow = light ? Colors.Black : Colors.White;
+        if (TitleText.Effect is System.Windows.Media.Effects.DropShadowEffect titleGlow)
+            titleGlow.Color = glow;
+        PlayTimeGlow.Color = glow;
+
+        var path = game is null ? null : ImageStore.GetBackgroundPath(game);
+        if (path is not null && !File.Exists(path))
+            path = null;
+        if (path == _lookBackground)
+            return;
+        _lookBackground = path;
+
+        var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(path is null ? 300 : 140));
+        fadeOut.Completed += (_, _) =>
+        {
+            if (_lookBackground != path)
+                return;
+            BackgroundVideo.Stop();
+            BackgroundVideo.Source = null;
+            BackgroundImage.Source = null;
+            Floor.Opacity = path is null ? 1 : 0.35;
+            if (path is null)
+                return;
+
+            if (game!.BackgroundIsVideo)
+            {
+                BackgroundVideo.Source = new Uri(path);
+                BackgroundVideo.Play();
+            }
+            else
+            {
+                BackgroundImage.Source = CoverArt.LoadImage(path, 2560);
+            }
+            BackgroundLayer.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(320)));
+        };
+        BackgroundLayer.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    void OnBackgroundVideoEnded(object sender, RoutedEventArgs e)
+    {
+        BackgroundVideo.Position = TimeSpan.Zero;
+        BackgroundVideo.Play();
+    }
+
+    // ---- Tiempo de juego ----
+
+    /// <summary>Partida en curso: desde que se lanza hasta que se cierra el juego o se vuelve a Basilisco.</summary>
+    sealed record PlaySession(Game Game, DateTime Started, System.Diagnostics.Process? Process);
+
+    PlaySession? _session;
+
+    void StartPlaySession(Game game, System.Diagnostics.Process? process)
+    {
+        EndPlaySession(returned: false);
+        _session = new PlaySession(game, DateTime.Now, process);
+        if (process is null)
+            return;
+        try
+        {
+            process.EnableRaisingEvents = true;
+            process.Exited += (_, _) => Dispatcher.BeginInvoke(() =>
+            {
+                // Un lanzador que se cierra al momento no cuenta: se espera a volver a Basilisco.
+                if (_session?.Process == process && DateTime.Now - _session.Started > TimeSpan.FromSeconds(20))
+                    EndPlaySession(returned: false);
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+        }
+    }
+
+    /// <param name="returned">True si se acaba porque has vuelto a Basilisco (los primeros segundos no cuentan: aún carga el juego).</param>
+    void EndPlaySession(bool returned)
+    {
+        if (_session is not { } session)
+            return;
+        var elapsed = DateTime.Now - session.Started;
+        if (returned && elapsed < TimeSpan.FromSeconds(20))
+            return;
+
+        _session = null;
+        var minutes = (int)Math.Min(elapsed.TotalMinutes, 12 * 60);
+        if (minutes < 1 || !Games.Contains(session.Game))
+            return;
+
+        session.Game.PlayMinutes += minutes;
+        Save();
+        if (SelectedGame == session.Game)
+            ShowDetails(_flow.SelectedIndex);
+        ShowToast($"{session.Game.Name}: +{(minutes < 60 ? $"{minutes} min" : $"{minutes / 60} h {minutes % 60} min")} de juego");
     }
 
     List<string> DescribeGame(Game game)
@@ -666,6 +786,10 @@ public partial class MainWindow : Window
         // El suelo empieza por detrás de las cajas laterales para que todas apoyen sobre él.
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));
         Floor.Margin = new Thickness(0, Math.Max(0, horizon.Y - 40), 0, 0);
+
+        // El tiempo de juego, justo debajo de la caja seleccionada.
+        var coverBottom = _flow.Project(new Point3D(0, 0, 0.1));
+        PlayTimeText.Margin = new Thickness(0, coverBottom.Y + 14, 0, 0);
     }
 
     void Activate(int index)
@@ -825,6 +949,7 @@ public partial class MainWindow : Window
                 return;
             game.SteamAppId = app.AppId;
             game.SteamOwner = app.Source == SteamSource.Family ? app.Owner ?? "otro miembro" : null;
+            game.PlayMinutes = Math.Max(game.PlayMinutes, app.PlaytimeMinutes);
             game.Platform ??= "pc";
             if (familyFilter is not null && app.Source == SteamSource.Family && !game.FilterIds.Contains(familyFilter.Id))
                 game.FilterIds.Add(familyFilter.Id);
@@ -882,7 +1007,7 @@ public partial class MainWindow : Window
 
         try
         {
-            GameLauncher.Launch(game);
+            StartPlaySession(game, GameLauncher.Launch(game));
         }
         catch (Exception ex)
         {
@@ -932,6 +1057,19 @@ public partial class MainWindow : Window
 
         game.Name = result.Name;
         game.ReleaseDate = result.ReleaseDate;
+        game.TextColor = result.TextColor;
+        game.PlayMinutes = result.PlayMinutes;
+        try
+        {
+            if (result.Background.NewPath is { } background)
+                ImageStore.SetBackground(game, background);
+            else if (result.Background.Remove)
+                ImageStore.RemoveBackground(game);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+        _lookBackground = "\0"; // Fuerza a recargar el fondo aunque el archivo se llame igual.
         game.Platform = result.Platform;
         game.Format = result.Format;
         game.FilterIds = result.FilterIds;

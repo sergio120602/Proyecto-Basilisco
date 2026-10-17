@@ -17,4 +17,7 @@ public static class AppInfo
 
     /// <summary>Franjas de cada consola (ps1.png, ps2.png…). Si falta alguna, Basilisco dibuja la suya.</summary>
     public static string BordersDirectory { get; } = Path.Combine(DataDirectory, "borders");
+
+    /// <summary>Fondos propios de cada juego (imágenes y vídeos).</summary>
+    public static string BackgroundsDirectory { get; } = Path.Combine(DataDirectory, "backgrounds");
 }

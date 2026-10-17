@@ -13,7 +13,8 @@ public static class GameLauncher
     public const string FileFilter =
         "Juegos y aplicaciones (*.exe;*.lnk;*.url;*.bat;*.cmd)|*.exe;*.lnk;*.url;*.bat;*.cmd|Todos los archivos (*.*)|*.*";
 
-    public static void Launch(Game game)
+    /// <returns>El proceso lanzado, si Windows lo da (para saber cuándo se cierra el juego).</returns>
+    public static Process? Launch(Game game)
     {
         // UseShellExecute permite abrir .exe, accesos directos (.lnk), .url, .bat y cualquier archivo asociado.
         var info = new ProcessStartInfo(game.Path) { UseShellExecute = true };
@@ -23,6 +24,6 @@ public static class GameLauncher
         if (extension is ".exe" or ".bat" or ".cmd")
             info.WorkingDirectory = Path.GetDirectoryName(game.Path) ?? "";
 
-        Process.Start(info);
+        return Process.Start(info);
     }
 }

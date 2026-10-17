@@ -9,6 +9,8 @@
         PreviewKeyDown="OnPreviewKeyDown" MouseWheel="OnMouseWheel">
 
     <Window.Resources>
+        <!-- Color de las letras de la pantalla principal; cambia con el juego seleccionado si tiene uno propio -->
+        <SolidColorBrush x:Key="UiText" Color="#1F2630"/>
         <Style x:Key="KeyBadge" TargetType="Border">
             <Setter Property="Background" Value="#3E6FD8"/>
             <Setter Property="CornerRadius" Value="5"/>
@@ -22,7 +24,7 @@
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
         <Style x:Key="HintText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#1F2630"/>
+            <Setter Property="Foreground" Value="{DynamicResource UiText}"/>
             <Setter Property="FontSize" Value="17"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -32,7 +34,7 @@
         <Style x:Key="HeaderTab" TargetType="ToggleButton">
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#2A313C"/>
+            <Setter Property="Foreground" Value="{DynamicResource UiText}"/>
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
@@ -68,6 +70,15 @@
             </LinearGradientBrush>
         </Grid.Background>
 
+        <!-- Fondo propio del juego seleccionado: imagen (estático) o vídeo (dinámico), con fundido al cambiar -->
+        <Grid x:Name="BackgroundLayer" IsHitTestVisible="False" Opacity="0">
+            <Image x:Name="BackgroundImage" Stretch="UniformToFill"/>
+            <MediaElement x:Name="BackgroundVideo" Stretch="UniformToFill" IsMuted="True" LoadedBehavior="Manual"
+                          MediaEnded="OnBackgroundVideoEnded"/>
+            <!-- Velo suave para que las cajas y las letras sigan destacando -->
+            <Border Background="#33000000"/>
+        </Grid>
+
         <!-- Suelo brillante sobre el que se reflejan las cajas -->
         <Border x:Name="Floor" IsHitTestVisible="False">
             <Border.Background>
@@ -93,7 +104,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Basilisco" FontSize="30" FontWeight="SemiBold" Foreground="#1B222C" VerticalAlignment="Center"/>
+                <TextBlock Text="Basilisco" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource UiText}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="VersionText" FontSize="13" Foreground="#5B6573" Margin="10,6,0,0" VerticalAlignment="Center"/>
             </StackPanel>
 
@@ -123,9 +134,17 @@
             </StackPanel>
         </Grid>
 
+        <!-- Tiempo de juego, debajo de la caja seleccionada -->
+        <TextBlock x:Name="PlayTimeText" VerticalAlignment="Top" HorizontalAlignment="Center" IsHitTestVisible="False"
+                   FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource UiText}">
+            <TextBlock.Effect>
+                <DropShadowEffect x:Name="PlayTimeGlow" Color="White" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
+            </TextBlock.Effect>
+        </TextBlock>
+
         <!-- Título y etiquetas del juego seleccionado -->
         <StackPanel x:Name="TitlePanel" VerticalAlignment="Bottom" HorizontalAlignment="Center" IsHitTestVisible="False">
-            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="#1B222C"
+            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}"
                        HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="1000">
                 <TextBlock.Effect>
                     <DropShadowEffect Color="White" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>

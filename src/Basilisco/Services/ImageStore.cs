@@ -38,9 +38,34 @@ public static class ImageStore
         faces.SetFrame(face, null);
     }
 
+    public static readonly string[] VideoExtensions = [".mp4", ".wmv", ".avi", ".mov", ".m4v", ".mkv"];
+
+    public const string VideoFilter = "Vídeos (*.mp4;*.wmv;*.avi;*.mov;*.m4v;*.mkv)|*.mp4;*.wmv;*.avi;*.mov;*.m4v;*.mkv";
+
+    public static bool IsVideo(string path) => VideoExtensions.Contains(Path.GetExtension(path).ToLowerInvariant());
+
+    public static string? GetBackgroundPath(Game game) => Resolve(AppInfo.BackgroundsDirectory, game.Background);
+
+    /// <summary>Copia la imagen o el vídeo como fondo del juego y borra el anterior.</summary>
+    public static void SetBackground(Game game, string sourcePath)
+    {
+        var fileName = Import(sourcePath, AppInfo.BackgroundsDirectory, $"{game.Id}-bg");
+        RemoveBackground(game);
+        game.Background = fileName;
+        game.BackgroundIsVideo = IsVideo(sourcePath);
+    }
+
+    public static void RemoveBackground(Game game)
+    {
+        Delete(AppInfo.BackgroundsDirectory, game.Background);
+        game.Background = null;
+        game.BackgroundIsVideo = false;
+    }
+
     /// <summary>Borra todas las imágenes del juego, de todos los formatos (al quitarlo de la biblioteca).</summary>
     public static void RemoveAll(Game game)
     {
+        RemoveBackground(game);
         foreach (var format in Enum.GetValues<CoverFormat>())
         {
             if (format == CoverFormat.Portrait && game.Portrait is null)
