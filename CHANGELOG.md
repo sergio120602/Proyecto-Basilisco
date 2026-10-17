@@ -3,6 +3,16 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.0] - 2026-10-17
+
+Apariencia de cada juego y tiempo de juego.
+
+- **Fondo de cada juego** (Personalizar → Fondo): **estático** con una imagen o **dinámico** con un vídeo (MP4, WMV, AVI, MOV, M4V o MKV) en bucle y sin sonido. Se ve detrás del carrusel cuando el juego está seleccionado y cambia con un fundido al pasar de un juego a otro. El vídeo se pausa cuando Basilisco no está en primer plano.
+- **Color de las letras** (Personalizar → Color de las letras): muestras rápidas (blanco, negro, gris, amarillo, celeste, rosa, verde) o cualquier color en `#RRGGBB`. Cambia el título, la barra de arriba, la de abajo y el tiempo de juego; con letras claras, el halo del título pasa a ser oscuro para que se lean.
+- **Tiempo de juego** debajo de la caja seleccionada. Se cuenta solo desde que lanzas un juego hasta que lo cierras o vuelves a Basilisco (los primeros 20 segundos no cuentan), se puede editar en Personalizar (horas y minutos, o «A cero») y al importar desde Steam se traen tus horas.
+- La vista previa de Personalizar enseña el fondo elegido detrás de la caja.
+- Los fondos se guardan en `basilisco-data/backgrounds/`, junto al .exe.
+
 ## [0.2.3] - 2026-10-17
 
 - **Cajas más grandes**: el carrusel se ve con un 20 % más de zoom por defecto.

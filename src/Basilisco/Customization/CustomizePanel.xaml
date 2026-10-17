@@ -29,6 +29,10 @@
                             </LinearGradientBrush>
                         </Border.Background>
                         <Grid Width="340" Height="340" Cursor="SizeAll">
+                            <!-- El fondo del juego detrás de la caja, para ver cómo queda -->
+                            <Image x:Name="PreviewBackground" Stretch="UniformToFill" IsHitTestVisible="False"/>
+                            <MediaElement x:Name="PreviewVideo" Stretch="UniformToFill" IsMuted="True" LoadedBehavior="Manual"
+                                          IsHitTestVisible="False" MediaEnded="OnPreviewVideoEnded"/>
                             <Viewport3D x:Name="PreviewViewport"/>
                         </Grid>
                     </Border>
@@ -39,6 +43,35 @@
                     </StackPanel>
                     <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="#5B6573" TextWrapping="Wrap"
                                Text="Arrastra la caja para girarla y ver su grosor. Las cuadradas se llenan con carátulas de 1024 × 1024 y las rectangulares con 600 × 800. Otras medidas se ven enteras, con negro en el hueco que sobra; usa «Ajustar…» para ampliarlas."/>
+
+                    <!-- Apariencia: fondo, color de las letras y tiempo de juego -->
+                    <TextBlock Text="FONDO" Style="{StaticResource FieldLabel}" Margin="2,24,0,8"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Imagen…" Click="OnBackgroundImageClick" Margin="0,0,8,8"
+                                ToolTip="Fondo estático: una imagen detrás del carrusel cuando este juego está seleccionado"/>
+                        <Button Style="{StaticResource PillButton}" Content="Vídeo…" Click="OnBackgroundVideoClick" Margin="0,0,8,8"
+                                ToolTip="Fondo dinámico: un vídeo en bucle y sin sonido"/>
+                        <Button x:Name="RemoveBackgroundButton" Style="{StaticResource PillButton}" Content="Quitar" Click="OnRemoveBackgroundClick" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="BackgroundText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+
+                    <TextBlock Text="COLOR DE LAS LETRAS" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
+                    <WrapPanel x:Name="ColorSwatches"/>
+                    <DockPanel Margin="0,4,0,0">
+                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center" Margin="10,0,0,0" Text="o un color: #RRGGBB"/>
+                        <TextBox x:Name="ColorBox" Style="{StaticResource FieldTextBox}" FontSize="14" TextChanged="OnColorBoxChanged"/>
+                    </DockPanel>
+
+                    <TextBlock Text="TIEMPO DE JUEGO" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="HoursBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="80"/>
+                        <TextBlock Text="h" FontSize="15" Foreground="#1F2630" VerticalAlignment="Center" Margin="8,0,16,0"/>
+                        <TextBox x:Name="MinutesBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="64"/>
+                        <TextBlock Text="min" FontSize="15" Foreground="#1F2630" VerticalAlignment="Center" Margin="8,0,16,0"/>
+                        <Button Style="{StaticResource PillButton}" Content="A cero" Click="OnResetPlayTimeClick"/>
+                    </StackPanel>
+                    <TextBlock FontSize="12" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
+                               Text="Se cuenta solo mientras juegas desde Basilisco. Se ve debajo del juego en el carrusel."/>
                 </StackPanel>
 
                 <!-- Con tantas secciones, en pantallas bajas el lado derecho se desplaza -->

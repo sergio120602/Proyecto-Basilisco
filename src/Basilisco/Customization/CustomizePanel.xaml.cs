@@ -47,9 +47,13 @@ public sealed class PendingFaces
 /// <param name="Platform">Consola elegida para el juego (null: sin consola).</param>
 /// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
 /// <param name="ReleaseDate">Fecha de lanzamiento (null si se ha dejado en blanco).</param>
+/// <param name="Background">Cambio del fondo (imagen o vídeo).</param>
+/// <param name="TextColor">Color de las letras (#RRGGBB) o null para el de siempre.</param>
+/// <param name="PlayMinutes">Tiempo de juego en minutos.</param>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
-    string? Platform, List<string> FilterIds, DateTime? ReleaseDate);
+    string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
+    ImageChange Background, string? TextColor, int PlayMinutes);
 
 /// <summary>Cara de la caja para la que se busca una imagen en internet.</summary>
 public enum ArtTarget { Front, Back, Spine }
@@ -67,6 +71,16 @@ public partial class CustomizePanel : UserControl
     string? _newPath;
     string? _platform;
     CancellationTokenSource? _autoFetch;
+    ImageChange _background = ImageChange.None;
+    string? _textColor;
+    bool _syncingColor;
+
+    // Muestras rápidas de color (null: el de siempre, que va bien con el fondo claro de Basilisco).
+    static readonly (string Name, string? Hex)[] Swatches =
+    [
+        ("Automático", null), ("Blanco", "#FFFFFF"), ("Negro", "#111418"), ("Gris", "#C8CDD5"),
+        ("Amarillo", "#FFD54A"), ("Celeste", "#7FD3FF"), ("Rosa", "#FF8FB1"), ("Verde", "#8BE38B"),
+    ];
 
     static readonly Brush MutedText = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
 
@@ -108,6 +122,13 @@ public partial class CustomizePanel : UserControl
         AutoFetchText.Visibility = Visibility.Collapsed;
         ShowPath(game.Path);
         NameBox.Text = game.Name;
+        _background = ImageChange.None;
+        _textColor = game.TextColor;
+        BuildSwatches();
+        SyncColor();
+        HoursBox.Text = (game.PlayMinutes / 60).ToString();
+        MinutesBox.Text = (game.PlayMinutes % 60).ToString();
+        UpdateBackgroundPreview();
         ReleaseBox.Text = game.ReleaseDate is { } released
             ? released is { Month: 1, Day: 1 } ? released.Year.ToString() : released.ToString("dd/MM/yyyy")
             : "";
@@ -363,7 +384,16 @@ public partial class CustomizePanel : UserControl
             .Select(toggle => (string)toggle.Tag)
             .ToList();
 
-        var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate);
+        if (!int.TryParse(HoursBox.Text.Trim().Length == 0 ? "0" : HoursBox.Text.Trim(), out var hours) || hours < 0 ||
+            !int.TryParse(MinutesBox.Text.Trim().Length == 0 ? "0" : MinutesBox.Text.Trim(), out var minutes) || minutes < 0)
+        {
+            ShowError("El tiempo de juego tiene que ser un número de horas y de minutos.");
+            HoursBox.Focus();
+            return;
+        }
+
+        var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
+            _background, _textColor, hours * 60 + minutes);
         Close();
         Saved?.Invoke(result);
     }
@@ -389,9 +419,134 @@ public partial class CustomizePanel : UserControl
         return false;
     }
 
+    /// <summary>Fondo que tendrá el juego si se guarda ahora.</summary>
+    string? CurrentBackground =>
+        _background.NewPath ?? (_background.Remove || _game is null ? null : ImageStore.GetBackgroundPath(_game));
+
+    void UpdateBackgroundPreview()
+    {
+        var path = CurrentBackground;
+        var video = path is not null && ImageStore.IsVideo(path);
+        PreviewVideo.Stop();
+        PreviewVideo.Source = null;
+        PreviewBackground.Source = null;
+        if (path is not null && File.Exists(path))
+        {
+            if (video)
+            {
+                PreviewVideo.Source = new Uri(path);
+                PreviewVideo.Play();
+            }
+            else
+            {
+                PreviewBackground.Source = CoverArt.LoadImage(path, 1200);
+            }
+        }
+
+        BackgroundText.Text = path is null ? "Sin fondo propio: se usa el de siempre."
+            : $"{(video ? "Fondo dinámico (vídeo)" : "Fondo estático (imagen)")} · {Path.GetFileName(_background.NewPath ?? path)}";
+        RemoveBackgroundButton.IsEnabled = path is not null;
+    }
+
+    void SetBackground(string path)
+    {
+        var video = ImageStore.IsVideo(path);
+        if (!video && !IsValidImage(path))
+            return;
+        _background = new ImageChange(path, false);
+        ErrorText.Visibility = Visibility.Collapsed;
+        UpdateBackgroundPreview();
+    }
+
+    void BuildSwatches()
+    {
+        ColorSwatches.Children.Clear();
+        foreach (var (name, hex) in Swatches)
+        {
+            var dot = new Border
+            {
+                Width = 16, Height = 16, CornerRadius = new CornerRadius(8), Margin = new Thickness(0, 0, 7, 0),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xAF)), BorderThickness = new Thickness(1),
+                Background = hex is null
+                    ? new LinearGradientBrush(Color.FromRgb(0x1B, 0x22, 0x2C), Colors.White, 45)
+                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)),
+            };
+            var toggle = new ToggleButton
+            {
+                Tag = hex,
+                Style = (Style)FindResource("FilterToggle"),
+                Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { dot, new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center } } },
+            };
+            toggle.Click += (_, _) =>
+            {
+                _textColor = hex;
+                SyncColor();
+            };
+            ColorSwatches.Children.Add(toggle);
+        }
+    }
+
+    void SyncColor()
+    {
+        foreach (var toggle in ColorSwatches.Children.OfType<ToggleButton>())
+            toggle.IsChecked = string.Equals(toggle.Tag as string, _textColor, StringComparison.OrdinalIgnoreCase);
+        _syncingColor = true;
+        ColorBox.Text = _textColor ?? "";
+        _syncingColor = false;
+    }
+
+    void OnColorBoxChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_syncingColor)
+            return;
+        var text = ColorBox.Text.Trim();
+        if (text.Length == 0)
+            _textColor = null;
+        else if (System.Text.RegularExpressions.Regex.IsMatch(text, "^#?[0-9a-fA-F]{6}$"))
+            _textColor = "#" + text.TrimStart('#').ToUpperInvariant();
+        else
+            return;
+        foreach (var toggle in ColorSwatches.Children.OfType<ToggleButton>())
+            toggle.IsChecked = string.Equals(toggle.Tag as string, _textColor, StringComparison.OrdinalIgnoreCase);
+    }
+
+    void OnBackgroundImageClick(object sender, RoutedEventArgs e)
+    {
+        if (PickImage("Elegir imagen de fondo") is { } path)
+            SetBackground(path);
+    }
+
+    void OnBackgroundVideoClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog { Title = "Elegir vídeo de fondo", Filter = ImageStore.VideoFilter };
+        if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+            SetBackground(dialog.FileName);
+    }
+
+    void OnRemoveBackgroundClick(object sender, RoutedEventArgs e)
+    {
+        _background = new ImageChange(null, true);
+        UpdateBackgroundPreview();
+    }
+
+    void OnResetPlayTimeClick(object sender, RoutedEventArgs e)
+    {
+        HoursBox.Text = "0";
+        MinutesBox.Text = "0";
+    }
+
+    void OnPreviewVideoEnded(object sender, RoutedEventArgs e)
+    {
+        PreviewVideo.Position = TimeSpan.Zero;
+        PreviewVideo.Play();
+    }
+
     void Close()
     {
         _autoFetch?.Cancel();
+        PreviewVideo.Stop();
+        PreviewVideo.Source = null;
+        PreviewBackground.Source = null;
         _game = null;
         _preview.Clear();
         Visibility = Visibility.Collapsed;

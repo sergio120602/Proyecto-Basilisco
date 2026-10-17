@@ -29,7 +29,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
 | Importar tu cuenta de Steam (instalados, toda la biblioteca y Steam Familiar) | `S` o botón «Steam» |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
-| Personalizar (nombre, portada, contraportada, lomo, consola y filtros) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada, contraportada, lomo, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
 | Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
 | Cambiar de filtro o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** y **Filtros** de arriba |
@@ -103,6 +103,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.2.1** — Consolas y filtros agrupados arriba, y orden personalizado, alfabético, por lanzamiento y por adición
 - [x] **v0.2.2** — Orden personalizado en modo estantería: coger, mover y soltar los juegos por su lomo
 - [x] **v0.2.3** — Cajas más grandes y barra de zoom
+- [x] **v0.3.0** — Fondo estático o dinámico, color de las letras y tiempo de juego por juego
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -111,7 +112,6 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - Información de cada juego (descripción, año, género…).
 - Búsqueda por nombre y categorías automáticas (jugados recientemente, favoritos…).
 - Soporte para otras plataformas (Epic Games, GOG, Xbox, etc.).
-- Registro de tiempo de juego.
 
 ## 🎮 Consolas
 
