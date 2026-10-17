@@ -12,24 +12,44 @@ namespace Basilisco.Carousel;
 /// </summary>
 public sealed class BoxModel
 {
-    // Algo más ancha que alta: la franja de la izquierda más una zona cuadrada para la carátula.
-    public const double Width = (double)CoverArt.Width / CoverArt.Height;
+    // El alto y el grosor son iguales para todas; el ancho depende del formato (cuadrada o rectangular).
     public const double Height = 1.0;
 
     /// <summary>Grosor de la caja; en proporción, el de una caja de CD de PS1.</summary>
     public const double Depth = 0.08;
 
-    const double W = Width / 2;
     const double D = Depth / 2;
 
-    // Cada cara se define con sus esquinas abajo-izquierda, abajo-derecha, arriba-derecha y arriba-izquierda
-    // vistas desde fuera, para que la textura quede derecha y la cara mire hacia fuera.
-    static readonly MeshGeometry3D FrontMesh = Quad(new(-W, 0, D), new(W, 0, D), new(W, Height, D), new(-W, Height, D));
-    static readonly MeshGeometry3D BackMesh = Quad(new(W, 0, -D), new(-W, 0, -D), new(-W, Height, -D), new(W, Height, -D));
-    static readonly MeshGeometry3D SpineMesh = Quad(new(-W, 0, -D), new(-W, 0, D), new(-W, Height, D), new(-W, Height, -D));
-    static readonly MeshGeometry3D EdgeMesh = Quad(new(W, 0, D), new(W, 0, -D), new(W, Height, -D), new(W, Height, D));
-    static readonly MeshGeometry3D TopMesh = Quad(new(-W, Height, D), new(W, Height, D), new(W, Height, -D), new(-W, Height, -D));
-    static readonly MeshGeometry3D BottomMesh = Quad(new(-W, 0, -D), new(W, 0, -D), new(W, 0, D), new(-W, 0, D));
+    /// <summary>Las seis caras de una caja de un ancho dado; se comparten entre todas las cajas del mismo formato.</summary>
+    sealed record Meshes(MeshGeometry3D Front, MeshGeometry3D Back, MeshGeometry3D Spine,
+                         MeshGeometry3D Edge, MeshGeometry3D Top, MeshGeometry3D Bottom)
+    {
+        // Cada cara se define con sus esquinas abajo-izquierda, abajo-derecha, arriba-derecha y arriba-izquierda
+        // vistas desde fuera, para que la textura quede derecha y la cara mire hacia fuera.
+        public static Meshes Create(double width)
+        {
+            var w = width / 2;
+            return new(
+                Quad(new(-w, 0, D), new(w, 0, D), new(w, Height, D), new(-w, Height, D)),
+                Quad(new(w, 0, -D), new(-w, 0, -D), new(-w, Height, -D), new(w, Height, -D)),
+                Quad(new(-w, 0, -D), new(-w, 0, D), new(-w, Height, D), new(-w, Height, -D)),
+                Quad(new(w, 0, D), new(w, 0, -D), new(w, Height, -D), new(w, Height, D)),
+                Quad(new(-w, Height, D), new(w, Height, D), new(w, Height, -D), new(-w, Height, -D)),
+                Quad(new(-w, 0, -D), new(w, 0, -D), new(w, 0, D), new(-w, 0, D)));
+        }
+    }
+
+    static readonly Dictionary<Models.CoverFormat, Meshes> MeshesByFormat = [];
+
+    static Meshes MeshesFor(Models.CoverFormat format)
+    {
+        if (!MeshesByFormat.TryGetValue(format, out var meshes))
+            MeshesByFormat[format] = meshes = Meshes.Create(CoverArt.BoxWidth(format));
+        return meshes;
+    }
+
+    /// <summary>Ancho de la caja de este formato en la escena (para colocar las cajas en el carrusel).</summary>
+    public static double WidthOf(Models.CoverFormat format) => CoverArt.BoxWidth(format);
 
     static readonly Color Plastic = Color.FromRgb(0x17, 0x18, 0x1C);
     static readonly BitmapSource Placeholder = CreatePlaceholder();
@@ -52,6 +72,12 @@ public sealed class BoxModel
 
     CarouselItem _item;
     bool _backRendered;
+    Models.CoverFormat? _format;
+    double _halfWidth;
+
+    // Caras en el mismo orden en que se crean: caja (delante, detrás, lomo, canto, arriba, abajo) y reflejo (las cuatro primeras).
+    readonly List<GeometryModel3D> _boxFaces = [];
+    readonly List<GeometryModel3D> _reflectionFaces = [];
 
     public Model3DGroup Box { get; } = new();
     public Model3DGroup Reflection { get; } = new();
@@ -85,19 +111,13 @@ public sealed class BoxModel
         mirrored.Children.Add(new ScaleTransform3D(1, -1, 1));
         Reflection.Transform = mirrored;
 
-        AddFace(Box, FrontMesh, _front);
-        AddFace(Box, BackMesh, _back);
-        AddFace(Box, SpineMesh, _spine);
-        AddFace(Box, EdgeMesh, _edge);
-        AddFace(Box, TopMesh, _edge);
-        AddFace(Box, BottomMesh, _edge);
+        foreach (var brush in new Brush[] { _front, _back, _spine, _edge, _edge, _edge })
+            _boxFaces.Add(AddFace(Box, brush));
 
         // WPF ya corrige la orientación de las caras al aplicar el espejo, así que el reflejo usa las mismas mallas.
         // Arriba y abajo no hacen falta: nunca se ven en el reflejo.
-        AddFace(Reflection, FrontMesh, _frontReflection);
-        AddFace(Reflection, BackMesh, _backReflection);
-        AddFace(Reflection, SpineMesh, _spineReflection);
-        AddFace(Reflection, EdgeMesh, _edgeReflection);
+        foreach (var brush in new Brush[] { _frontReflection, _backReflection, _spineReflection, _edgeReflection })
+            _reflectionFaces.Add(AddFace(Reflection, brush));
 
         SetArt(item);
         if (renderBackNow)
@@ -107,6 +127,20 @@ public sealed class BoxModel
     public void SetArt(CarouselItem item)
     {
         _item = item;
+
+        // La tarjeta de importar siempre es cuadrada; al cambiar de formato la caja cambia de ancho.
+        var format = item.IsAddCard ? Models.CoverFormat.Square : item.Format;
+        if (_format != format)
+        {
+            _format = format;
+            _halfWidth = CoverArt.BoxWidth(format) / 2;
+            var meshes = MeshesFor(format);
+            MeshGeometry3D[] box = [meshes.Front, meshes.Back, meshes.Spine, meshes.Edge, meshes.Top, meshes.Bottom];
+            for (var i = 0; i < _boxFaces.Count; i++)
+                _boxFaces[i].Geometry = box[i];
+            for (var i = 0; i < _reflectionFaces.Count; i++)
+                _reflectionFaces[i].Geometry = box[i];
+        }
 
         // Cantos del color del plástico de la consola.
         var plastic = PlatformArt.Plastic(item.Platform);
@@ -143,7 +177,7 @@ public sealed class BoxModel
             EnsureBack();
 
         double y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
-        var depthExtent = D * Math.Abs(Math.Cos(y)) + W * Math.Abs(Math.Sin(y));
+        var depthExtent = D * Math.Abs(Math.Cos(y)) + _halfWidth * Math.Abs(Math.Sin(y));
         var halfHeight = Height / 2;
         _lift.OffsetY = Math.Max(0, halfHeight * Math.Abs(Math.Cos(p)) + depthExtent * Math.Abs(Math.Sin(p)) - halfHeight);
     }
@@ -167,11 +201,13 @@ public sealed class BoxModel
         _backReflection.ImageSource = CoverArt.RenderReflection(back);
     }
 
-    void AddFace(Model3DGroup group, MeshGeometry3D mesh, Brush brush)
+    GeometryModel3D AddFace(Model3DGroup group, Brush brush)
     {
-        var face = new GeometryModel3D(mesh, new DiffuseMaterial(brush));
+        // La malla se pone en SetArt, cuando se sabe el formato de la caja.
+        var face = new GeometryModel3D { Material = new DiffuseMaterial(brush) };
         group.Children.Add(face);
         _faces.Add(face);
+        return face;
     }
 
     static MeshGeometry3D Quad(Point3D bottomLeft, Point3D bottomRight, Point3D topRight, Point3D topLeft)

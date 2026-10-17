@@ -17,49 +17,37 @@ public static class ImageStore
     public static bool IsImage(string path) =>
         SupportedExtensions.Contains(Path.GetExtension(path).ToLowerInvariant());
 
-    public static string? GetCoverPath(Game game) => Resolve(AppInfo.CoversDirectory, game.CoverImage);
+    /// <summary>Ruta de la imagen de esa cara en ese formato, o null si no tiene.</summary>
+    public static string? GetPath(Game game, CoverFormat format, Face face) =>
+        Resolve(AppInfo.CoversDirectory, game.Faces(format).Get(face));
 
-    public static void SetCover(Game game, string sourcePath)
+    /// <summary>Copia la imagen como nueva cara del juego en ese formato y borra la anterior.</summary>
+    public static void Set(Game game, CoverFormat format, Face face, string sourcePath)
     {
-        var fileName = Import(sourcePath, AppInfo.CoversDirectory, game.Id);
-        RemoveCover(game);
-        game.CoverImage = fileName;
+        var owner = $"{game.Id}-{format.ToString().ToLowerInvariant()}-{face.ToString().ToLowerInvariant()}";
+        var fileName = Import(sourcePath, AppInfo.CoversDirectory, owner);
+        Remove(game, format, face);
+        game.Faces(format).Set(face, fileName);
     }
 
-    public static void RemoveCover(Game game)
+    public static void Remove(Game game, CoverFormat format, Face face)
     {
-        Delete(AppInfo.CoversDirectory, game.CoverImage);
-        game.CoverImage = null;
+        var faces = game.Faces(format);
+        Delete(AppInfo.CoversDirectory, faces.Get(face));
+        faces.Set(face, null);
+        faces.SetFrame(face, null);
     }
 
-    public static string? GetBackCoverPath(Game game) => Resolve(AppInfo.CoversDirectory, game.BackImage);
-
-    public static void SetBackCover(Game game, string sourcePath)
+    /// <summary>Borra todas las imágenes del juego, de todos los formatos (al quitarlo de la biblioteca).</summary>
+    public static void RemoveAll(Game game)
     {
-        var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-back");
-        RemoveBackCover(game);
-        game.BackImage = fileName;
-    }
-
-    public static void RemoveBackCover(Game game)
-    {
-        Delete(AppInfo.CoversDirectory, game.BackImage);
-        game.BackImage = null;
-    }
-
-    public static string? GetSpinePath(Game game) => Resolve(AppInfo.CoversDirectory, game.SpineImage);
-
-    public static void SetSpine(Game game, string sourcePath)
-    {
-        var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-spine");
-        RemoveSpine(game);
-        game.SpineImage = fileName;
-    }
-
-    public static void RemoveSpine(Game game)
-    {
-        Delete(AppInfo.CoversDirectory, game.SpineImage);
-        game.SpineImage = null;
+        foreach (var format in Enum.GetValues<CoverFormat>())
+        {
+            if (format == CoverFormat.Portrait && game.Portrait is null)
+                continue;
+            foreach (var face in Enum.GetValues<Face>())
+                Remove(game, format, face);
+        }
     }
 
     public static string? GetFilterImagePath(GameFilter filter) => Resolve(AppInfo.FilterImagesDirectory, filter.Image);

@@ -38,7 +38,7 @@
                         <Button Style="{StaticResource PillButton}" Content="Contraportada" Margin="10,0,0,0" Click="OnShowBackClick"/>
                     </StackPanel>
                     <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="#5B6573" TextWrapping="Wrap"
-                               Text="Arrastra la caja para girarla y ver su grosor. Las cajas son cuadradas: las carátulas de 1024 × 1024 las llenan enteras. Otras medidas se muestran enteras, sin deformar ni recortar, con negro en el hueco que sobra."/>
+                               Text="Arrastra la caja para girarla y ver su grosor. Las cuadradas se llenan con carátulas de 1024 × 1024 y las rectangulares con 600 × 800. Otras medidas se ven enteras, con negro en el hueco que sobra; usa «Ajustar…» para ampliarlas."/>
                 </StackPanel>
 
                 <!-- Con tantas secciones, en pantallas bajas el lado derecho se desplaza -->
@@ -57,11 +57,25 @@
                     <TextBlock Text="NOMBRE" Style="{StaticResource FieldLabel}" Margin="2,26,0,8"/>
                     <TextBox x:Name="NameBox" Style="{StaticResource FieldTextBox}" TextChanged="OnNameChanged"/>
 
-                    <TextBlock Text="PORTADA" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
+                    <TextBlock Text="FORMATO DE LA CAJA" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
+                    <WrapPanel>
+                        <ToggleButton x:Name="SquareToggle" Style="{StaticResource FilterToggle}" Content="Cuadrada · 1024 × 1024"
+                                      Click="OnSquareClick"/>
+                        <ToggleButton x:Name="PortraitToggle" Style="{StaticResource FilterToggle}" Content="Rectangular · 600 × 800"
+                                      Click="OnPortraitClick"/>
+                    </WrapPanel>
+                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"
+                               Text="Cada formato guarda sus propias imágenes: al volver al otro, recuperas las que tenía."/>
+                    <TextBlock x:Name="AutoFetchText" FontSize="13" FontWeight="SemiBold" Foreground="#3E6FD8" Margin="2,6,0,0"
+                               TextWrapping="Wrap" Visibility="Collapsed"/>
+
+                    <TextBlock Text="PORTADA" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
                     <WrapPanel>
                         <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseImageClick" Margin="0,0,10,10"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en SteamGridDB" Click="OnSearchFrontClick" Margin="0,0,10,10"
                                 ToolTip="Descarga una carátula de steamgriddb.com"/>
+                        <Button x:Name="FrameFrontButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
+                                Click="OnFrameFrontClick" ToolTip="Amplía y mueve la portada para que cuadre en la caja"/>
                         <Button x:Name="RemoveImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
                                 Margin="0,0,10,10" Click="OnRemoveImageClick"/>
                     </WrapPanel>

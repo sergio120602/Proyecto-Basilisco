@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     readonly LibraryStore _store = new();
     readonly AppSettings _settings = AppSettings.Load();
     readonly SteamGridDbProvider _steamGridDb = new();
+    readonly SteamGridDbProvider _steamGridDbPortrait = new(CoverFormat.Portrait);
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
     readonly Library _library;
@@ -57,6 +58,8 @@ public partial class MainWindow : Window
 
         Customizer.Saved += ApplyCustomization;
         Customizer.ArtSearchRequested += OpenArtSearch;
+        Customizer.AutoFetch = AutoFetchAsync;
+        FormatEditor.Applied += ApplyFormat;
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
         FolderImporter.ImportRequested += ApplyFolderImport;
@@ -125,15 +128,23 @@ public partial class MainWindow : Window
             keep.Name = duplicate.Name;
 
         keep.Platform ??= duplicate.Platform;
-        if (keep.CoverImage is null)
-            (keep.CoverImage, duplicate.CoverImage) = (duplicate.CoverImage, null);
-        if (keep.BackImage is null)
-            (keep.BackImage, keep.BackFrame, duplicate.BackImage) = (duplicate.BackImage, duplicate.BackFrame, null);
-        if (keep.SpineImage is null)
-            (keep.SpineImage, keep.SpineFrame, duplicate.SpineImage) = (duplicate.SpineImage, duplicate.SpineFrame, null);
-        ImageStore.RemoveSpine(duplicate);
-        ImageStore.RemoveCover(duplicate);
-        ImageStore.RemoveBackCover(duplicate);
+        // Cada formato conserva sus imágenes y completa las que le falten con las del duplicado.
+        foreach (var format in Enum.GetValues<CoverFormat>())
+        {
+            if (format == CoverFormat.Portrait && duplicate.Portrait is null)
+                continue;
+            var mine = keep.Faces(format);
+            var theirs = duplicate.Faces(format);
+            foreach (var face in Enum.GetValues<Face>())
+            {
+                if (mine.Get(face) is not null || theirs.Get(face) is not { } file)
+                    continue;
+                mine.Set(face, file);
+                mine.SetFrame(face, theirs.GetFrame(face));
+                theirs.Set(face, null);
+            }
+        }
+        ImageStore.RemoveAll(duplicate);
 
         keep.FilterIds = keep.FilterIds.Union(duplicate.FilterIds).ToList();
         keep.PlayCount += duplicate.PlayCount;
@@ -185,7 +196,8 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen;
+    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
+                        FormatEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
@@ -209,8 +221,10 @@ public partial class MainWindow : Window
     }
 
     static CarouselItem ToCarouselItem(Game game) =>
-        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game), ImageStore.GetBackCoverPath(game), game.Platform,
-            ImageStore.GetSpinePath(game), game.BackFrame, game.SpineFrame);
+        new(game.Name, IsAddCard: false,
+            ImageStore.GetPath(game, game.Format, Face.Front), ImageStore.GetPath(game, game.Format, Face.Back), game.Platform,
+            ImageStore.GetPath(game, game.Format, Face.Spine), game.CurrentFaces.BackFrame, game.CurrentFaces.SpineFrame,
+            game.Format, game.CurrentFaces.FrontFrame);
 
     void RefreshFilterTabs()
     {
@@ -561,9 +575,7 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.Yes)
             return;
 
-        ImageStore.RemoveCover(game);
-        ImageStore.RemoveBackCover(game);
-        ImageStore.RemoveSpine(game);
+        ImageStore.RemoveAll(game);
         Games.Remove(game);
         Save();
         RefreshFilterTabs();
@@ -585,27 +597,26 @@ public partial class MainWindow : Window
 
         game.Name = result.Name;
         game.Platform = result.Platform;
-        // El encuadre por defecto no se guarda: así el archivo queda limpio y se reconoce como «entera».
-        game.BackFrame = result.BackFrame == ImageFrame.Default ? null : result.BackFrame;
-        game.SpineFrame = result.SpineFrame == ImageFrame.Default ? null : result.SpineFrame;
+        game.Format = result.Format;
         game.FilterIds = result.FilterIds;
         var message = "Cambios guardados";
         try
         {
-            if (result.Front.NewPath is { } front)
-                ImageStore.SetCover(game, front);
-            else if (result.Front.Remove)
-                ImageStore.RemoveCover(game);
+            // Las imágenes de cada formato van por separado: se guardan las de los dos.
+            foreach (var (format, pending) in result.Faces)
+            {
+                foreach (var face in Enum.GetValues<Face>())
+                {
+                    var change = pending.Change(face);
+                    if (change.NewPath is { } path)
+                        ImageStore.Set(game, format, face, path);
+                    else if (change.Remove)
+                        ImageStore.Remove(game, format, face);
 
-            if (result.Back.NewPath is { } back)
-                ImageStore.SetBackCover(game, back);
-            else if (result.Back.Remove)
-                ImageStore.RemoveBackCover(game);
-
-            if (result.Spine.NewPath is { } spine)
-                ImageStore.SetSpine(game, spine);
-            else if (result.Spine.Remove)
-                ImageStore.RemoveSpine(game);
+                    if (format == CoverFormat.Square || game.Portrait is not null)
+                        game.Faces(format).SetFrame(face, pending.Frame(face));
+                }
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -642,14 +653,99 @@ public partial class MainWindow : Window
     /// Busca en internet una imagen para el juego que se está personalizando: la portada en SteamGridDB,
     /// y la contraportada y el lomo (a partir de sus banners) en TheGamesDB.
     /// </summary>
-    void OpenArtSearch(string gameName, ArtTarget target)
+    void OpenArtSearch(string gameName, ArtTarget target, CoverFormat format)
     {
         switch (target)
         {
-            case ArtTarget.Front: ArtSearch.Open(_steamGridDb, _settings, gameName, Customizer.SetFrontImage); break;
+            case ArtTarget.Front:
+                ArtSearch.Open(format == CoverFormat.Portrait ? _steamGridDbPortrait : _steamGridDb, _settings, gameName, Customizer.SetFrontImage);
+                break;
             case ArtTarget.Back: ArtSearch.Open(_theGamesDb, _settings, gameName, Customizer.SetBackImage); break;
             case ArtTarget.Spine: ArtSearch.Open(_theGamesDbBanners, _settings, gameName, Customizer.SetSpineImage); break;
         }
+    }
+
+    /// <summary>
+    /// Imagen por defecto para una cara de un formato: la portada de SteamGridDB (con las medidas del formato)
+    /// y la contraportada de TheGamesDB. Null si falta la clave, no hay resultados o el servicio no responde.
+    /// </summary>
+    Task<string?> AutoFetchAsync(string name, CoverFormat format, Face face, CancellationToken cancellation)
+    {
+        ArtProvider? provider = face switch
+        {
+            Face.Front => format == CoverFormat.Portrait ? _steamGridDbPortrait : _steamGridDb,
+            Face.Back => _theGamesDb,
+            _ => null,
+        };
+        return provider is null ? Task.FromResult<string?>(null) : ArtAutoFetch.FirstImageAsync(provider, _settings, name, cancellation);
+    }
+
+    void OpenFormatEditor() => FormatEditor.Open(_visibleGames, SelectedGame);
+
+    /// <summary>Cambia el formato de los juegos y, si se ha pedido, pone imágenes por defecto donde falten.</summary>
+    async void ApplyFormat(FormatResult result)
+    {
+        var selected = SelectedGame;
+        foreach (var game in result.Games)
+            game.Format = result.Format;
+        Save();
+        RefreshKeeping(selected);
+
+        var name = result.Format == CoverFormat.Portrait ? "rectangular" : "cuadrado";
+        ShowToast(result.Games.Count == 1 ? $"«{result.Games[0].Name}» pasa a formato {name}" : $"{result.Games.Count} juegos pasan a formato {name}");
+
+        if (!result.AutoFetch)
+            return;
+
+        var empty = result.Games.Where(game => game.Faces(result.Format).IsEmpty).ToList();
+        if (empty.Count == 0)
+            return;
+
+        if (string.IsNullOrEmpty(_settings.SteamGridDbApiKey) && string.IsNullOrEmpty(_settings.TheGamesDbApiKey))
+        {
+            ShowToast("Para poner carátulas por defecto, guarda tus claves de SteamGridDB y TheGamesDB (Personalizar → Buscar)");
+            return;
+        }
+
+        // Una a una, para no saturar las APIs; cada caja se actualiza en cuanto llega su imagen.
+        var done = 0;
+        var withArt = 0;
+        foreach (var game in empty)
+        {
+            ShowToast($"Buscando carátulas por defecto… {++done} de {empty.Count}");
+            var changed = false;
+            foreach (var face in new[] { Face.Front, Face.Back })
+            {
+                var path = await AutoFetchAsync(game.Name, result.Format, face, CancellationToken.None);
+                // Mientras buscábamos ha podido quitarse el juego, cambiar de formato o recibir otra imagen.
+                if (path is null || !Games.Contains(game) || game.Format != result.Format || game.Faces(result.Format).Get(face) is not null)
+                    continue;
+                try
+                {
+                    ImageStore.Set(game, result.Format, face, path);
+                    changed = true;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                }
+            }
+
+            if (!changed)
+                continue;
+            withArt++;
+            Save();
+            var index = _visibleGames.IndexOf(game);
+            if (index >= 0)
+            {
+                _flow.UpdateItem(index, ToCarouselItem(game));
+                if (index == _flow.SelectedIndex)
+                    ShowDetails(index);
+            }
+        }
+
+        ShowToast(withArt == empty.Count
+            ? "Carátulas por defecto puestas"
+            : $"Carátulas por defecto puestas en {withArt} de {empty.Count} juegos (el resto no se encontró)");
     }
 
     void OpenFilterEditor(GameFilter? filter)
@@ -755,6 +851,7 @@ public partial class MainWindow : Window
             case Key.R: _flow.FlipSelected(); break;
             case Key.I: Import(); break;
             case Key.C: ImportFolder(); break;
+            case Key.F: OpenFormatEditor(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.Escape when _fullScreen: ToggleFullScreen(); break;
             default: return;
@@ -852,6 +949,8 @@ public partial class MainWindow : Window
     void OnImportClick(object sender, RoutedEventArgs e) => Import();
 
     void OnImportFolderClick(object sender, RoutedEventArgs e) => ImportFolder();
+
+    void OnFormatClick(object sender, RoutedEventArgs e) => OpenFormatEditor();
 
     void OnDragOver(object sender, DragEventArgs e)
     {
