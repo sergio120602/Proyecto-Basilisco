@@ -23,6 +23,9 @@ public sealed class AppSettings
     /// <summary>Orden de los juegos en el carrusel.</summary>
     public Models.SortMode SortMode { get; set; } = Models.SortMode.Custom;
 
+    /// <summary>Zoom del carrusel (barra de abajo a la derecha).</summary>
+    public double Zoom { get; set; } = 1.2;
+
     public static AppSettings Load()
     {
         try

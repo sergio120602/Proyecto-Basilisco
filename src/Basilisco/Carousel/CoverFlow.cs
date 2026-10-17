@@ -25,8 +25,16 @@ public sealed class CoverFlow
 {
     public const double CoverHeight = BoxModel.Height;
 
-    static readonly Point3D CameraPosition = new(0, 0.7, 3.7);
+    static readonly Point3D BaseCameraPosition = new(0, 0.7, 3.7);
     static readonly Point3D CameraTarget = new(0, 0.44, 0);
+
+    public const double MinZoom = 0.7;
+    public const double MaxZoom = 1.8;
+
+    // La cámara se acerca o se aleja del centro según el zoom (1 = la distancia original).
+    Point3D CameraPosition => CameraTarget + (BaseCameraPosition - CameraTarget) / _zoom;
+    double _zoom = 1;
+    PerspectiveCamera _camera = null!;
     const double FieldOfView = 55;
 
     // Disposición de las cajas laterales.
@@ -79,6 +87,18 @@ public sealed class CoverFlow
     public event Action<int>? SelectedIndexChanged;
 
     public int SelectedIndex => _target;
+
+    /// <summary>Tamaño con el que se ven las cajas (acerca o aleja la cámara).</summary>
+    public double Zoom
+    {
+        get => _zoom;
+        set
+        {
+            _zoom = Math.Clamp(value, MinZoom, MaxZoom);
+            _camera.Position = CameraPosition;
+            _camera.LookDirection = CameraTarget - CameraPosition;
+        }
+    }
 
     /// <summary>
     /// Modo estantería: las cajas se giran para enseñar solo el lomo, una junto a otra, para colocarlas a mano.
@@ -143,13 +163,13 @@ public sealed class CoverFlow
     public CoverFlow(Viewport3D viewport)
     {
         _viewport = viewport;
-        _viewport.Camera = new PerspectiveCamera
+        _viewport.Camera = _camera = new PerspectiveCamera
         {
             Position = CameraPosition,
             LookDirection = CameraTarget - CameraPosition,
             UpDirection = new Vector3D(0, 1, 0),
             FieldOfView = FieldOfView,
-            NearPlaneDistance = 0.1,
+            NearPlaneDistance = 0.05,
             FarPlaneDistance = 100,
         };
         _viewport.Children.Add(new ModelVisual3D { Content = BoxModel.CreateLighting() });

@@ -80,6 +80,8 @@ public partial class MainWindow : Window
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
+        ZoomSlider.Value = Math.Clamp(_settings.Zoom, CoverFlow.MinZoom, CoverFlow.MaxZoom);
+        ApplyZoom(ZoomSlider.Value, save: false);
 
         _gamepad.IsActive = () => IsActive && WindowState != WindowState.Minimized;
         _gamepad.Pressed += OnPadPressed;
@@ -1313,6 +1315,26 @@ public partial class MainWindow : Window
         UpdateShelfHints();
     }
 
+    /// <summary>Acerca o aleja las cajas; el título y el suelo se recolocan solos.</summary>
+    void ApplyZoom(double zoom, bool save = true)
+    {
+        _flow.Zoom = zoom;
+        ZoomText.Text = $"{_flow.Zoom * 100:0} %";
+        UpdateOverlayLayout();
+        if (!save)
+            return;
+        _settings.Zoom = _flow.Zoom;
+        _settings.Save();
+    }
+
+    void OnZoomChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_flow is not null && IsLoaded)
+            ApplyZoom(e.NewValue);
+    }
+
+    void StepZoom(double delta) => ZoomSlider.Value = Math.Clamp(ZoomSlider.Value + delta, ZoomSlider.Minimum, ZoomSlider.Maximum);
+
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         // Al volver al teclado, la barra de abajo vuelve a enseñar las teclas.
@@ -1346,6 +1368,8 @@ public partial class MainWindow : Window
             case Key.F: OpenFormatEditor(); break;
             case Key.S: OpenSteamImport(); break;
             case Key.F11: ToggleFullScreen(); break;
+            case Key.OemPlus or Key.Add: StepZoom(0.1); break;
+            case Key.OemMinus or Key.Subtract: StepZoom(-0.1); break;
             case Key.Escape when _fullScreen: ToggleFullScreen(); break;
             default: return;
         }
@@ -1356,6 +1380,13 @@ public partial class MainWindow : Window
     {
         if (IsPanelOpen)
             return;
+
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            StepZoom(e.Delta > 0 ? 0.05 : -0.05);
+            e.Handled = true;
+            return;
+        }
 
         // Acumulamos para que los touchpads (que mandan deltas pequeños) no aceleren el carrusel.
         _wheelDelta += e.Delta;
