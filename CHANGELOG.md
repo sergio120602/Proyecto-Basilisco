@@ -3,6 +3,19 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.0] - 2026-10-17
+
+Consolas: cada juego lleva la caja de su consola.
+
+- **Consolas disponibles**: PS1, PS2, PS3, PSP, Xbox, Xbox 360, Game Boy Advance, Wii, Wii U, Nintendo DS y PC.
+- **Menú «¿De qué consola son?»** cada vez que importas uno o varios juegos (archivos sueltos o una carpeta entera): botones para asignar la misma consola a todos de golpe y un desplegable para cada juego. «Ahora no» los deja sin consola.
+- **Borde de cada consola**: la franja de la izquierda de la portada cambia según la consola (PS1 negra con «PlayStation», PS2 con «PlayStation 2», PS3 con «PLAYSTATION 3», Xbox 360 con el degradado verde y la esfera, Wii blanca, Wii U azul…). Son recreaciones dibujadas por Basilisco, no los logotipos oficiales.
+- **El plástico también cambia**: los cantos, el lomo y la contraportada sin imagen toman el color de la caja de la consola (verde en Xbox 360, blanco en Wii, azul en Wii U…).
+- **Pestañas de consola** arriba, junto a tus filtros: aparecen las consolas que tienen algún juego. `Tab` también pasa por ellas.
+- **Mover un juego de consola** en Personalizar (`E`), sección «Consola»; la vista previa 3D cambia de borde al momento.
+- Lo que importas con una consola seleccionada arriba entra directamente en ella.
+- La franja de la izquierda es más ancha, como en las cajas reales; la zona de la carátula sigue siendo cuadrada para las imágenes de 1024 × 1024.
+
 ## [0.0.11] - 2026-10-17
 
 Descarga de carátulas desde internet.

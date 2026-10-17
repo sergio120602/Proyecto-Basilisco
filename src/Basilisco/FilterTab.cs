@@ -6,8 +6,12 @@ namespace Basilisco;
 /// <summary>Una pestaña de la barra de filtros de arriba.</summary>
 public sealed class FilterTab
 {
-    /// <summary>El filtro que representa; null para «Todos los juegos» y para el botón de crear.</summary>
+    /// <summary>El filtro que representa; null para «Todos los juegos», las consolas y el botón de crear.</summary>
     public GameFilter? Filter { get; init; }
+
+    /// <summary>La consola que representa, si es una pestaña de consola.</summary>
+    public Platform? Platform { get; init; }
+
     public required string Label { get; init; }
     public ImageSource? Icon { get; init; }
     public bool IsSelected { get; init; }

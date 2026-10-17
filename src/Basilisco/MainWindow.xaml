@@ -190,5 +190,6 @@
         <customization:ArtSearchPanel x:Name="ArtSearch"/>
         <customization:FilterPanel x:Name="FilterEditor"/>
         <customization:FolderImportPanel x:Name="FolderImporter"/>
+        <customization:PlatformPickerPanel x:Name="PlatformPicker"/>
     </Grid>
 </Window>

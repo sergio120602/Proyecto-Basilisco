@@ -28,8 +28,8 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
-| Personalizar (nombre, portada, contraportada y filtros) | `E` o clic derecho sobre la caja |
-| Cambiar de filtro | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
+| Personalizar (nombre, portada, contraportada, consola y filtros) | `E` o clic derecho sobre la caja |
+| Cambiar de filtro o de consola | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
 | Crear filtro | «+ Nuevo filtro» en la barra de arriba |
 | Editar o eliminar filtro | Clic derecho sobre su pestaña |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
@@ -66,6 +66,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] **Paso 4 · v0.0.5** — Personalización con imagen delantera y trasera de la caja
 - [x] **Paso 5 · v0.0.5** — Girar las cajas como modelos 3D completos, con su grosor
 - [x] **v0.0.11** — Descargar portadas de SteamGridDB y contraportadas de TheGamesDB desde Personalizar
+- [x] **v0.1.0** — Consolas (PS1, PS2, PS3, PSP, Xbox, Xbox 360, GBA, Wii, Wii U, DS y PC): menú al importar y caja con el borde de cada consola
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -77,6 +78,12 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - Soporte para mando.
 - Soporte para otras plataformas (Epic Games, GOG, Xbox, etc.).
 - Registro de tiempo de juego.
+
+## 🎮 Consolas
+
+Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, Game Boy Advance, Wii, Wii U, Nintendo DS o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
+
+Las franjas son recreaciones dibujadas por Basilisco; no incluye logotipos oficiales de ninguna marca.
 
 ## 🌐 Carátulas desde internet
 

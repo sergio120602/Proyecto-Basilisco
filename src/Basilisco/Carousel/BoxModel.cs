@@ -108,6 +108,12 @@ public sealed class BoxModel
     {
         _item = item;
 
+        // Cantos del color del plástico de la consola.
+        var plastic = PlatformArt.Plastic(item.Platform);
+        _edge.Color = plastic;
+        _edgeReflection.GradientStops[0].Color = Color.FromArgb(95, plastic.R, plastic.G, plastic.B);
+        _edgeReflection.GradientStops[1].Color = Color.FromArgb(0, plastic.R, plastic.G, plastic.B);
+
         var front = CoverArt.RenderCover(item);
         _front.ImageSource = front;
         _frontReflection.ImageSource = CoverArt.RenderReflection(front);
