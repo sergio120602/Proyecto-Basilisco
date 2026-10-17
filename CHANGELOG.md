@@ -3,6 +3,15 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.2] - 2026-10-17
+
+- **Editor de encuadre** («Ajustar…» en Personalizar → Contraportada): amplía la contraportada con la rueda del ratón o la barra de zoom (del 50 % al 1200 %) y muévela arrastrando para que cuadre en la caja. «Entera» la deja completa sin recortar y «Llenar» hace que ocupe toda la cara. Lo que queda fuera se recorta.
+- **Lomo personalizado**: nueva sección «Lomo» en Personalizar para poner una imagen en el lomo de la caja (el lado con el nombre que se ve en las cajas apiladas del carrusel), elegida a mano o arrastrada a la ventana. Las imágenes horizontales se giran para leerse de arriba abajo, y se encuadran con el mismo editor.
+- **Lomos desde TheGamesDB**: «Buscar en TheGamesDB» en la sección Lomo busca los *banners* del juego (TheGamesDB no tiene lomos como tal) y los usa girados.
+- El lomo con imagen se pinta al doble de resolución para que se lea bien.
+- La vista previa 3D tiene un botón «Lomo» para girar la caja y verlo de frente.
+- El lado derecho de Personalizar se adapta al alto de la ventana y se desplaza si no cabe.
+
 ## [0.1.1] - 2026-10-17
 
 - **Franjas oficiales de cada consola**: si en `basilisco-data/borders/` hay una imagen de la franja (`ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gba.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png`, `pc.png`), Basilisco la usa en lugar de la dibujada. Su ancho sale de su propia proporción para que no se deforme.

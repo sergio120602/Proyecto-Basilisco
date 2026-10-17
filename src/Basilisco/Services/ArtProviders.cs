@@ -178,10 +178,11 @@ public sealed class SteamGridDbProvider : ArtProvider
 }
 
 /// <summary>
-/// TheGamesDB (thegamesdb.net): base de datos de juegos con fotos de las cajas por delante y por detrás.
-/// De aquí se sacan las contraportadas.
+/// TheGamesDB (thegamesdb.net): base de datos de juegos con fotos de las cajas por delante y por detrás,
+/// y banners horizontales con el título. De aquí se sacan las contraportadas y, de los banners, los lomos.
 /// </summary>
-public sealed class TheGamesDbProvider : ArtProvider
+/// <param name="banners">True para buscar banners (para el lomo) en lugar de contraportadas.</param>
+public sealed class TheGamesDbProvider(bool banners = false) : ArtProvider
 {
     const string BaseUrl = "https://api.thegamesdb.net";
 
@@ -189,7 +190,7 @@ public sealed class TheGamesDbProvider : ArtProvider
     readonly Dictionary<string, List<ArtImage>> _backsByGame = [];
 
     public override string Name => "TheGamesDB";
-    public override string ImageKind => "contraportada";
+    public override string ImageKind => banners ? "imagen para el lomo" : "contraportada";
     public override string KeyHelp => "Entra en thegamesdb.net con tu cuenta y pulsa «API Access Request» al pie de la página. Es gratis, pero tienen que aprobarla.";
     public override string KeyUrl => "https://thegamesdb.net/";
 
@@ -208,7 +209,7 @@ public sealed class TheGamesDbProvider : ArtProvider
 
         var include = root.TryGetProperty("include", out var inc) ? inc : default;
         var platforms = ReadPlatforms(include);
-        if (include.ValueKind == JsonValueKind.Object && include.TryGetProperty("boxart", out var boxart))
+        if (!banners && include.ValueKind == JsonValueKind.Object && include.TryGetProperty("boxart", out var boxart))
             CacheBacks(boxart, "data");
 
         foreach (var game in list.EnumerateArray())
@@ -227,14 +228,15 @@ public sealed class TheGamesDbProvider : ArtProvider
         if (_backsByGame.TryGetValue(game.Id, out var cached))
             return cached;
 
-        var url = $"{BaseUrl}/v1/Games/Images?apikey={Uri.EscapeDataString(key)}&games_id={game.Id}&filter%5Btype%5D=boxart";
+        var type = banners ? "banner" : "boxart";
+        var url = $"{BaseUrl}/v1/Games/Images?apikey={Uri.EscapeDataString(key)}&games_id={game.Id}&filter%5Btype%5D={type}";
         using var json = await GetJsonAsync(new HttpRequestMessage(HttpMethod.Get, url), cancellation);
         if (json.RootElement.TryGetProperty("data", out var data))
             CacheBacks(data, "images");
         return _backsByGame.GetValueOrDefault(game.Id) ?? [];
     }
 
-    /// <summary>Lee las fotos de cajas («base_url» + lista por juego) y se queda con las de la parte de atrás.</summary>
+    /// <summary>Lee las imágenes («base_url» + lista por juego) y se queda con las de atrás de la caja, o con los banners.</summary>
     void CacheBacks(JsonElement section, string listProperty)
     {
         if (!section.TryGetProperty("base_url", out var baseUrl) || !section.TryGetProperty(listProperty, out var byGame) ||
@@ -251,7 +253,8 @@ public sealed class TheGamesDbProvider : ArtProvider
             {
                 foreach (var image in entry.Value.EnumerateArray())
                 {
-                    if (GetString(image, "side") != "back" || GetString(image, "filename") is not { } file)
+                    var wanted = banners ? GetString(image, "type") == "banner" : GetString(image, "side") == "back";
+                    if (!wanted || GetString(image, "filename") is not { } file)
                         continue;
                     var (width, height) = ParseResolution(GetString(image, "resolution"));
                     backs.Add(new ArtImage(original + file, thumb + file, width, height));

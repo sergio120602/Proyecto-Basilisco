@@ -6,7 +6,11 @@ using System.Windows.Media.Media3D;
 namespace Basilisco.Carousel;
 
 /// <param name="Platform">Consola del juego (decide el borde y el plástico de la caja), o null si no tiene.</param>
-public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null, string? BackImagePath = null, string? Platform = null);
+/// <param name="SpineImagePath">Imagen del lomo, o null para el lomo con el nombre.</param>
+/// <param name="BackFrame">Encuadre de la contraportada; null para verla entera.</param>
+/// <param name="SpineFrame">Encuadre de la imagen del lomo; null para verla entera.</param>
+public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null, string? BackImagePath = null, string? Platform = null,
+                                  string? SpineImagePath = null, Models.ImageFrame? BackFrame = null, Models.ImageFrame? SpineFrame = null);
 
 /// <summary>
 /// Carrusel 3D de cajas: la seleccionada de frente y el resto girado y apilado a los lados,

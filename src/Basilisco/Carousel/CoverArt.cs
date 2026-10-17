@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Basilisco.Models;
 
 namespace Basilisco.Carousel;
 
@@ -19,6 +20,9 @@ public static class CoverArt
     public const int Width = Spine + 2 + Height - Frame;
     const int SpineWidth = (int)(Height * BoxModel.Depth / BoxModel.Height);
     const double Scale = Height / 576.0;
+
+    // El lomo con imagen se pinta al doble de resolución; un banner girado no necesita más que esto de ancho.
+    const int SpineDecodeWidth = 2048;
 
     // Por encima de esto se decodifica reducida: la portada nunca se pinta más grande.
     const int MaxDecodeWidth = Width;
@@ -40,12 +44,68 @@ public static class CoverArt
     public static BitmapSource RenderBack(CarouselItem item)
     {
         var image = item.BackImagePath is null ? null : LoadImage(item.BackImagePath);
-        return Rasterize(Width, Height, dc => DrawBack(dc, item.Title, image, item.Platform));
+        return Rasterize(Width, Height, dc => DrawBack(dc, item.Title, image, item.Platform, item.BackFrame ?? ImageFrame.Default));
     }
 
-    /// <summary>Lomo de la caja: tan alto como la portada y tan ancho como el grosor, con el nombre en vertical.</summary>
-    public static BitmapSource RenderSpine(CarouselItem item) =>
-        Rasterize(SpineWidth, Height, dc => DrawSpine(dc, item.IsAddCard ? "" : item.Title, item.Platform));
+    /// <summary>
+    /// Lomo de la caja: tan alto como la portada y tan ancho como el grosor, con el nombre en vertical
+    /// o con la imagen que haya elegido el usuario (entonces al doble de resolución, para que se lea bien).
+    /// </summary>
+    public static BitmapSource RenderSpine(CarouselItem item)
+    {
+        var image = item.SpineImagePath is null || item.IsAddCard ? null : LoadImage(item.SpineImagePath, SpineDecodeWidth);
+        var scale = image is null ? 1 : 2;
+        return Rasterize(SpineWidth * scale, Height * scale, dc =>
+        {
+            dc.PushTransform(new ScaleTransform(scale, scale));
+            DrawSpine(dc, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default);
+            dc.Pop();
+        });
+    }
+
+    /// <summary>Medidas de cada cara, para que el editor de encuadre enseñe la cara con su forma real.</summary>
+    public static Size BackSize => new(Width, Height);
+    public static Size SpineSize => new(SpineWidth, Height);
+
+    /// <summary>
+    /// Pinta una imagen dentro de su cara con el encuadre elegido. Con el encuadre por defecto la imagen
+    /// se ve entera (sin deformar ni recortar); con zoom se amplía alrededor del centro y se mueve, y lo que
+    /// sale de la cara se recorta. Las imágenes horizontales del lomo se giran para leerse de arriba abajo.
+    /// </summary>
+    static void DrawFramed(DrawingContext dc, BitmapSource image, Rect area, ImageFrame frame, bool rotateWide = false)
+    {
+        var rotate = rotateWide && image.Width > image.Height;
+        double width = rotate ? image.Height : image.Width, height = rotate ? image.Width : image.Height;
+
+        var fit = FitInside(width, height, area);
+        var w = fit.Width * frame.Zoom;
+        var h = fit.Height * frame.Zoom;
+        var center = new Point(area.X + area.Width / 2 + frame.X * area.Width, area.Y + area.Height / 2 + frame.Y * area.Height);
+
+        dc.PushClip(new RectangleGeometry(area));
+        if (rotate)
+        {
+            // Girada 90° en sentido horario: el texto de un banner queda de arriba abajo, como en los lomos reales.
+            dc.PushTransform(new RotateTransform(90, center.X, center.Y));
+            dc.DrawImage(image, new Rect(center.X - h / 2, center.Y - w / 2, h, w));
+            dc.Pop();
+        }
+        else
+        {
+            dc.DrawImage(image, new Rect(center.X - w / 2, center.Y - h / 2, w, h));
+        }
+        dc.Pop();
+    }
+
+    /// <summary>Zoom con el que la imagen llena toda la cara (recortando lo que sobre), para el botón «Llenar».</summary>
+    public static double FillZoom(Size image, Size face, bool rotateWide)
+    {
+        var rotate = rotateWide && image.Width > image.Height;
+        double width = rotate ? image.Height : image.Width, height = rotate ? image.Width : image.Height;
+        var fit = Math.Min(face.Width / width, face.Height / height);
+        var fill = Math.Max(face.Width / width, face.Height / height);
+        return fill / fit;
+    }
 
     /// <summary>
     /// Versión para el reflejo en el suelo: a media resolución y desvaneciéndose desde el borde de abajo,
@@ -132,7 +192,7 @@ public static class CoverArt
         }
     }
 
-    static void DrawBack(DrawingContext dc, string title, BitmapSource? image, string? platform)
+    static void DrawBack(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame)
     {
         var bounds = new Rect(0, 0, Width, Height);
         // La trasera sin imagen es del color del plástico de la consola.
@@ -142,10 +202,10 @@ public static class CoverArt
 
         if (image is not null)
         {
-            // Igual que la portada: entera, sin deformar ni recortar, con negro en el hueco que sobre.
+            // Con el encuadre que haya elegido el usuario (por defecto, entera y con negro en el hueco que sobre).
             var area = new Rect(Frame, Frame, Width - Frame * 2, Height - Frame * 2);
             dc.DrawRectangle(Brushes.Black, null, area);
-            dc.DrawImage(image, FitInside(image.Width, image.Height, area));
+            DrawFramed(dc, image, area, frame);
         }
         else
         {
@@ -160,14 +220,22 @@ public static class CoverArt
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2, Frame / 2, Width - Frame, Height - Frame));
     }
 
-    static void DrawSpine(DrawingContext dc, string title, string? platform)
+    static void DrawSpine(DrawingContext dc, string title, string? platform, BitmapSource? image, ImageFrame frame)
     {
         // El lomo es del plástico de la consola (verde en Xbox 360, blanco en Wii…).
         var plastic = PlatformArt.Plastic(platform);
-        dc.DrawRectangle(new LinearGradientBrush(Shade(plastic, 1.25), Shade(plastic, 0.8), 0), null, new Rect(0, 0, SpineWidth, Height));
+        var bounds = new Rect(0, 0, SpineWidth, Height);
+        dc.DrawRectangle(new LinearGradientBrush(Shade(plastic, 1.25), Shade(plastic, 0.8), 0), null, bounds);
+
+        if (image is not null)
+        {
+            // Imagen propia del lomo, encuadrada como haya elegido el usuario; sustituye al nombre.
+            dc.DrawRectangle(Brushes.Black, null, bounds);
+            DrawFramed(dc, image, bounds, frame, rotateWide: true);
+        }
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), 3), new Rect(1.5, 1.5, SpineWidth - 3, Height - 3));
 
-        if (title.Length == 0)
+        if (title.Length == 0 || image is not null)
             return;
 
         // Texto girado 90° para leerse de arriba abajo, como en el lomo de las cajas reales.

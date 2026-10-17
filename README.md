@@ -28,7 +28,8 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
-| Personalizar (nombre, portada, contraportada, consola y filtros) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada, contraportada, lomo, consola y filtros) | `E` o clic derecho sobre la caja |
+| Encuadrar contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
 | Cambiar de filtro o de consola | `Tab` / `Shift+Tab` o clic en la pestaña de arriba |
 | Crear filtro | «+ Nuevo filtro» en la barra de arriba |
 | Editar o eliminar filtro | Clic derecho sobre su pestaña |
@@ -67,6 +68,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 - [x] **Paso 5 · v0.0.5** — Girar las cajas como modelos 3D completos, con su grosor
 - [x] **v0.0.11** — Descargar portadas de SteamGridDB y contraportadas de TheGamesDB desde Personalizar
 - [x] **v0.1.0** — Consolas (PS1, PS2, PS3, PSP, Xbox, Xbox 360, GBA, Wii, Wii U, DS y PC): menú al importar y caja con el borde de cada consola
+- [x] **v0.1.2** — Editor de encuadre para la contraportada y lomo personalizado (imagen propia o banner de TheGamesDB)
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [ ] Detectar la instalación de Steam, leer sus bibliotecas y lanzar sus juegos
@@ -87,7 +89,7 @@ Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-dat
 
 ## 🌐 Carátulas desde internet
 
-En Personalizar (`E`) puedes buscar y descargar la portada en **SteamGridDB** y la contraportada en **TheGamesDB**. Cada servicio necesita tu propia clave de API (gratuita), que Basilisco te pide la primera vez:
+En Personalizar (`E`) puedes buscar y descargar la portada en **SteamGridDB**, y la contraportada y el lomo en **TheGamesDB** (para el lomo se usan sus *banners*, girados). Cada servicio necesita tu propia clave de API (gratuita), que Basilisco te pide la primera vez:
 
 - **SteamGridDB**: entra en [steamgriddb.com](https://www.steamgriddb.com) con tu cuenta → Preferencias → API → genera la clave. Es inmediata.
 - **TheGamesDB**: entra en [thegamesdb.net](https://thegamesdb.net) con tu cuenta y pulsa «API Access Request» al pie de la página. Tienen que aprobarla y tiene un límite de consultas al mes.
