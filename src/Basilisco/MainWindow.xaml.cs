@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     readonly AppSettings _settings = AppSettings.Load();
     readonly SteamGridDbProvider _steamGridDb = new();
     readonly TheGamesDbProvider _theGamesDb = new();
+    readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
     readonly Library _library;
     readonly CoverFlow _flow;
 
@@ -127,7 +128,10 @@ public partial class MainWindow : Window
         if (keep.CoverImage is null)
             (keep.CoverImage, duplicate.CoverImage) = (duplicate.CoverImage, null);
         if (keep.BackImage is null)
-            (keep.BackImage, duplicate.BackImage) = (duplicate.BackImage, null);
+            (keep.BackImage, keep.BackFrame, duplicate.BackImage) = (duplicate.BackImage, duplicate.BackFrame, null);
+        if (keep.SpineImage is null)
+            (keep.SpineImage, keep.SpineFrame, duplicate.SpineImage) = (duplicate.SpineImage, duplicate.SpineFrame, null);
+        ImageStore.RemoveSpine(duplicate);
         ImageStore.RemoveCover(duplicate);
         ImageStore.RemoveBackCover(duplicate);
 
@@ -205,7 +209,8 @@ public partial class MainWindow : Window
     }
 
     static CarouselItem ToCarouselItem(Game game) =>
-        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game), ImageStore.GetBackCoverPath(game), game.Platform);
+        new(game.Name, IsAddCard: false, ImageStore.GetCoverPath(game), ImageStore.GetBackCoverPath(game), game.Platform,
+            ImageStore.GetSpinePath(game), game.BackFrame, game.SpineFrame);
 
     void RefreshFilterTabs()
     {
@@ -558,6 +563,7 @@ public partial class MainWindow : Window
 
         ImageStore.RemoveCover(game);
         ImageStore.RemoveBackCover(game);
+        ImageStore.RemoveSpine(game);
         Games.Remove(game);
         Save();
         RefreshFilterTabs();
@@ -579,6 +585,9 @@ public partial class MainWindow : Window
 
         game.Name = result.Name;
         game.Platform = result.Platform;
+        // El encuadre por defecto no se guarda: así el archivo queda limpio y se reconoce como «entera».
+        game.BackFrame = result.BackFrame == ImageFrame.Default ? null : result.BackFrame;
+        game.SpineFrame = result.SpineFrame == ImageFrame.Default ? null : result.SpineFrame;
         game.FilterIds = result.FilterIds;
         var message = "Cambios guardados";
         try
@@ -592,6 +601,11 @@ public partial class MainWindow : Window
                 ImageStore.SetBackCover(game, back);
             else if (result.Back.Remove)
                 ImageStore.RemoveBackCover(game);
+
+            if (result.Spine.NewPath is { } spine)
+                ImageStore.SetSpine(game, spine);
+            else if (result.Spine.Remove)
+                ImageStore.RemoveSpine(game);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -624,13 +638,18 @@ public partial class MainWindow : Window
         ShowToast(message);
     }
 
-    /// <summary>Busca en internet la portada (SteamGridDB) o la contraportada (TheGamesDB) del juego que se está personalizando.</summary>
-    void OpenArtSearch(string gameName, bool back)
+    /// <summary>
+    /// Busca en internet una imagen para el juego que se está personalizando: la portada en SteamGridDB,
+    /// y la contraportada y el lomo (a partir de sus banners) en TheGamesDB.
+    /// </summary>
+    void OpenArtSearch(string gameName, ArtTarget target)
     {
-        if (back)
-            ArtSearch.Open(_theGamesDb, _settings, gameName, Customizer.SetBackImage);
-        else
-            ArtSearch.Open(_steamGridDb, _settings, gameName, Customizer.SetFrontImage);
+        switch (target)
+        {
+            case ArtTarget.Front: ArtSearch.Open(_steamGridDb, _settings, gameName, Customizer.SetFrontImage); break;
+            case ArtTarget.Back: ArtSearch.Open(_theGamesDb, _settings, gameName, Customizer.SetBackImage); break;
+            case ArtTarget.Spine: ArtSearch.Open(_theGamesDbBanners, _settings, gameName, Customizer.SetSpineImage); break;
+        }
     }
 
     void OpenFilterEditor(GameFilter? filter)

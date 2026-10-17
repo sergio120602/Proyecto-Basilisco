@@ -53,7 +53,7 @@ public sealed class BoxPreview
         get
         {
             var yaw = ((_yawTarget % 360) + 360) % 360;
-            return yaw is > 90 and < 270;
+            return yaw is >= 135 and < 270;
         }
     }
 
@@ -82,7 +82,20 @@ public sealed class BoxPreview
         _yaw = _pitch = _yawTarget = _pitchTarget = 0;
     }
 
+    /// <summary>True si se está viendo el lomo (la caja girada un cuarto de vuelta).</summary>
+    public bool IsShowingSpine
+    {
+        get
+        {
+            var yaw = ((_yawTarget % 360) + 360) % 360;
+            return yaw is > 45 and < 135;
+        }
+    }
+
     public void ShowFront() => TurnTo(0);
+
+    /// <summary>Gira la caja un cuarto de vuelta para enseñar el lomo de frente.</summary>
+    public void ShowSpine() => TurnTo(90);
 
     public void ShowBack() => TurnTo(180);
 

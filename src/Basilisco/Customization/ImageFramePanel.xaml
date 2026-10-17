@@ -1,0 +1,46 @@
+<UserControl x:Class="Basilisco.Customization.ImageFramePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
+    <!-- Se abre encima de Personalizar; el fondo se come los clics para no cerrar el menú de debajo -->
+    <Grid Background="#B30E1218" MouseLeftButtonDown="OnBackdropMouseDown">
+        <Border Background="#F4F6F9" CornerRadius="20" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
+            </Border.Effect>
+            <StackPanel>
+                <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" Foreground="#1B222C"/>
+                <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"
+                           Text="Arrastra la imagen para moverla y usa la rueda del ratón (o la barra) para ampliarla. Lo que quede fuera de la cara se recorta."/>
+
+                <!-- La cara tal como se verá en la caja -->
+                <Border Margin="0,18,0,0" Background="#D3D8E0" CornerRadius="12" Padding="14" HorizontalAlignment="Center">
+                    <Image x:Name="FaceImage" MaxWidth="640" MaxHeight="540" Stretch="Uniform" Cursor="SizeAll"
+                           MouseLeftButtonDown="OnFaceMouseDown" MouseMove="OnFaceMouseMove"
+                           MouseLeftButtonUp="OnFaceMouseUp" LostMouseCapture="OnFaceLostCapture" MouseWheel="OnFaceMouseWheel"/>
+                </Border>
+
+                <DockPanel Margin="0,18,0,0">
+                    <TextBlock Text="ZOOM" Style="{StaticResource FieldLabel}" Margin="2,0,12,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ZoomText" DockPanel.Dock="Right" Width="56" FontSize="14" Foreground="#1F2630"
+                               VerticalAlignment="Center" TextAlignment="Right"/>
+                    <Slider x:Name="ZoomSlider" Minimum="0" Maximum="1" VerticalAlignment="Center" Focusable="False"
+                            ValueChanged="OnZoomSliderChanged"/>
+                </DockPanel>
+
+                <Grid Margin="0,22,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PillButton}" Content="Entera" Click="OnFitClick"
+                                ToolTip="La imagen entera dentro de la cara, sin recortar"/>
+                        <Button Style="{StaticResource PillButton}" Content="Llenar" Margin="10,0,0,0" Click="OnFillClick"
+                                ToolTip="La imagen llena toda la cara, recortando lo que sobre"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource PillButton}" Content="Cancelar" Click="OnCancelClick"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="Aceptar" Margin="12,0,0,0" Click="OnAcceptClick"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

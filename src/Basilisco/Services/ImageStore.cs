@@ -47,6 +47,21 @@ public static class ImageStore
         game.BackImage = null;
     }
 
+    public static string? GetSpinePath(Game game) => Resolve(AppInfo.CoversDirectory, game.SpineImage);
+
+    public static void SetSpine(Game game, string sourcePath)
+    {
+        var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-spine");
+        RemoveSpine(game);
+        game.SpineImage = fileName;
+    }
+
+    public static void RemoveSpine(Game game)
+    {
+        Delete(AppInfo.CoversDirectory, game.SpineImage);
+        game.SpineImage = null;
+    }
+
     public static string? GetFilterImagePath(GameFilter filter) => Resolve(AppInfo.FilterImagesDirectory, filter.Image);
 
     public static void SetFilterImage(GameFilter filter, string sourcePath)

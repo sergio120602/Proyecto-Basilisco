@@ -1,7 +1,8 @@
 <UserControl x:Class="Basilisco.Customization.CustomizePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             PreviewKeyDown="OnPreviewKeyDown">
+             xmlns:local="clr-namespace:Basilisco.Customization"
+             PreviewKeyDown="OnPreviewKeyDown" SizeChanged="OnSizeChanged">
     <!-- El fondo oscurece el carrusel y bloquea los clics mientras el menú está abierto -->
     <Grid Background="#A60E1218" MouseLeftButtonDown="OnBackdropMouseDown">
         <Border Background="#F4F6F9" CornerRadius="20" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -32,14 +33,17 @@
                         </Grid>
                     </Border>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
-                        <Button Style="{StaticResource PillButton}" Content="Ver portada" Click="OnShowFrontClick"/>
-                        <Button Style="{StaticResource PillButton}" Content="Ver contraportada" Margin="10,0,0,0" Click="OnShowBackClick"/>
+                        <Button Style="{StaticResource PillButton}" Content="Portada" Click="OnShowFrontClick"/>
+                        <Button Style="{StaticResource PillButton}" Content="Lomo" Margin="10,0,0,0" Click="OnShowSpineClick"/>
+                        <Button Style="{StaticResource PillButton}" Content="Contraportada" Margin="10,0,0,0" Click="OnShowBackClick"/>
                     </StackPanel>
                     <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="#5B6573" TextWrapping="Wrap"
                                Text="Arrastra la caja para girarla y ver su grosor. Las cajas son cuadradas: las carátulas de 1024 × 1024 las llenan enteras. Otras medidas se muestran enteras, sin deformar ni recortar, con negro en el hueco que sobra."/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2">
+                <!-- Con tantas secciones, en pantallas bajas el lado derecho se desplaza -->
+                <ScrollViewer x:Name="SideScroll" Grid.Column="2" VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel Margin="0,0,8,0">
                     <TextBlock Text="Personalizar" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
 
                     <TextBlock Text="UBICACIÓN" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
@@ -67,11 +71,24 @@
                         <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseBackImageClick" Margin="0,0,10,10"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en TheGamesDB" Click="OnSearchBackClick" Margin="0,0,10,10"
                                 ToolTip="Descarga la parte de atrás de la caja desde thegamesdb.net"/>
+                        <Button x:Name="FrameBackButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
+                                Click="OnFrameBackClick" ToolTip="Amplía y mueve la contraportada para que cuadre en la caja"/>
                         <Button x:Name="RemoveBackImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
                                 Margin="0,0,10,10" Click="OnRemoveBackImageClick"/>
                     </WrapPanel>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,10,0,0" TextWrapping="Wrap"
-                               Text="También puedes arrastrar una imagen a esta ventana: se pone en la cara de la caja que estés viendo."/>
+
+                    <TextBlock Text="LOMO" Style="{StaticResource FieldLabel}" Margin="2,12,0,8"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseSpineImageClick" Margin="0,0,10,10"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en TheGamesDB" Click="OnSearchSpineClick" Margin="0,0,10,10"
+                                ToolTip="Usa un banner de thegamesdb.net, girado para que quepa en el lomo"/>
+                        <Button x:Name="FrameSpineButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
+                                Click="OnFrameSpineClick" ToolTip="Amplía y mueve la imagen para que cuadre en el lomo"/>
+                        <Button x:Name="RemoveSpineImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
+                                Margin="0,0,10,10" Click="OnRemoveSpineImageClick"/>
+                    </WrapPanel>
+                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"
+                               Text="Las imágenes horizontales se giran para leerse de arriba abajo. También puedes arrastrar una imagen a esta ventana: se pone en la cara de la caja que estés viendo."/>
 
                     <TextBlock Text="CONSOLA" Style="{StaticResource FieldLabel}" Margin="2,12,0,8"/>
                     <WrapPanel x:Name="PlatformToggles"/>
@@ -89,7 +106,11 @@
                         <Button Style="{StaticResource PrimaryButton}" Content="Guardar" Margin="12,0,0,0" Click="OnSaveClick"/>
                     </StackPanel>
                 </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Border>
+
+        <!-- Editor de encuadre, encima de todo lo demás -->
+        <local:ImageFramePanel x:Name="FrameEditor"/>
     </Grid>
 </UserControl>

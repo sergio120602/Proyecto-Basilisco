@@ -21,7 +21,12 @@ public sealed record ImageChange(string? NewPath, bool Remove);
 /// <param name="NewPath">Nueva ubicación del juego, o null si no ha cambiado.</param>
 /// <param name="Platform">Consola elegida para el juego (null: sin consola).</param>
 /// <param name="FilterIds">Filtros a los que debe pertenecer el juego.</param>
-public sealed record CustomizeResult(Game Game, string Name, string? NewPath, ImageChange Front, ImageChange Back, string? Platform, List<string> FilterIds);
+public sealed record CustomizeResult(
+    Game Game, string Name, string? NewPath, ImageChange Front, ImageChange Back, ImageChange Spine,
+    ImageFrame BackFrame, ImageFrame SpineFrame, string? Platform, List<string> FilterIds);
+
+/// <summary>Cara de la caja para la que se busca una imagen en internet.</summary>
+public enum ArtTarget { Front, Back, Spine }
 
 /// <summary>
 /// Menú para cambiar el nombre, la portada, la contraportada y los filtros de un juego,
@@ -33,6 +38,9 @@ public partial class CustomizePanel : UserControl
     Game? _game;
     ImageChange _front = new(null, false);
     ImageChange _back = new(null, false);
+    ImageChange _spine = new(null, false);
+    ImageFrame _backFrame = ImageFrame.Default;
+    ImageFrame _spineFrame = ImageFrame.Default;
     string? _newPath;
     string? _platform;
 
@@ -40,8 +48,8 @@ public partial class CustomizePanel : UserControl
 
     public event Action<CustomizeResult>? Saved;
 
-    /// <summary>El usuario quiere buscar una portada (false) o una contraportada (true) en internet para este nombre.</summary>
-    public event Action<string, bool>? ArtSearchRequested;
+    /// <summary>El usuario quiere buscar en internet una imagen para esa cara de la caja, con este nombre.</summary>
+    public event Action<string, ArtTarget>? ArtSearchRequested;
     public event Action? Closed;
 
     public bool IsOpen => Visibility == Visibility.Visible;
@@ -56,7 +64,9 @@ public partial class CustomizePanel : UserControl
     public void Open(Game game, IReadOnlyList<GameFilter> filters)
     {
         _game = game;
-        _front = _back = new ImageChange(null, false);
+        _front = _back = _spine = new ImageChange(null, false);
+        _backFrame = game.BackFrame ?? ImageFrame.Default;
+        _spineFrame = game.SpineFrame ?? ImageFrame.Default;
         _newPath = null;
         ErrorText.Visibility = Visibility.Collapsed;
         ShowPath(game.Path);
@@ -103,7 +113,11 @@ public partial class CustomizePanel : UserControl
     /// <summary>Pone la imagen soltada en la cara de la caja que se está viendo.</summary>
     public void DropImage(string path)
     {
-        if (_preview.IsShowingBack)
+        if (FrameEditor.IsOpen)
+            return;
+        if (_preview.IsShowingSpine)
+            SetSpineImage(path);
+        else if (_preview.IsShowingBack)
             SetBackImage(path);
         else
             SetFrontImage(path);
@@ -123,8 +137,22 @@ public partial class CustomizePanel : UserControl
         if (!IsValidImage(path))
             return;
         _back = new ImageChange(path, false);
+        _backFrame = ImageFrame.Default; // Una imagen nueva empieza entera.
         UpdatePreview();
         _preview.ShowBack();
+    }
+
+    public void SetSpineImage(string path)
+    {
+        if (!IsValidImage(path))
+            return;
+        _spine = new ImageChange(path, false);
+        // Un banner girado queda muy estrecho entero: por defecto se llena el lomo.
+        _spineFrame = CoverArt.LoadImage(path) is { } image
+            ? new ImageFrame(CoverArt.FillZoom(new Size(image.Width, image.Height), CoverArt.SpineSize, rotateWide: true))
+            : ImageFrame.Default;
+        UpdatePreview();
+        _preview.ShowSpine();
     }
 
     bool IsValidImage(string path)
@@ -149,9 +177,50 @@ public partial class CustomizePanel : UserControl
 
         var front = Resolve(_front, ImageStore.GetCoverPath(_game));
         var back = Resolve(_back, ImageStore.GetBackCoverPath(_game));
-        _preview.SetItem(new CarouselItem(NameBox.Text, IsAddCard: false, front, back, _platform));
+        var spine = Resolve(_spine, ImageStore.GetSpinePath(_game));
+        _preview.SetItem(CurrentItem());
         RemoveImageButton.IsEnabled = front is not null;
-        RemoveBackImageButton.IsEnabled = back is not null;
+        RemoveBackImageButton.IsEnabled = FrameBackButton.IsEnabled = back is not null;
+        RemoveSpineImageButton.IsEnabled = FrameSpineButton.IsEnabled = spine is not null;
+    }
+
+    /// <summary>La caja con todo lo elegido hasta ahora (aún sin guardar).</summary>
+    CarouselItem CurrentItem() => new(
+        NameBox.Text, IsAddCard: false,
+        Resolve(_front, ImageStore.GetCoverPath(_game!)),
+        Resolve(_back, ImageStore.GetBackCoverPath(_game!)),
+        _platform,
+        Resolve(_spine, ImageStore.GetSpinePath(_game!)),
+        _backFrame, _spineFrame);
+
+    /// <summary>Abre el editor de encuadre para la contraportada (back) o el lomo.</summary>
+    void OpenFrameEditor(bool back)
+    {
+        if (_game is null)
+            return;
+
+        var item = CurrentItem();
+        var path = back ? item.BackImagePath : item.SpineImagePath;
+        if (path is null || CoverArt.LoadImage(path) is not { } image)
+            return;
+
+        var size = new Size(image.Width, image.Height);
+        if (back)
+        {
+            _preview.ShowBack();
+            FrameEditor.Open("Ajustar contraportada", _backFrame,
+                CoverArt.FillZoom(size, CoverArt.BackSize, rotateWide: false),
+                frame => CoverArt.RenderBack(item with { BackFrame = frame }),
+                frame => { _backFrame = frame; UpdatePreview(); _preview.ShowBack(); });
+        }
+        else
+        {
+            _preview.ShowSpine();
+            FrameEditor.Open("Ajustar lomo", _spineFrame,
+                CoverArt.FillZoom(size, CoverArt.SpineSize, rotateWide: true),
+                frame => CoverArt.RenderSpine(item with { SpineFrame = frame }),
+                frame => { _spineFrame = frame; UpdatePreview(); _preview.ShowSpine(); });
+        }
     }
 
     void Save()
@@ -173,7 +242,7 @@ public partial class CustomizePanel : UserControl
             .Select(toggle => (string)toggle.Tag)
             .ToList();
 
-        var result = new CustomizeResult(_game, name, _newPath, _front, _back, _platform, filterIds);
+        var result = new CustomizeResult(_game, name, _newPath, _front, _back, _spine, _backFrame, _spineFrame, _platform, filterIds);
         Close();
         Saved?.Invoke(result);
     }
@@ -217,9 +286,30 @@ public partial class CustomizePanel : UserControl
             SetBackImage(path);
     }
 
+    void OnChooseSpineImageClick(object sender, RoutedEventArgs e)
+    {
+        if (PickImage("Elegir imagen del lomo") is { } path)
+            SetSpineImage(path);
+    }
+
+    void OnRemoveSpineImageClick(object sender, RoutedEventArgs e)
+    {
+        _spine = new ImageChange(null, true);
+        _spineFrame = ImageFrame.Default;
+        UpdatePreview();
+        _preview.ShowSpine();
+    }
+
+    void OnFrameBackClick(object sender, RoutedEventArgs e) => OpenFrameEditor(back: true);
+
+    void OnFrameSpineClick(object sender, RoutedEventArgs e) => OpenFrameEditor(back: false);
+
+    void OnShowSpineClick(object sender, RoutedEventArgs e) => _preview.ShowSpine();
+
     void OnRemoveBackImageClick(object sender, RoutedEventArgs e)
     {
         _back = new ImageChange(null, true);
+        _backFrame = ImageFrame.Default;
         UpdatePreview();
         _preview.ShowBack();
     }
@@ -268,9 +358,14 @@ public partial class CustomizePanel : UserControl
         _preview.ShowFront();
     }
 
-    void OnSearchFrontClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), false);
+    void OnSearchFrontClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), ArtTarget.Front);
 
-    void OnSearchBackClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), true);
+    void OnSearchBackClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), ArtTarget.Back);
+
+    void OnSearchSpineClick(object sender, RoutedEventArgs e) => ArtSearchRequested?.Invoke(NameBox.Text.Trim(), ArtTarget.Spine);
+
+    // El lado derecho ocupa lo que permita la ventana; si no cabe, se desplaza.
+    void OnSizeChanged(object sender, SizeChangedEventArgs e) => SideScroll.MaxHeight = Math.Max(300, ActualHeight - 200);
 
     void OnShowFrontClick(object sender, RoutedEventArgs e) => _preview.ShowFront();
 
@@ -289,6 +384,10 @@ public partial class CustomizePanel : UserControl
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Con el editor de encuadre abierto, Enter y Esc son para él.
+        if (FrameEditor.IsOpen)
+            return;
+
         switch (e.Key)
         {
             case Key.Enter: Save(); break;
