@@ -1,5 +1,8 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
@@ -129,7 +132,7 @@ public partial class MainWindow : Window
     void RefreshKeeping(Game? game)
     {
         RefreshFilterTabs();
-        var index = game is null ? -1 : Games.Where(BelongsToActiveFilter).ToList().IndexOf(game);
+        var index = game is null ? -1 : SortModes.Apply(Games.Where(BelongsToActiveFilter), _settings.SortMode).ToList().IndexOf(game);
         RefreshCarousel(index < 0 ? Math.Min(_flow.SelectedIndex, Games.Count(BelongsToActiveFilter)) : index);
     }
 
@@ -234,7 +237,7 @@ public partial class MainWindow : Window
 
     void RefreshCarousel(int selectedIndex, bool jump = false)
     {
-        _visibleGames = Games.Where(BelongsToActiveFilter).ToList();
+        _visibleGames = SortModes.Apply(Games.Where(BelongsToActiveFilter), _settings.SortMode).ToList();
         var items = _visibleGames
             .Select(ToCarouselItem)
             .Append(new CarouselItem("Importar juego", IsAddCard: true))
@@ -249,43 +252,227 @@ public partial class MainWindow : Window
             ImageStore.GetPath(game, game.Format, Face.Spine), game.CurrentFaces.BackFrame, game.CurrentFaces.SpineFrame,
             game.Format, game.CurrentFaces.FrontFrame);
 
+    /// <summary>
+    /// Barra de arriba: «Todos los juegos», el grupo de consolas, el de filtros y el orden. Cada botón dice lo que
+    /// está elegido (por ejemplo «PS2 (3)») y se ve marcado si es lo que se está viendo.
+    /// </summary>
     void RefreshFilterTabs()
     {
-        var tabs = new List<FilterTab>
-        {
-            new() { Label = $"Todos los juegos ({Games.Count})", IsSelected = _activeFilter is null && _activePlatform is null },
-        };
+        AllTab.Content = $"Todos los juegos ({Games.Count})";
+        AllTab.IsChecked = _activeFilter is null && _activePlatform is null;
 
-        // Las consolas solo salen arriba si tienen algún juego (o si es la que estás viendo).
+        ConsolesTab.Content = Platforms.Find(_activePlatform) is { } platform ? $"{platform.Name} ({CountGames(platform)})  ▾" : "Consolas  ▾";
+        ConsolesTab.IsChecked = _activePlatform is not null;
+
+        // Con un filtro activo se ve su logo (si tiene) o su nombre.
+        if (_activeFilter is { } filter)
+        {
+            var image = ImageStore.GetFilterImagePath(filter);
+            var logo = image is null ? null : CoverArt.LoadImage(image, FilterIconDecodeWidth);
+            FiltersTab.Content = logo is null
+                ? $"{filter.Name} ({CountGames(filter)})  ▾"
+                : new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Children =
+                    {
+                        new Image { Source = logo, Height = 30, MaxWidth = 150, Stretch = Stretch.Uniform, Margin = new Thickness(-6, -4, 8, -4) },
+                        new TextBlock { Text = $"({CountGames(filter)})  ▾", VerticalAlignment = VerticalAlignment.Center },
+                    },
+                };
+            FiltersTab.ToolTip = $"{filter.Name} · clic derecho para editarlo";
+        }
+        else
+        {
+            FiltersTab.Content = "Filtros  ▾";
+            FiltersTab.ToolTip = "Ver solo los juegos de un filtro, crear filtros nuevos o editarlos";
+        }
+        FiltersTab.IsChecked = _activeFilter is not null;
+
+        SortTab.Content = $"Orden: {SortModes.Short(_settings.SortMode)}  ▾";
+        SortTab.IsChecked = false;
+        MoveHint.Visibility = _settings.SortMode == SortMode.Custom && !_padMode ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Abre un menú desplegable debajo de un botón de la barra de arriba.</summary>
+    void ShowMenu(FrameworkElement owner, ContextMenu menu)
+    {
+        menu.PlacementTarget = owner;
+        menu.Placement = PlacementMode.Bottom;
+        menu.VerticalOffset = 6;
+        menu.FontSize = 15;
+        menu.Closed += (_, _) => RefreshFilterTabs();
+        menu.IsOpen = true;
+    }
+
+    static MenuItem Item(object header, Action? onClick, bool isChecked = false, bool enabled = true, object? icon = null)
+    {
+        var item = new MenuItem { Header = header, IsChecked = isChecked, IsEnabled = enabled, Icon = icon, Padding = new Thickness(6, 6, 18, 6) };
+        if (onClick is not null)
+            item.Click += (_, _) => onClick();
+        return item;
+    }
+
+    void OnAllTabClick(object sender, RoutedEventArgs e)
+    {
+        if (_activeFilter is not null || _activePlatform is not null)
+            SelectView(null, null);
+        else
+            RefreshFilterTabs();
+    }
+
+    /// <summary>Grupo «Consolas»: las que tienen juegos (y la que estás viendo).</summary>
+    void OnConsolesTabClick(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu();
+        menu.Items.Add(Item("Todas las consolas", () => SelectView(null, _activeFilter), isChecked: _activePlatform is null));
+        menu.Items.Add(new Separator());
+
+        var any = false;
         foreach (var platform in Platforms.All)
         {
             var count = CountGames(platform);
-            if (count > 0 || platform.Id == _activePlatform)
-                tabs.Add(new FilterTab { Platform = platform, Label = $"{platform.Name} ({count})", IsSelected = platform.Id == _activePlatform });
+            if (count == 0 && platform.Id != _activePlatform)
+                continue;
+            any = true;
+            var id = platform.Id;
+            menu.Items.Add(Item($"{platform.Name}  ({count})", () => SelectView(id, null), isChecked: id == _activePlatform));
         }
+        if (!any)
+            menu.Items.Add(Item("Aún no hay juegos con consola (elígela en Personalizar)", null, enabled: false));
+
+        ShowMenu(ConsolesTab, menu);
+    }
+
+    /// <summary>Grupo «Filtros»: tus filtros, crear uno nuevo y editar los que hay.</summary>
+    void OnFiltersTabClick(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu();
+        menu.Items.Add(Item("Todos los filtros", () => SelectView(_activePlatform, null), isChecked: _activeFilter is null));
+        menu.Items.Add(new Separator());
 
         foreach (var filter in Filters)
         {
             var image = ImageStore.GetFilterImagePath(filter);
-            tabs.Add(new FilterTab
+            var icon = image is null ? null : new Image { Source = CoverArt.LoadImage(image, FilterIconDecodeWidth), Width = 22, Height = 22, Stretch = Stretch.Uniform };
+            var chosen = filter;
+            menu.Items.Add(Item($"{filter.Name}  ({CountGames(filter)})", () => SelectView(null, chosen), isChecked: filter == _activeFilter, icon: icon));
+        }
+        if (Filters.Count > 0)
+            menu.Items.Add(new Separator());
+
+        menu.Items.Add(Item("+  Nuevo filtro…", () => OpenFilterEditor(null)));
+        if (Filters.Count > 0)
+        {
+            var edit = Item("Editar filtro", null);
+            foreach (var filter in Filters)
             {
-                Filter = filter,
-                Label = $"{filter.Name} ({CountGames(filter)})",
-                Icon = image is null ? null : CoverArt.LoadImage(image, FilterIconDecodeWidth),
-                IsSelected = filter == _activeFilter,
-            });
+                var chosen = filter;
+                edit.Items.Add(Item(filter.Name, () => OpenFilterEditor(chosen)));
+            }
+            menu.Items.Add(edit);
         }
 
-        tabs.Add(new FilterTab { Label = "+  Nuevo filtro", IsAddButton = true });
-        FilterTabs.ItemsSource = tabs;
+        ShowMenu(FiltersTab, menu);
+    }
 
-        // Si hay muchos filtros, que el seleccionado no quede escondido fuera de la barra.
-        var selected = tabs.FindIndex(tab => tab.IsSelected);
-        Dispatcher.BeginInvoke(() =>
+    // Clic derecho en el grupo de filtros con uno activo: editarlo directamente.
+    void OnFiltersTabRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_activeFilter is { } filter)
+            OpenFilterEditor(filter);
+        e.Handled = true;
+    }
+
+    /// <summary>Menú de orden: personalizado, alfabético, fecha de lanzamiento y fecha de adición.</summary>
+    void OnSortTabClick(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu();
+        foreach (var mode in Enum.GetValues<SortMode>())
         {
-            if (FilterTabs.ItemContainerGenerator.ContainerFromIndex(selected) is FrameworkElement container)
-                container.BringIntoView();
-        });
+            var chosen = mode;
+            menu.Items.Add(Item(SortModes.Label(mode), () => _ = SetSortModeAsync(chosen), isChecked: mode == _settings.SortMode));
+            if (mode is SortMode.Custom or SortMode.NameDescending or SortMode.ReleaseOldest)
+                menu.Items.Add(new Separator());
+        }
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(_settings.SortMode == SortMode.Custom
+            ? "En «Personalizado», mueve el juego del centro con Ctrl + ← →"
+            : "Elige «Personalizado» para colocar los juegos a tu gusto", null, enabled: false));
+
+        ShowMenu(SortTab, menu);
+    }
+
+    async Task SetSortModeAsync(SortMode mode)
+    {
+        var selected = SelectedGame;
+        _settings.SortMode = mode;
+        _settings.Save();
+
+        if (SortModes.UsesReleaseDate(mode))
+            await FillReleaseDatesAsync();
+
+        RefreshKeeping(selected);
+        ShowToast($"Orden: {SortModes.Label(mode)}");
+    }
+
+    /// <summary>
+    /// Pone la fecha de lanzamiento a los juegos que no la tienen, buscándolos en LaunchBox por su nombre exacto
+    /// (solo si su base de datos ya está descargada). Los que no se encuentran se quedan al final.
+    /// </summary>
+    async Task FillReleaseDatesAsync()
+    {
+        var missing = Games.Where(game => game.ReleaseDate is null).ToList();
+        if (missing.Count == 0)
+            return;
+
+        if (!LaunchBoxDatabase.IsDownloaded)
+        {
+            ShowToast("Para saber las fechas de lanzamiento, descarga LaunchBox (Personalizar → Buscar en LaunchBox) o escríbelas en Personalizar");
+            return;
+        }
+
+        ShowToast("Buscando fechas de lanzamiento en LaunchBox…");
+        if (!await LaunchBoxDatabase.TryLoadAsync(CancellationToken.None))
+            return;
+
+        var found = await Task.Run(() => missing
+            .Select(game => (Game: game, Date: LaunchBoxDatabase.FindReleaseDate(game.Name, LaunchBoxDatabase.PlatformName(game.Platform))))
+            .Where(entry => entry.Date is not null)
+            .ToList());
+        foreach (var (game, date) in found)
+            game.ReleaseDate ??= date;
+
+        if (found.Count > 0)
+            Save();
+        var left = missing.Count - found.Count;
+        if (left > 0)
+            ShowToast($"{left} juegos sin fecha de lanzamiento (van al final). Puedes ponerla en Personalizar (E)");
+    }
+
+    /// <summary>En el orden personalizado, mueve el juego del centro una posición a la izquierda o a la derecha.</summary>
+    void MoveSelected(int direction)
+    {
+        if (SelectedGame is not { } game)
+            return;
+        if (_settings.SortMode != SortMode.Custom)
+        {
+            ShowToast("Para colocar los juegos a tu gusto, elige «Personalizado» en Orden");
+            return;
+        }
+
+        var index = _visibleGames.IndexOf(game);
+        var target = index + direction;
+        if (target < 0 || target >= _visibleGames.Count)
+            return;
+
+        // Se cambia en la biblioteca completa: el juego pasa a ocupar el sitio de su vecino visible.
+        var neighbor = _visibleGames[target];
+        Games.Remove(game);
+        var at = Games.IndexOf(neighbor);
+        Games.Insert(direction > 0 ? at + 1 : at, game);
+        Save();
+        RefreshCarousel(target);
     }
 
     void SelectFilter(GameFilter? filter) => SelectView(null, filter);
@@ -672,6 +859,7 @@ public partial class MainWindow : Window
             return;
 
         game.Name = result.Name;
+        game.ReleaseDate = result.ReleaseDate;
         game.Platform = result.Platform;
         game.Format = result.Format;
         game.FilterIds = result.FilterIds;
@@ -1024,6 +1212,7 @@ public partial class MainWindow : Window
         FilterKey.Text = pad ? GamepadService.Label(PadAction.NextFilter, style) : "Tab";
         FullScreenKey.Text = pad ? GamepadService.Label(PadAction.FullScreen, style) : "F11";
         RemoveHint.Visibility = ImportHints.Visibility = pad ? Visibility.Collapsed : Visibility.Visible;
+        MoveHint.Visibility = !pad && _settings.SortMode == SortMode.Custom ? Visibility.Visible : Visibility.Collapsed;
     }
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -1038,6 +1227,8 @@ public partial class MainWindow : Window
 
         switch (e.Key)
         {
+            case Key.Left when Keyboard.Modifiers.HasFlag(ModifierKeys.Control): MoveSelected(-1); break;
+            case Key.Right when Keyboard.Modifiers.HasFlag(ModifierKeys.Control): MoveSelected(1); break;
             case Key.Left: _flow.MoveBy(-1); break;
             case Key.Right: _flow.MoveBy(1); break;
             case Key.Home: _flow.Select(0); break;
@@ -1126,23 +1317,6 @@ public partial class MainWindow : Window
 
         _flow.Select(index);
         OpenCustomizer(index);
-    }
-
-    void OnFilterTabClick(object sender, MouseButtonEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.DataContext is not FilterTab tab)
-            return;
-
-        if (tab.IsAddButton)
-            OpenFilterEditor(null);
-        else if (tab.Filter != _activeFilter || tab.Platform?.Id != _activePlatform)
-            SelectView(tab.Platform?.Id, tab.Filter);
-    }
-
-    void OnFilterTabRightClick(object sender, MouseButtonEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.DataContext is FilterTab { Filter: { } filter })
-            OpenFilterEditor(filter);
     }
 
     void OnImportClick(object sender, RoutedEventArgs e) => Import();

@@ -28,6 +28,35 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,38,0"/>
         </Style>
+        <!-- Pestaña de la barra de arriba: transparente, y blanca con sombra cuando está activa -->
+        <Style x:Key="HeaderTab" TargetType="ToggleButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#2A313C"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Pill" CornerRadius="19" Padding="18,7" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#66FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#F4F6F9"/>
+                                <Setter TargetName="Pill" Property="BorderBrush" Value="White"/>
+                                <Setter TargetName="Pill" Property="Effect" Value="{StaticResource PillShadow}"/>
+                                <Setter Property="Foreground" Value="#1F2630"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root">
@@ -68,52 +97,19 @@
                 <TextBlock x:Name="VersionText" FontSize="13" Foreground="#5B6573" Margin="10,6,0,0" VerticalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Filtros: «Todos los juegos», los del usuario y el botón para crear uno nuevo -->
-            <ScrollViewer x:Name="FilterScroll" Grid.Column="1" Focusable="False" Margin="34,0,20,0" Padding="0,10"
-                          HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="FilterTabs">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border x:Name="Pill" CornerRadius="19" Padding="18,7" Margin="0,0,6,0" Background="Transparent"
-                                    BorderThickness="1" BorderBrush="Transparent" Cursor="Hand" ToolTip="{Binding ToolTip}"
-                                    MouseLeftButtonUp="OnFilterTabClick" MouseRightButtonUp="OnFilterTabRightClick">
-                                <Grid>
-                                    <!-- Con imagen se ve solo el logo, entero y sin deformar; el nombre queda en el tooltip -->
-                                    <Image x:Name="Logo" Source="{Binding Icon}" Visibility="Collapsed"
-                                           Height="40" MaxWidth="180" Stretch="Uniform"/>
-                                    <TextBlock x:Name="Label" Text="{Binding Label}" FontSize="15" FontWeight="SemiBold"
-                                               Foreground="#2A313C" VerticalAlignment="Center"/>
-                                </Grid>
-                            </Border>
-                            <DataTemplate.Triggers>
-                                <Trigger SourceName="Pill" Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Pill" Property="Background" Value="#66FFFFFF"/>
-                                </Trigger>
-                                <DataTrigger Binding="{Binding HasLogo}" Value="True">
-                                    <Setter TargetName="Logo" Property="Visibility" Value="Visible"/>
-                                    <Setter TargetName="Label" Property="Visibility" Value="Collapsed"/>
-                                    <Setter TargetName="Pill" Property="Padding" Value="16,4"/>
-                                    <Setter TargetName="Pill" Property="CornerRadius" Value="24"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsAddButton}" Value="True">
-                                    <Setter TargetName="Label" Property="Foreground" Value="#5B6573"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                    <Setter TargetName="Pill" Property="Background" Value="#F4F6F9"/>
-                                    <Setter TargetName="Pill" Property="BorderBrush" Value="White"/>
-                                    <Setter TargetName="Pill" Property="Effect" Value="{StaticResource PillShadow}"/>
-                                    <Setter TargetName="Label" Property="Foreground" Value="#1F2630"/>
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+            <!-- Todos los juegos, los dos grupos (consolas y filtros) y el orden; cada grupo abre su menú -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="34,0,20,0" VerticalAlignment="Center">
+                <ToggleButton x:Name="AllTab" Style="{StaticResource HeaderTab}" Click="OnAllTabClick"
+                              ToolTip="Todos los juegos de la biblioteca"/>
+                <ToggleButton x:Name="ConsolesTab" Style="{StaticResource HeaderTab}" Click="OnConsolesTabClick"
+                              ToolTip="Ver solo los juegos de una consola"/>
+                <ToggleButton x:Name="FiltersTab" Style="{StaticResource HeaderTab}" Click="OnFiltersTabClick"
+                              MouseRightButtonUp="OnFiltersTabRightClick"
+                              ToolTip="Ver solo los juegos de un filtro, crear filtros nuevos o editarlos"/>
+                <Border Width="1" Height="24" Background="#55FFFFFF" Margin="10,0,16,0" VerticalAlignment="Center"/>
+                <ToggleButton x:Name="SortTab" Style="{StaticResource HeaderTab}" Click="OnSortTabClick"
+                              ToolTip="Cambiar el orden de los juegos"/>
+            </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Style="{StaticResource PillButton}" Content="Steam" Click="OnSteamClick" Margin="0,0,10,0"
@@ -190,6 +186,10 @@
                 <TextBlock Style="{StaticResource HintText}" Text="Formato"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FilterKey" Text="Tab"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
+                <StackPanel x:Name="MoveHint" Orientation="Horizontal" Visibility="Collapsed">
+                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Ctrl ← →"/></Border>
+                    <TextBlock Style="{StaticResource HintText}" Text="Mover"/>
+                </StackPanel>
             </StackPanel>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>

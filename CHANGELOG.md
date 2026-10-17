@@ -3,6 +3,20 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.2.1] - 2026-10-17
+
+Barra de arriba agrupada y orden de los juegos.
+
+- **Grupos en la barra de arriba**: «Todos los juegos», **Consolas ▾** (las consolas con juegos) y **Filtros ▾** (tus filtros, «+ Nuevo filtro…» y «Editar filtro»). Cada grupo dice lo que tienes elegido, por ejemplo «PS2 (3)», o enseña el logo del filtro. Clic derecho en Filtros edita el filtro activo.
+- **Menú «Orden»** para todos los juegos:
+  - **Personalizado**: colócalos a tu gusto moviendo el juego del centro con `Ctrl + ← →`.
+  - **Alfabético** de la A a la Z y de la Z a la A.
+  - **Fecha de lanzamiento**: más nuevos o más antiguos primero.
+  - **Fecha de adición**: más recientes o más antiguos primero.
+- **Fechas de lanzamiento**: al ordenar por ellas, Basilisco busca en LaunchBox (si está descargada) la fecha de los juegos que no la tienen, solo cuando el nombre coincide de verdad. También se puede escribir a mano en Personalizar (`E`), con día o solo el año. Los juegos sin fecha van al final.
+- El índice de LaunchBox guarda ahora la fecha completa de lanzamiento (antes solo el año); «Actualizar base de datos» lo pone al día.
+- El orden elegido se recuerda al cerrar Basilisco.
+
 ## [0.2.0] - 2026-10-17
 
 Conexión con Steam.

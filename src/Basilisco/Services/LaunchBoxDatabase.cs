@@ -12,12 +12,20 @@ namespace Basilisco.Services;
 /// <param name="Reconstructed">Rehecha por la comunidad a partir de otras (se ofrece después de las originales).</param>
 public sealed record LaunchBoxImage(Face Face, string Region, string FileName, bool Reconstructed);
 
-public sealed class LaunchBoxGame(int id, string name, string platform, string? year)
+/// <param name="released">Fecha de lanzamiento (aaaa-mm-dd) o solo el año (aaaa), si se sabe.</param>
+public sealed class LaunchBoxGame(int id, string name, string platform, string? released)
 {
     public int Id { get; } = id;
     public string Name { get; } = name;
     public string Platform { get; } = platform;
-    public string? Year { get; } = year;
+    public string? Released { get; } = released;
+    public string? Year => Released is { Length: >= 4 } text ? text[..4] : null;
+
+    /// <summary>La fecha como DateTime (el 1 de enero si solo se sabe el año).</summary>
+    public DateTime? ReleaseDate =>
+        Released is { Length: 10 } full && DateTime.TryParseExact(full, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) ? date
+        : Year is { } year && int.TryParse(year, out var y) && y > 1950 ? new DateTime(y, 1, 1)
+        : null;
     public List<string> AlternateNames { get; } = [];
     public List<LaunchBoxImage> Images { get; } = [];
 }
@@ -81,6 +89,33 @@ public static class LaunchBoxDatabase
     }
 
     public static LaunchBoxGame? Find(int id) => _games?.GetValueOrDefault(id);
+
+    /// <summary>
+    /// Fecha de lanzamiento de un juego por su nombre: solo si el nombre coincide de verdad (o un nombre alternativo),
+    /// y mejor si es de la misma plataforma. Así no se pone la fecha de otro juego parecido.
+    /// </summary>
+    public static DateTime? FindReleaseDate(string name, string? platform)
+    {
+        if (_games is null)
+            return null;
+
+        var query = Normalize(name);
+        if (query.Length == 0)
+            return null;
+
+        LaunchBoxGame? best = null;
+        foreach (var (normalized, game) in _names)
+        {
+            if (normalized != query || game.ReleaseDate is null)
+                continue;
+            if (platform is not null && game.Platform == platform)
+                return game.ReleaseDate;
+            // Sin plataforma que coincida, la primera versión publicada.
+            if (best is null || game.ReleaseDate < best.ReleaseDate)
+                best = game;
+        }
+        return best?.ReleaseDate;
+    }
 
     /// <param name="platform">Plataforma de LaunchBox del juego (si se sabe), para ponerlo primero.</param>
     /// <param name="face">Solo juegos que tengan imágenes de esa cara.</param>
@@ -227,8 +262,9 @@ public static class LaunchBoxDatabase
                 switch (kind)
                 {
                     case "Game" when fields.TryGetValue("DatabaseID", out var id) && fields.TryGetValue("Name", out var name):
-                        var year = fields.GetValueOrDefault("ReleaseYear") ??
-                                   (fields.GetValueOrDefault("ReleaseDate") is { Length: >= 4 } date ? date[..4] : "");
+                        // Fecha completa si la hay (2013-09-20), o solo el año.
+                        var year = fields.GetValueOrDefault("ReleaseDate") is { Length: >= 10 } date ? date[..10]
+                                 : fields.GetValueOrDefault("ReleaseYear") ?? "";
                         writer.WriteLine($"G\t{id}\t{Clean(fields.GetValueOrDefault("Platform"))}\t{year}\t{Clean(name)}");
                         if (++games % 20000 == 0)
                             status?.Report($"Preparando la base de datos de LaunchBox… {games:N0} juegos");
