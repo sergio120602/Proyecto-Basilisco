@@ -445,6 +445,8 @@ public partial class CustomizePanel : UserControl
 
         BackgroundText.Text = path is null ? "Sin fondo propio: se usa el de siempre."
             : $"{(video ? "Fondo dinámico (vídeo)" : "Fondo estático (imagen)")} · {Path.GetFileName(_background.NewPath ?? path)}";
+        if (video && path is not null && !VideoConverter.IsPlayable(path))
+            BackgroundText.Text = $"Fondo dinámico · {Path.GetFileName(path)} · se convertirá a un formato compatible al usarlo (unos segundos)";
         RemoveBackgroundButton.IsEnabled = path is not null;
     }
 

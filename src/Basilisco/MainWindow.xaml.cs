@@ -647,6 +647,13 @@ public partial class MainWindow : Window
             return;
         _lookBackground = path;
 
+        // Vídeo en un códec que el reproductor no abre (VP9, AV1, HEVC…): se convierte una vez y se usa el convertido.
+        if (path is not null && isVideo && !VideoConverter.IsPlayable(path))
+        {
+            _ = ConvertBackgroundAsync(path, own is not null ? game : null);
+            return;
+        }
+
         var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(path is null ? 300 : 140));
         fadeOut.Completed += (_, _) =>
         {
@@ -671,6 +678,50 @@ public partial class MainWindow : Window
             BackgroundLayer.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(320)));
         };
         BackgroundLayer.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    readonly HashSet<string> _converting = [];
+
+    /// <summary>
+    /// Convierte a H.264 un vídeo de fondo que no se puede reproducir, sustituye el archivo guardado por el
+    /// convertido (del juego o el general) y lo enseña. Solo pasa la primera vez.
+    /// </summary>
+    async Task ConvertBackgroundAsync(string path, Game? owner)
+    {
+        if (!_converting.Add(path))
+            return;
+        ShowToast("Preparando el vídeo de fondo (solo la primera vez)…");
+        var converted = await VideoConverter.ConvertAsync(path);
+        _converting.Remove(path);
+
+        if (converted is null)
+        {
+            ShowToast("Este vídeo no se puede reproducir: Windows no tiene su códec. Prueba con otro (por ejemplo MP4 en H.264)");
+            return;
+        }
+
+        var fileName = Path.GetFileName(converted);
+        if (owner is not null)
+        {
+            owner.Background = fileName;
+            Save();
+        }
+        else
+        {
+            _settings.Background = fileName;
+            _settings.Save();
+        }
+        try { File.Delete(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+
+        _lookBackground = null;
+        ShowDetails(_flow.SelectedIndex);
+    }
+
+    void OnBackgroundVideoFailed(object? sender, ExceptionRoutedEventArgs e)
+    {
+        BackgroundVideo.Source = null;
+        ShowToast("No se ha podido reproducir el vídeo de fondo. Prueba con otro (por ejemplo MP4 en H.264)");
     }
 
     void OnBackgroundVideoEnded(object sender, RoutedEventArgs e)

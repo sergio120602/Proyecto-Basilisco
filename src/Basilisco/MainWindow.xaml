@@ -74,7 +74,7 @@
         <Grid x:Name="BackgroundLayer" IsHitTestVisible="False" Opacity="0">
             <Image x:Name="BackgroundImage" Stretch="UniformToFill"/>
             <MediaElement x:Name="BackgroundVideo" Stretch="UniformToFill" IsMuted="True" LoadedBehavior="Manual"
-                          MediaEnded="OnBackgroundVideoEnded"/>
+                          MediaEnded="OnBackgroundVideoEnded" MediaFailed="OnBackgroundVideoFailed"/>
             <!-- Velo suave para que las cajas y las letras sigan destacando -->
             <Border Background="#33000000"/>
         </Grid>

@@ -106,6 +106,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.2.3** — Cajas más grandes y barra de zoom
 - [x] **v0.3.0** — Fondo estático o dinámico, color de las letras y tiempo de juego por juego
 - [x] **v0.3.1** — Apariencia general (fondo y color de letras) para todos los juegos
+- [x] **v0.3.3** — Los vídeos de fondo en VP9, AV1 o HEVC se convierten solos para que carguen
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

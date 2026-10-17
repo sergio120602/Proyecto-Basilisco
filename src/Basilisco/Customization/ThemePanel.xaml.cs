@@ -85,6 +85,8 @@ public partial class ThemePanel : UserControl
         PreviewVeil.Visibility = path is null ? Visibility.Collapsed : Visibility.Visible;
         BackgroundText.Text = path is null ? "Sin fondo: el gris claro de siempre."
             : $"{(video ? "Fondo dinámico (vídeo)" : "Fondo estático (imagen)")} · {Path.GetFileName(path)}";
+        if (video && path is not null && !VideoConverter.IsPlayable(path))
+            BackgroundText.Text = $"Fondo dinámico · {Path.GetFileName(path)} · se convertirá a un formato compatible al usarlo (unos segundos)";
         RemoveButton.IsEnabled = path is not null;
 
         var color = _textColor is { } hex ? (Color)ColorConverter.ConvertFromString(hex) : Color.FromRgb(0x1F, 0x26, 0x30);
