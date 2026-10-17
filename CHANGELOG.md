@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.2.3] - 2026-10-17
+
+- **Cajas más grandes**: el carrusel se ve con un 20 % más de zoom por defecto.
+- **Barra de zoom** abajo a la derecha, del 70 % al 180 %. También con `Ctrl + rueda` o con las teclas `+` y `−`. El título y el suelo se recolocan solos, y el zoom elegido se recuerda al cerrar.
+
 ## [0.2.2] - 2026-10-17
 
 El orden personalizado pasa a ser una estantería.

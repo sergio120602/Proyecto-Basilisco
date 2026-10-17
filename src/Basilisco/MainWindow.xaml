@@ -201,6 +201,12 @@
 
             </StackPanel>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
+                <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
+                <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
+                        Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
+                        ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
+                <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,30,0"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
             </StackPanel>
