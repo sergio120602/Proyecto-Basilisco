@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.8] - 2026-10-17
+
+- **Cajas rectangulares sin franja de consola**: la carátula ocupa toda la portada. Están pensadas para las portadas reales de LaunchBox, que ya traen impresa la franja oficial de su consola.
+- Imágenes por defecto en el formato rectangular: la portada se busca primero en LaunchBox (si su base de datos ya está descargada) y después en SteamGridDB.
+- Las cajas cuadradas no cambian: siguen con su franja a la izquierda.
+- Ya no se usan los archivos `borders/<consola>-top.png`.
+
 ## [0.1.7] - 2026-10-17
 
 Nuevas consolas: Nintendo 64, GameCube y Game Boy Advance.

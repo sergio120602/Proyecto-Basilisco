@@ -25,8 +25,6 @@ public static class CoverArt
     // a 1128 px por unidad de alto, así que una caja de DVD (1 de alto) mide lo mismo que antes.
     const double PortraitPixelsPerUnit = 1128;
 
-    // La franja de arriba ocupa la misma proporción del ancho en todas las cajas rectangulares.
-    const double TopBandShare = 112 / 768.0;
 
     /// <summary>Medidas en píxeles de la portada y la contraportada de una caja.</summary>
     public static Size FaceSize(CoverFormat format, string? platform)
@@ -40,7 +38,6 @@ public static class CoverArt
     static Size FaceSize(CarouselItem item) =>
         item.IsAddCard ? new Size(Width, Height) : FaceSize(item.Format, item.Platform);
 
-    static double TopBandHeight(double faceWidth) => Math.Round(faceWidth * TopBandShare);
 
     /// <summary>Medidas de la zona de la carátula en la portada, para calcular el zoom de «Llenar».</summary>
     public static Size FrontArtSize(CoverFormat format, string? platform)
@@ -48,7 +45,7 @@ public static class CoverArt
         if (format == CoverFormat.Square)
             return new Size(Height - Frame, Height - Frame * 2);
         var face = FaceSize(format, platform);
-        return new Size(face.Width - Frame * 2, face.Height - TopBandHeight(face.Width) - 2 - Frame);
+        return new Size(face.Width - Frame * 2, face.Height - Frame * 2);
     }
 
     /// <summary>Medidas del lomo: tan alto como la caja y tan ancho como su grosor.</summary>
@@ -233,31 +230,22 @@ public static class CoverArt
         }
     }
 
-    /// <summary>Caja rectangular: la franja de la consola arriba y la carátula 3:4 debajo.</summary>
+    /// <summary>
+    /// Caja rectangular: la carátula ocupa toda la portada, sin franja de consola. Está pensada para portadas
+    /// de caja reales (como las de LaunchBox), que ya traen impresa la franja oficial de su consola.
+    /// </summary>
     static void DrawPortraitCase(DrawingContext dc, Size size, string title, BitmapSource? image, string? platform, ImageFrame frame)
     {
         double PortraitWidth = size.Width, PortraitHeight = size.Height;
-        var TopBand = TopBandHeight(PortraitWidth);
         var bounds = new Rect(0, 0, PortraitWidth, PortraitHeight);
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x17, 0x18, 0x1C), Color.FromRgb(0x05, 0x05, 0x07), 45), null, bounds);
 
-        // Franja de arriba: la del usuario (basilisco-data/borders/<consola>-top.png) con su proporción, o la dibujada.
-        var bandImage = PlatformArt.TopBandImage(platform);
-        var bandHeight = bandImage is null
-            ? TopBand + 2
-            : Math.Clamp(PortraitWidth * bandImage.Height / bandImage.Width, 40, PortraitHeight * 0.25);
-
-        var area = new Rect(Frame, bandHeight, PortraitWidth - Frame * 2, PortraitHeight - bandHeight - Frame);
+        var area = new Rect(Frame, Frame, PortraitWidth - Frame * 2, PortraitHeight - Frame * 2);
         if (image is not null)
         {
             dc.DrawRectangle(Brushes.Black, null, area);
             DrawFramed(dc, image, area, frame);
         }
-
-        if (bandImage is not null)
-            dc.DrawImage(bandImage, new Rect(0, 0, PortraitWidth, bandHeight));
-        else
-            PlatformArt.DrawTopBand(dc, platform, new Rect(0, 0, PortraitWidth, TopBand));
 
         var gloss = new LinearGradientBrush(Color.FromArgb(30, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0.6, 0.6));
         dc.DrawRectangle(gloss, null, bounds);

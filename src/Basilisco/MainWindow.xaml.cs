@@ -710,6 +710,14 @@ public partial class MainWindow : Window
     /// <remarks>Si no hay resultado y la base de datos de LaunchBox ya está descargada, se prueba con ella.</remarks>
     async Task<string?> AutoFetchAsync(string name, string? platform, CoverFormat format, Face face, CancellationToken cancellation)
     {
+        // Las cajas rectangulares no llevan franja: la portada real de LaunchBox (con su franja impresa) va primero.
+        if (format == CoverFormat.Portrait && face == Face.Front && LaunchBoxDatabase.IsDownloaded)
+        {
+            _launchBoxFront.PlatformHint = platform;
+            if (await ArtAutoFetch.FirstImageAsync(_launchBoxFront, _settings, name, cancellation) is { } real)
+                return real;
+        }
+
         ArtProvider? provider = face switch
         {
             Face.Front => format == CoverFormat.Portrait ? _steamGridDbPortrait : _steamGridDb,
