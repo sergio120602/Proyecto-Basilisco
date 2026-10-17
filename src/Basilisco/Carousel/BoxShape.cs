@@ -1,0 +1,41 @@
+using Basilisco.Models;
+
+namespace Basilisco.Carousel;
+
+/// <summary>
+/// Medidas de una caja en la escena 3D. La cuadrada mide siempre lo mismo; las rectangulares tienen las medidas
+/// reales de la caja de su consola, a escala: 19 cm (el alto de una caja de DVD) es 1 unidad, así que una caja
+/// de PS1 o de DS se ve más baja que una de PS2, como en una estantería.
+/// </summary>
+public sealed record BoxShape(double Width, double Height, double Depth)
+{
+    const double ReferenceCm = 19.0;
+
+    public static readonly BoxShape Square = new((double)CoverArt.Width / CoverArt.Height, 1.0, 0.08);
+
+    // Alto × ancho × grosor en centímetros de cada caja real.
+    static readonly BoxShape Dvd = Cm(19.0, 13.5, 1.4);
+
+    public static BoxShape Of(CarouselItem item) =>
+        item.IsAddCard ? Square : Of(item.Format, item.Platform);
+
+    public static BoxShape Of(CoverFormat format, string? platform) =>
+        format == CoverFormat.Square ? Square : platform switch
+        {
+            "ps1" => Cm(12.5, 14.2, 1.0),   // Jewel case de CD (EE. UU.)
+            "ps2" => Dvd,                   // Caja de DVD
+            "ps3" => Cm(17.0, 13.5, 1.4),   // Caja de Blu-ray de PS3
+            "psp" => Cm(18.0, 10.5, 1.5),   // Caja de UMD
+            "xbox" => Dvd,                  // Caja de DVD verde
+            "x360" => Dvd,                  // Caja de DVD verde transparente
+            "gba" => Cm(12.8, 12.8, 2.5),   // Caja de cartón de Game Boy
+            "wii" => Dvd,                   // Caja de DVD blanca
+            "wiiu" => Cm(17.0, 13.5, 1.5),  // Caja de Blu-ray azul
+            "nds" => Cm(13.6, 12.4, 1.9),   // Estuche de DS (Europa)
+            "pc" => Dvd,                    // Caja de DVD
+            _ => Dvd,
+        };
+
+    static BoxShape Cm(double height, double width, double depth) =>
+        new(width / ReferenceCm, height / ReferenceCm, depth / ReferenceCm);
+}

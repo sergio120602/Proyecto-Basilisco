@@ -12,13 +12,8 @@ namespace Basilisco.Carousel;
 /// </summary>
 public sealed class BoxModel
 {
-    // El alto y el grosor son iguales para todas; el ancho depende del formato (cuadrada o rectangular).
+    /// <summary>Alto de referencia (el de la caja cuadrada y el de una caja de DVD); las demás miden según su consola.</summary>
     public const double Height = 1.0;
-
-    /// <summary>Grosor de la caja; en proporción, el de una caja de CD de PS1.</summary>
-    public const double Depth = 0.08;
-
-    const double D = Depth / 2;
 
     /// <summary>Las seis caras de una caja de un ancho dado; se comparten entre todas las cajas del mismo formato.</summary>
     sealed record Meshes(MeshGeometry3D Front, MeshGeometry3D Back, MeshGeometry3D Spine,
@@ -26,30 +21,30 @@ public sealed class BoxModel
     {
         // Cada cara se define con sus esquinas abajo-izquierda, abajo-derecha, arriba-derecha y arriba-izquierda
         // vistas desde fuera, para que la textura quede derecha y la cara mire hacia fuera.
-        public static Meshes Create(double width)
+        public static Meshes Create(BoxShape shape)
         {
-            var w = width / 2;
+            double w = shape.Width / 2, h = shape.Height, d = shape.Depth / 2;
             return new(
-                Quad(new(-w, 0, D), new(w, 0, D), new(w, Height, D), new(-w, Height, D)),
-                Quad(new(w, 0, -D), new(-w, 0, -D), new(-w, Height, -D), new(w, Height, -D)),
-                Quad(new(-w, 0, -D), new(-w, 0, D), new(-w, Height, D), new(-w, Height, -D)),
-                Quad(new(w, 0, D), new(w, 0, -D), new(w, Height, -D), new(w, Height, D)),
-                Quad(new(-w, Height, D), new(w, Height, D), new(w, Height, -D), new(-w, Height, -D)),
-                Quad(new(-w, 0, -D), new(w, 0, -D), new(w, 0, D), new(-w, 0, D)));
+                Quad(new(-w, 0, d), new(w, 0, d), new(w, h, d), new(-w, h, d)),
+                Quad(new(w, 0, -d), new(-w, 0, -d), new(-w, h, -d), new(w, h, -d)),
+                Quad(new(-w, 0, -d), new(-w, 0, d), new(-w, h, d), new(-w, h, -d)),
+                Quad(new(w, 0, d), new(w, 0, -d), new(w, h, -d), new(w, h, d)),
+                Quad(new(-w, h, d), new(w, h, d), new(w, h, -d), new(-w, h, -d)),
+                Quad(new(-w, 0, -d), new(w, 0, -d), new(w, 0, d), new(-w, 0, d)));
         }
     }
 
-    static readonly Dictionary<Models.CoverFormat, Meshes> MeshesByFormat = [];
+    static readonly Dictionary<BoxShape, Meshes> MeshesByShape = [];
 
-    static Meshes MeshesFor(Models.CoverFormat format)
+    static Meshes MeshesFor(BoxShape shape)
     {
-        if (!MeshesByFormat.TryGetValue(format, out var meshes))
-            MeshesByFormat[format] = meshes = Meshes.Create(CoverArt.BoxWidth(format));
+        if (!MeshesByShape.TryGetValue(shape, out var meshes))
+            MeshesByShape[shape] = meshes = Meshes.Create(shape);
         return meshes;
     }
 
-    /// <summary>Ancho de la caja de este formato en la escena (para colocar las cajas en el carrusel).</summary>
-    public static double WidthOf(Models.CoverFormat format) => CoverArt.BoxWidth(format);
+    /// <summary>Ancho de la caja en la escena (para colocar las cajas en el carrusel).</summary>
+    public static double WidthOf(CarouselItem item) => BoxShape.Of(item).Width;
 
     static readonly Color Plastic = Color.FromRgb(0x17, 0x18, 0x1C);
     static readonly BitmapSource Placeholder = CreatePlaceholder();
@@ -72,8 +67,9 @@ public sealed class BoxModel
 
     CarouselItem _item;
     bool _backRendered;
-    Models.CoverFormat? _format;
-    double _halfWidth;
+    BoxShape? _shape;
+    readonly RotateTransform3D _yawTransform;
+    readonly RotateTransform3D _pitchTransform;
 
     // Caras en el mismo orden en que se crean: caja (delante, detrás, lomo, canto, arriba, abajo) y reflejo (las cuatro primeras).
     readonly List<GeometryModel3D> _boxFaces = [];
@@ -97,10 +93,12 @@ public sealed class BoxModel
         _brushes = [_front, _back, _spine, _frontReflection, _backReflection, _spineReflection, _edge, _edgeReflection];
 
         // Primero el giro de inspección alrededor del centro de la caja, después su sitio en el carrusel.
-        var center = new Point3D(0, Height / 2, 0);
+        // El centro del giro se ajusta en SetArt a la mitad de la altura de la caja.
+        _yawTransform = new RotateTransform3D(_yaw);
+        _pitchTransform = new RotateTransform3D(_pitch);
         var transform = new Transform3DGroup();
-        transform.Children.Add(new RotateTransform3D(_yaw, center));
-        transform.Children.Add(new RotateTransform3D(_pitch, center));
+        transform.Children.Add(_yawTransform);
+        transform.Children.Add(_pitchTransform);
         transform.Children.Add(_lift);
         transform.Children.Add(new RotateTransform3D(SideRotation));
         transform.Children.Add(Position);
@@ -128,13 +126,13 @@ public sealed class BoxModel
     {
         _item = item;
 
-        // La tarjeta de importar siempre es cuadrada; al cambiar de formato la caja cambia de ancho.
-        var format = item.IsAddCard ? Models.CoverFormat.Square : item.Format;
-        if (_format != format)
+        // La tarjeta de importar siempre es cuadrada; al cambiar de formato o de consola la caja cambia de medidas.
+        var shape = BoxShape.Of(item);
+        if (_shape != shape)
         {
-            _format = format;
-            _halfWidth = CoverArt.BoxWidth(format) / 2;
-            var meshes = MeshesFor(format);
+            _shape = shape;
+            _yawTransform.CenterY = _pitchTransform.CenterY = shape.Height / 2;
+            var meshes = MeshesFor(shape);
             MeshGeometry3D[] box = [meshes.Front, meshes.Back, meshes.Spine, meshes.Edge, meshes.Top, meshes.Bottom];
             for (var i = 0; i < _boxFaces.Count; i++)
                 _boxFaces[i].Geometry = box[i];
@@ -177,8 +175,9 @@ public sealed class BoxModel
             EnsureBack();
 
         double y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
-        var depthExtent = D * Math.Abs(Math.Cos(y)) + _halfWidth * Math.Abs(Math.Sin(y));
-        var halfHeight = Height / 2;
+        var shape = _shape ?? BoxShape.Square;
+        var depthExtent = shape.Depth / 2 * Math.Abs(Math.Cos(y)) + shape.Width / 2 * Math.Abs(Math.Sin(y));
+        var halfHeight = shape.Height / 2;
         _lift.OffsetY = Math.Max(0, halfHeight * Math.Abs(Math.Cos(p)) + depthExtent * Math.Abs(Math.Sin(p)) - halfHeight);
     }
 

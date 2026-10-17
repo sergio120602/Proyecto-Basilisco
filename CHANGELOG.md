@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.6] - 2026-10-17
+
+Las cajas rectangulares tienen las medidas reales de cada consola.
+
+- **Medidas reales (alto × ancho × grosor)** de la caja de cada consola en el formato rectangular:
+  PS1 jewel case 12,5 × 14,2 × 1,0 cm · PS2, Xbox, Xbox 360, Wii y PC caja de DVD 19,0 × 13,5 × 1,4 cm · PS3 Blu-ray 17,0 × 13,5 × 1,4 cm ·
+  PSP UMD 18,0 × 10,5 × 1,5 cm · Game Boy cartón 12,8 × 12,8 × 2,5 cm · Wii U Blu-ray 17,0 × 13,5 × 1,5 cm · Nintendo DS (Europa) 13,6 × 12,4 × 1,9 cm.
+- Están a escala entre sí, como en una estantería: una caja de PS1 o de DS se ve más baja que una de PS2, y la de Game Boy, más gruesa.
+- El lomo, la contraportada, el editor de encuadre y el zoom de «Llenar» usan las medidas de cada caja.
+- El título del juego se coloca justo encima de la caja seleccionada, sea cual sea su altura.
+- Las cajas cuadradas no cambian.
+
 ## [0.1.5] - 2026-10-17
 
 LaunchBox como segunda opción para las imágenes.
