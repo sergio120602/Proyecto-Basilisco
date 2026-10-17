@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.1.1] - 2026-10-17
+
+- **Franjas oficiales de cada consola**: si en `basilisco-data/borders/` hay una imagen de la franja (`ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gba.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png`, `pc.png`), Basilisco la usa en lugar de la dibujada. Su ancho sale de su propia proporción para que no se deforme.
+- Si falta alguna, se sigue usando la franja dibujada por Basilisco.
+- «Game Boy Advance» pasa a llamarse «Game Boy»; los juegos que ya la tenían asignada no cambian.
+
 ## [0.1.0] - 2026-10-17
 
 Consolas: cada juego lleva la caja de su consola.

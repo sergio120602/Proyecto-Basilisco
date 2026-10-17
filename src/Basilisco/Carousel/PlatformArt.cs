@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Basilisco.Carousel;
 
@@ -35,6 +36,25 @@ public static class PlatformArt
     /// <summary>Color de texto que se lee bien sobre el plástico de la consola.</summary>
     public static Color TextOnPlastic(string? platform) =>
         IsLight(Plastic(platform)) ? Color.FromArgb(200, 0x33, 0x33, 0x33) : Color.FromArgb(170, 255, 255, 255);
+
+    static readonly Dictionary<string, BitmapSource?> BandImages = [];
+
+    /// <summary>
+    /// Imagen de la franja de la consola en basilisco-data/borders/&lt;consola&gt;.png, si el usuario la tiene.
+    /// Se carga una vez y se reutiliza para todas las cajas.
+    /// </summary>
+    public static BitmapSource? BandImage(string? platform)
+    {
+        if (platform is null)
+            return null;
+        if (BandImages.TryGetValue(platform, out var cached))
+            return cached;
+
+        var path = System.IO.Path.Combine(AppInfo.BordersDirectory, platform + ".png");
+        var image = System.IO.File.Exists(path) ? CoverArt.LoadImage(path) : null;
+        BandImages[platform] = image;
+        return image;
+    }
 
     /// <summary>Pinta la franja de la izquierda de la portada, con el estilo de la consola.</summary>
     public static void DrawBand(DrawingContext dc, string? platform, Rect band)
@@ -135,11 +155,11 @@ public static class PlatformArt
         Separator(dc, band, Color.FromRgb(0xC8, 0xC8, 0xC8));
     }
 
-    // Game Boy Advance: franja añil con «GAME BOY ADVANCE» en cursiva.
+    // Game Boy: franja añil con «GAME BOY» en cursiva.
     static void DrawGba(DrawingContext dc, Rect band)
     {
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x3E, 0x39, 0x9E), Color.FromRgb(0x26, 0x22, 0x6E), 90), null, band);
-        VerticalText(dc, "GAME BOY ADVANCE", TextArea(band, band.Width * 0.5, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Black, FontStyles.Italic), maxFill: 0.72);
+        VerticalText(dc, "GAME BOY", TextArea(band, band.Width * 0.5, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Black, FontStyles.Italic), maxFill: 0.72);
         Separator(dc, band, Color.FromRgb(0x1C, 0x19, 0x55));
     }
 
