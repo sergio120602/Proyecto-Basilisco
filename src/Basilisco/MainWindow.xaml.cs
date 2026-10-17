@@ -77,6 +77,7 @@ public partial class MainWindow : Window
         FilterEditor.DeleteRequested += DeleteFilter;
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
+        ThemeEditor.Saved += ApplyTheme;
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
@@ -228,7 +229,7 @@ public partial class MainWindow : Window
     List<GameFilter> Filters => _library.Filters;
 
     bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
-                        FormatEditor.IsOpen || SteamImporter.IsOpen;
+                        FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
@@ -596,6 +597,7 @@ public partial class MainWindow : Window
         }
 
         var selectedGame = IsAddCard(index) ? null : _visibleGames[index];
+        // (con la tarjeta de importar se ven la apariencia general)
         ApplyLook(selectedGame);
         PlayTimeText.Text = selectedGame is null ? "" : PlayTimeLabel(selectedGame.PlayMinutes);
         PlayTimeText.Visibility = selectedGame is null || _flow.ShelfMode ? Visibility.Collapsed : Visibility.Visible;
@@ -623,7 +625,8 @@ public partial class MainWindow : Window
     /// </summary>
     void ApplyLook(Game? game)
     {
-        var color = game?.TextColor is { } hex && ColorConverter.ConvertFromString(hex) is Color custom ? custom : Color.FromRgb(0x1F, 0x26, 0x30);
+        var hexColor = game?.TextColor ?? _settings.TextColor;
+        var color = hexColor is { } hex && ColorConverter.ConvertFromString(hex) is Color custom ? custom : Color.FromRgb(0x1F, 0x26, 0x30);
         Resources["UiText"] = new SolidColorBrush(color);
         // Con letras claras, el halo alrededor del título pasa a ser oscuro para que se lean.
         var light = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255 > 0.6;
@@ -632,9 +635,14 @@ public partial class MainWindow : Window
             titleGlow.Color = glow;
         PlayTimeGlow.Color = glow;
 
-        var path = game is null ? null : ImageStore.GetBackgroundPath(game);
+        // El fondo propio del juego manda; si no tiene, el general.
+        var own = game is null ? null : ImageStore.GetBackgroundPath(game);
+        if (own is not null && !File.Exists(own))
+            own = null;
+        var path = own ?? ImageStore.GetGlobalBackgroundPath(_settings);
         if (path is not null && !File.Exists(path))
             path = null;
+        var isVideo = own is not null ? game!.BackgroundIsVideo : _settings.BackgroundIsVideo;
         if (path == _lookBackground)
             return;
         _lookBackground = path;
@@ -651,7 +659,7 @@ public partial class MainWindow : Window
             if (path is null)
                 return;
 
-            if (game!.BackgroundIsVideo)
+            if (isVideo)
             {
                 BackgroundVideo.Source = new Uri(path);
                 BackgroundVideo.Play();
@@ -1505,6 +1513,7 @@ public partial class MainWindow : Window
             case Key.C: ImportFolder(); break;
             case Key.F: OpenFormatEditor(); break;
             case Key.S: OpenSteamImport(); break;
+            case Key.A: OpenThemeEditor(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.OemPlus or Key.Add: StepZoom(0.1); break;
             case Key.OemMinus or Key.Subtract: StepZoom(-0.1); break;
@@ -1609,6 +1618,43 @@ public partial class MainWindow : Window
     void OnImportFolderClick(object sender, RoutedEventArgs e) => ImportFolder();
 
     void OnFormatClick(object sender, RoutedEventArgs e) => OpenFormatEditor();
+
+    void OnThemeClick(object sender, RoutedEventArgs e) => OpenThemeEditor();
+
+    void OpenThemeEditor() => ThemeEditor.Open(ImageStore.GetGlobalBackgroundPath(_settings), _settings.TextColor,
+        Games.Count(game => game.Background is not null || game.TextColor is not null));
+
+    /// <summary>Apariencia general: fondo y color de las letras para todos los juegos.</summary>
+    void ApplyTheme(ThemeResult result)
+    {
+        try
+        {
+            if (result.Background.NewPath is { } path)
+                ImageStore.SetGlobalBackground(_settings, path);
+            else if (result.Background.Remove)
+                ImageStore.RemoveGlobalBackground(_settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ShowToast("No se pudo copiar el fondo");
+        }
+        _settings.TextColor = result.TextColor;
+        _settings.Save();
+
+        if (result.ClearOwn)
+        {
+            foreach (var game in Games)
+            {
+                ImageStore.RemoveBackground(game);
+                game.TextColor = null;
+            }
+            Save();
+        }
+
+        _lookBackground = "\\0"; // Fuerza a recargar el fondo.
+        ShowDetails(_flow.SelectedIndex);
+        ShowToast("Apariencia guardada");
+    }
 
     void OnSteamClick(object sender, RoutedEventArgs e) => OpenSteamImport();
 

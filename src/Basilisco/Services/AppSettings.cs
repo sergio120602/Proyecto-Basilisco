@@ -23,6 +23,14 @@ public sealed class AppSettings
     /// <summary>Orden de los juegos en el carrusel.</summary>
     public Models.SortMode SortMode { get; set; } = Models.SortMode.Custom;
 
+    /// <summary>Fondo general para todos los juegos (archivo en basilisco-data/backgrounds). Null: el de siempre.</summary>
+    public string? Background { get; set; }
+
+    public bool BackgroundIsVideo { get; set; }
+
+    /// <summary>Color general de las letras (#RRGGBB). Null: el de siempre.</summary>
+    public string? TextColor { get; set; }
+
     /// <summary>Zoom del carrusel (barra de abajo a la derecha).</summary>
     public double Zoom { get; set; } = 1.2;
 
