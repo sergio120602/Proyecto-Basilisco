@@ -116,6 +116,8 @@
             </ScrollViewer>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource PillButton}" Content="Steam" Click="OnSteamClick" Margin="0,0,10,0"
+                        ToolTip="Importa tu cuenta de Steam: instalados, toda la biblioteca y Steam Familiar (S)"/>
                 <Button Style="{StaticResource PillButton}" Content="Formato" Click="OnFormatClick" Margin="0,0,10,0"
                         ToolTip="Cambia el formato de las cajas (cuadrada o rectangular) de uno, varios o todos los juegos (F)"/>
                 <Button Style="{StaticResource PillButton}" Content="+  Importar carpeta" Click="OnImportFolderClick"
@@ -201,5 +203,6 @@
         <customization:FolderImportPanel x:Name="FolderImporter"/>
         <customization:PlatformPickerPanel x:Name="PlatformPicker"/>
         <customization:FormatPanel x:Name="FormatEditor"/>
+        <customization:SteamPanel x:Name="SteamImporter"/>
     </Grid>
 </Window>

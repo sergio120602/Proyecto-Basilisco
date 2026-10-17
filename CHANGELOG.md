@@ -3,6 +3,20 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.2.0] - 2026-10-17
+
+Conexión con Steam.
+
+- **Importar desde Steam** (botón «Steam» arriba o tecla `S`), con tres opciones que se pueden combinar:
+  - **Juegos instalados en este PC**: se leen de tu instalación de Steam (todas sus bibliotecas, en cualquier disco). Sin clave ni internet. Los instalados desde la biblioteca de un familiar se reconocen solos.
+  - **Toda tu biblioteca**, también los juegos no instalados, con la clave de la Web API de Steam (gratis y permanente; el perfil debe tener los «Detalles de juegos» públicos) o con el token de sesión, que funciona aunque el perfil sea privado.
+  - **Steam Familiar**: los juegos que comparte contigo tu familia de Steam, con quién los comparte. Necesita el token de sesión, que se consigue con un botón que abre su página de Steam (con la sesión iniciada en el navegador) y dura unas 24 horas.
+- Lista para revisar antes de importar: tuyo o de la familia (y de quién), instalado o no, y horas jugadas. Los que ya tenías (importados desde Steam o como ejecutable de su carpeta de `steamapps`) salen marcados y no se duplican, así que puedes volver a sincronizar cuando quieras.
+- Los juegos de la familia pueden ir a un filtro «Steam Familiar».
+- Los juegos de Steam se lanzan a través de Steam (`steam://rungameid/…`); si no están instalados, Steam ofrece instalarlos. Son de PC sin tener que elegir la consola.
+- Las etiquetas del juego indican «Steam · instalado / no instalado» y «Steam Familiar · de …».
+- La clave de la Web API se guarda en `basilisco-data/settings.json`; **el token de sesión no se guarda nunca** en disco (da acceso a la cuenta mientras dura).
+
 ## [0.1.8] - 2026-10-17
 
 - **Cajas rectangulares sin franja de consola**: la carátula ocupa toda la portada. Están pensadas para las portadas reales de LaunchBox, que ya traen impresa la franja oficial de su consola.

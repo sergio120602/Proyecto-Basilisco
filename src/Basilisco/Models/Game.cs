@@ -10,6 +10,12 @@ public sealed class Game
     /// <summary>Ejecutable, acceso directo o cualquier archivo que se pueda abrir.</summary>
     public string Path { get; set; } = "";
 
+    /// <summary>Juego de Steam (se lanza con steam://rungameid/…), o null si es un archivo.</summary>
+    public int? SteamAppId { get; set; }
+
+    /// <summary>Si es de Steam Familiar, quién lo comparte.</summary>
+    public string? SteamOwner { get; set; }
+
     /// <summary>Formato con el que se ve la caja.</summary>
     public CoverFormat Format { get; set; } = CoverFormat.Square;
 
