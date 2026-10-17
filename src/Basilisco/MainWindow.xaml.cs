@@ -1348,8 +1348,59 @@ public partial class MainWindow : Window
     /// Botón del mando. Con un menú abierto solo se acepta (como Enter) o se cancela (como Esc);
     /// en el carrusel cada botón hace su acción directamente.
     /// </summary>
+    // ---- Evitar dobles pulsaciones ----
+    // Con Steam abierto, su «configuración de escritorio» convierte el mando en teclas (cruceta → flechas,
+    // A → Enter, B → Esc…). Basilisco lee el mando con SDL, así que la misma pulsación llegaría dos veces
+    // y el carrusel avanzaría dos puestos. Si mando y teclado dicen lo mismo casi a la vez, solo cuenta uno.
+    static readonly TimeSpan DuplicateWindow = TimeSpan.FromMilliseconds(250);
+    readonly Dictionary<Key, DateTime> _padKeys = [];
+    readonly Dictionary<Key, DateTime> _keyboardKeys = [];
+
+    /// <summary>Tecla que equivale a lo que hace el mando (para reconocer el duplicado de Steam).</summary>
+    static Key? KeyFor(PadAction action) => action switch
+    {
+        PadAction.Confirm => Key.Enter,
+        PadAction.Back => Key.Escape,
+        _ => null,
+    };
+
+    static Key KeyForDirection(int direction, bool vertical) =>
+        vertical ? (direction < 0 ? Key.Up : Key.Down) : (direction < 0 ? Key.Left : Key.Right);
+
+    // Si la tecla de Steam llega antes que el mando (pasa a veces por unos milisegundos), el mando no la repite.
+    static readonly TimeSpan KeyFirstWindow = TimeSpan.FromMilliseconds(90);
+
+    /// <summary>
+    /// True si el teclado acaba de hacer lo mismo (entonces el mando no lo repite). La pulsación del mando se
+    /// apunta siempre, para que las teclas repetidas que mande Steam después se ignoren.
+    /// </summary>
+    bool PadIsDuplicate(Key key)
+    {
+        var now = DateTime.Now;
+        var duplicate = _keyboardKeys.TryGetValue(key, out var at) && now - at < KeyFirstWindow;
+        _padKeys[key] = now;
+        return duplicate;
+    }
+
+    /// <summary>True si el mando acaba de hacer lo mismo: es la tecla que manda Steam por el mando y se ignora.</summary>
+    bool KeyIsDuplicate(Key key)
+    {
+        if (key is not (Key.Left or Key.Right or Key.Up or Key.Down or Key.Enter or Key.Escape or Key.Space))
+            return false;
+
+        var padKey = key == Key.Space ? Key.Enter : key;
+        if (_padKeys.TryGetValue(padKey, out var at) && DateTime.Now - at < DuplicateWindow)
+            return true;
+
+        // Solo se apuntan las teclas que sí cuentan.
+        _keyboardKeys[padKey] = DateTime.Now;
+        return false;
+    }
+
     void OnPadPressed(PadAction action)
     {
+        if (KeyFor(action) is { } key && PadIsDuplicate(key))
+            return;
         SetPadMode(true);
         if (_flow.ShelfMode && !IsPanelOpen)
         {
@@ -1390,6 +1441,8 @@ public partial class MainWindow : Window
 
     void OnPadNavigate(int direction)
     {
+        if (PadIsDuplicate(KeyForDirection(direction, vertical: false)))
+            return;
         SetPadMode(true);
         if (IsPanelOpen)
             return;
@@ -1402,6 +1455,8 @@ public partial class MainWindow : Window
     /// <summary>Arriba y abajo del mando: en la estantería, coger y soltar.</summary>
     void OnPadVertical(int direction)
     {
+        if (PadIsDuplicate(KeyForDirection(direction, vertical: true)))
+            return;
         SetPadMode(true);
         if (IsPanelOpen || !_flow.ShelfMode)
             return;
@@ -1483,6 +1538,13 @@ public partial class MainWindow : Window
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // La misma pulsación del mando repetida como tecla por Steam: se ignora.
+        if (!_injectingKey && KeyIsDuplicate(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // Al volver al teclado, la barra de abajo vuelve a enseñar las teclas.
         if (!_injectingKey)
             SetPadMode(false);
