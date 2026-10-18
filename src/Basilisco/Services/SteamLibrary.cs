@@ -107,6 +107,41 @@ public static partial class SteamLocal
         return apps.Values.ToList();
     }
 
+    /// <summary>
+    /// Minutos jugados y última partida de cada juego según Steam, de la cuenta con la sesión más reciente en este PC
+    /// (userdata/&lt;cuenta&gt;/config/localconfig.vdf). Incluye los juegos de la familia. Sin Steam: vacío.
+    /// </summary>
+    public static Dictionary<int, (int Minutes, DateTime? LastPlayed)> Playtimes()
+    {
+        var times = new Dictionary<int, (int, DateTime?)>();
+        if (SteamPath() is not { } steam || Accounts().FirstOrDefault() is not { } account ||
+            !ulong.TryParse(account.SteamId, out var steamId64) || steamId64 < SteamId64Base)
+            return times;
+
+        var file = Path.Combine(steam, "userdata", (steamId64 - SteamId64Base).ToString(), "config", "localconfig.vdf");
+        if (Read(file)?.GetValueOrDefault("UserLocalConfigStore") is not Dictionary<string, object> store ||
+            Child(Child(Child(Child(store, "Software"), "Valve"), "Steam"), "apps") is not { } apps)
+            return times;
+
+        foreach (var (key, value) in apps)
+        {
+            if (!int.TryParse(key, out var appId) || appId == 0 || value is not Dictionary<string, object> app ||
+                !int.TryParse(Text(app, "Playtime"), out var minutes))
+                continue;
+            DateTime? lastPlayed = long.TryParse(Text(app, "LastPlayed"), out var seconds) && seconds > 0
+                ? DateTimeOffset.FromUnixTimeSeconds(seconds).LocalDateTime
+                : null;
+            times[appId] = (minutes, lastPlayed);
+        }
+        return times;
+    }
+
+    // SteamID64 de la cuenta 0; la carpeta de userdata es el SteamID64 menos esto.
+    const ulong SteamId64Base = 76561197960265728;
+
+    static Dictionary<string, object>? Child(Dictionary<string, object>? data, string key) =>
+        data?.GetValueOrDefault(key) as Dictionary<string, object>;
+
     /// <summary>True si el juego está instalado en alguna biblioteca de este PC.</summary>
     public static bool IsInstalled(int appId) =>
         LibraryFolders().Any(library => File.Exists(Path.Combine(library, "steamapps", $"appmanifest_{appId}.acf")));

@@ -112,6 +112,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.4** — Cajas rectangulares de PC en 600 × 900
 - [x] **v0.3.5** — Logo de la aplicación
 - [x] **v0.3.6** — Logo con esquinas redondeadas
+- [x] **v0.3.7** — Horas de juego de Steam
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -136,6 +137,8 @@ Con el botón **Steam** (o la tecla `S`) importas tu cuenta de Steam:
 - **Steam Familiar**: los juegos que te comparte tu familia. Steam solo los da con un **token de sesión**: con la sesión de Steam iniciada en el navegador, abre [esta página](https://store.steampowered.com/pointssummary/ajaxgetasyncconfig), copia todo el texto y pégalo en Basilisco. Dura unas 24 horas y Basilisco no lo guarda en ningún archivo.
 
 Los juegos de Steam se lanzan a través de Steam; si no están instalados, Steam ofrece instalarlos. Puedes volver a importar cuando quieras: lo que ya tenías no se duplica.
+
+Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Steam de tu PC cada vez que abres Basilisco o vuelves a él (y, si has puesto la clave de la Web API, también de los servidores de Steam, que cuentan lo jugado en otros PC).
 
 ## 📦 Formatos de caja
 
