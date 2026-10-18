@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.5] - 2026-10-18
+
+- Nuevo **logo**: San Miguel venciendo al basilisco. Es el icono del `.exe`, de la ventana y de la barra de tareas.
+
 ## [0.3.4] - 2026-10-18
 
 - Las cajas rectangulares de **PC** pasan a la proporción **600 × 900** (2:3), la de las carátulas verticales de Steam y SteamGridDB, con el mismo alto que una caja de DVD (19 × 12,7 × 1,4 cm).
