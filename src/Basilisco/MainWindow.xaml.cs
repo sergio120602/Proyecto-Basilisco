@@ -104,10 +104,17 @@ public partial class MainWindow : Window
             ShowToast($"Mando conectado: {name}");
         };
         _gamepad.Disconnected += () => ShowToast("Mando desconectado");
-        Closed += (_, _) => _gamepad.Dispose();
+        Closed += (_, _) =>
+        {
+            _gamepad.Dispose();
+            // Si cierras Basilisco jugando, la partida queda guardada: al volver a abrirlo se sigue contando.
+            _session?.ToSaved().Save();
+        };
+        _playTimer.Tick += async (_, _) => await PollPlaySessionAsync();
         Loaded += async (_, _) =>
         {
             await RepairMovedGamesAsync();
+            await RestorePlaySessionAsync();
             await SyncSteamPlaytimeAsync(online: true);
         };
     }
@@ -793,43 +800,141 @@ public partial class MainWindow : Window
 
     // ---- Tiempo de juego ----
 
-    /// <summary>Partida en curso: desde que se lanza hasta que se cierra el juego o se vuelve a Basilisco.</summary>
-    sealed record PlaySession(Game Game, DateTime Started, System.Diagnostics.Process? Process);
+    /// <summary>
+    /// Partida en curso. Se cuenta mientras el juego siga abierto (algún proceso desde su carpeta, o el que se lanzó),
+    /// aunque vuelvas a Basilisco o lo cierres y lo abras otra vez. Si no se puede saber (un enlace sin carpeta, o un
+    /// lanzador que se cierra al momento), se acaba al volver a Basilisco, como antes.
+    /// </summary>
+    sealed class PlaySession(Game game, DateTime started, string? folder, int? processId)
+    {
+        public Game Game { get; } = game;
+        public DateTime Started { get; } = started;
+        public string? Folder { get; } = folder;
+        public int? ProcessId { get; } = processId;
+        public DateTime LastSeen { get; set; } = started;
+        public bool SeenRunning { get; set; }
+
+        /// <summary>True mientras se sigue al juego por sus procesos; false: se acaba al volver a Basilisco.</summary>
+        public bool Tracking { get; set; } = folder is not null || processId is not null;
+
+        public SavedSession ToSaved() => new(Game.Id, Started, LastSeen, Folder, ProcessId);
+    }
+
+    // Al lanzar un juego, lo que puede tardar en aparecer su proceso (lanzadores, Steam…).
+    static readonly TimeSpan LaunchGrace = TimeSpan.FromMinutes(2);
 
     PlaySession? _session;
+    readonly System.Windows.Threading.DispatcherTimer _playTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+    bool _polling;
+    DateTime _sessionSaved;
 
     void StartPlaySession(Game game, System.Diagnostics.Process? process)
     {
         EndPlaySession(returned: false);
-        _session = new PlaySession(game, DateTime.Now, process);
-        if (process is null)
-            return;
+        int? processId = null;
         try
         {
-            process.EnableRaisingEvents = true;
-            process.Exited += (_, _) => Dispatcher.BeginInvoke(() =>
-            {
-                // Un lanzador que se cierra al momento no cuenta: se espera a volver a Basilisco.
-                if (_session?.Process == process && DateTime.Now - _session.Started > TimeSpan.FromSeconds(20))
-                    EndPlaySession(returned: false);
-            });
+            processId = process?.Id;
         }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        catch (InvalidOperationException)
         {
+        }
+        process?.Dispose();
+        BeginTracking(new PlaySession(game, DateTime.Now, GameProcesses.FolderOf(game), processId));
+    }
+
+    void BeginTracking(PlaySession session)
+    {
+        _session = session;
+        session.ToSaved().Save();
+        _sessionSaved = DateTime.Now;
+        _playTimer.Start();
+    }
+
+    /// <summary>Cada pocos segundos: ¿sigue abierto el juego? Cuando se cierra, se apunta lo jugado hasta la última vez que se vio.</summary>
+    async Task PollPlaySessionAsync()
+    {
+        if (_polling || _session is not { } session)
+            return;
+        _polling = true;
+        try
+        {
+            var running = session.Tracking && await Task.Run(() => GameProcesses.IsRunning(session.Folder, session.ProcessId));
+            if (_session != session)
+                return;
+
+            var now = DateTime.Now;
+            if (!session.Tracking || running)
+            {
+                // Sin seguimiento, «visto» es que Basilisco sigue abierto: si se cierra, se cuenta hasta ese momento.
+                session.LastSeen = now;
+                session.SeenRunning |= running;
+            }
+            else if (session.SeenRunning)
+            {
+                EndPlaySession(returned: false, end: session.LastSeen);
+                return;
+            }
+            else if (session.Folder is null && now - session.Started < TimeSpan.FromSeconds(20) || now - session.Started > LaunchGrace)
+            {
+                // Un lanzador que se cierra al momento, o un juego que no aparece: se acaba al volver a Basilisco.
+                session.Tracking = false;
+                session.LastSeen = now;
+            }
+
+            if (now - _sessionSaved > TimeSpan.FromMinutes(1))
+            {
+                session.ToSaved().Save();
+                _sessionSaved = now;
+            }
+        }
+        finally
+        {
+            _polling = false;
         }
     }
 
+    /// <summary>Al abrir Basilisco: si quedó una partida a medias, se sigue contando (si el juego sigue abierto) o se apunta.</summary>
+    async Task RestorePlaySessionAsync()
+    {
+        if (SavedSession.Load() is not { } saved)
+            return;
+        if (Games.FirstOrDefault(game => game.Id == saved.GameId) is not { } game)
+        {
+            SavedSession.Clear();
+            return;
+        }
+
+        var session = new PlaySession(game, saved.Started, saved.Folder, null) { LastSeen = saved.LastSeen, SeenRunning = true };
+        if (saved.Folder is not null && await Task.Run(() => GameProcesses.IsRunning(saved.Folder, null)))
+        {
+            session.LastSeen = DateTime.Now;
+            BeginTracking(session);
+            ShowToast($"«{game.Name}» sigue abierto: se sigue contando el tiempo");
+            return;
+        }
+
+        _session = session;
+        EndPlaySession(returned: false, end: saved.LastSeen);
+    }
+
     /// <param name="returned">True si se acaba porque has vuelto a Basilisco (los primeros segundos no cuentan: aún carga el juego).</param>
-    void EndPlaySession(bool returned)
+    /// <param name="end">Cuándo se cerró el juego; si no, ahora.</param>
+    void EndPlaySession(bool returned, DateTime? end = null)
     {
         if (_session is not { } session)
             return;
-        var elapsed = DateTime.Now - session.Started;
+        // Si se le está siguiendo, volver a Basilisco no lo acaba: se espera a que se cierre el juego.
+        if (returned && session.Tracking)
+            return;
+        var elapsed = (end ?? DateTime.Now) - session.Started;
         if (returned && elapsed < TimeSpan.FromSeconds(20))
             return;
 
         _session = null;
-        var minutes = (int)Math.Min(elapsed.TotalMinutes, 12 * 60);
+        _playTimer.Stop();
+        SavedSession.Clear();
+        var minutes = (int)Math.Max(0, elapsed.TotalMinutes);
         if (minutes < 1 || !Games.Contains(session.Game))
             return;
 

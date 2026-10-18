@@ -142,6 +142,19 @@ public static partial class SteamLocal
     static Dictionary<string, object>? Child(Dictionary<string, object>? data, string key) =>
         data?.GetValueOrDefault(key) as Dictionary<string, object>;
 
+    /// <summary>Carpeta donde está instalado el juego (steamapps/common/…), o null si no está instalado.</summary>
+    public static string? InstallDirOf(int appId)
+    {
+        foreach (var library in LibraryFolders())
+        {
+            var steamapps = Path.Combine(library, "steamapps");
+            if (Read(Path.Combine(steamapps, $"appmanifest_{appId}.acf"))?.GetValueOrDefault("AppState") is Dictionary<string, object> state &&
+                Text(state, "installdir") is { Length: > 0 } dir)
+                return Path.Combine(steamapps, "common", dir);
+        }
+        return null;
+    }
+
     /// <summary>True si el juego está instalado en alguna biblioteca de este PC.</summary>
     public static bool IsInstalled(int appId) =>
         LibraryFolders().Any(library => File.Exists(Path.Combine(library, "steamapps", $"appmanifest_{appId}.acf")));
