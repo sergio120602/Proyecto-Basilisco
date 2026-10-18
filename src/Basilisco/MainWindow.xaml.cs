@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     readonly LaunchBoxProvider _launchBoxFront = new(Face.Front);
     readonly LaunchBoxProvider _launchBoxBack = new(Face.Back);
     readonly LaunchBoxProvider _launchBoxSpine = new(Face.Spine);
+    readonly SpineArchiveProvider _spineArchive = new();
     readonly Library _library;
     readonly CoverFlow _flow;
 
@@ -1271,11 +1272,17 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Busca en internet una imagen para el juego que se está personalizando: la portada en SteamGridDB,
-    /// y la contraportada y el lomo (a partir de sus banners) en TheGamesDB.
+    /// y la contraportada y el lomo (a partir de sus banners) en TheGamesDB. O en LaunchBox, o el lomo en The Spine Archive.
     /// </summary>
-    void OpenArtSearch(string gameName, ArtTarget target, CoverFormat format, string? platform, bool launchBox)
+    void OpenArtSearch(string gameName, ArtTarget target, CoverFormat format, string? platform, ArtSource source)
     {
-        if (launchBox)
+        if (source == ArtSource.SpineArchive)
+        {
+            ArtSearch.Open(_spineArchive, _settings, gameName, Customizer.SetSpineImage);
+            return;
+        }
+
+        if (source == ArtSource.LaunchBox)
         {
             // LaunchBox: la segunda opción, con fotos reales de las tres caras de la caja.
             var (provider, onChosen) = target switch

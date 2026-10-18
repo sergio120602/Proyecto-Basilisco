@@ -113,6 +113,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.5** — Logo de la aplicación
 - [x] **v0.3.6** — Logo con esquinas redondeadas
 - [x] **v0.3.7** — Horas de juego de Steam
+- [x] **v0.3.8** — Lomos de The Spine Archive
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -152,6 +153,8 @@ En Personalizar (`E`) puedes buscar y descargar la portada en **SteamGridDB**, y
 - **TheGamesDB**: entra en [thegamesdb.net](https://thegamesdb.net) con tu cuenta y pulsa «API Access Request» al pie de la página. Tienen que aprobarla y tiene un límite de consultas al mes.
 
 Como segunda opción, cada cara tiene un botón **Buscar en LaunchBox**: fotos reales de las cajas (portada, contraportada y lomo) de casi 200 000 juegos de la [base de datos de LaunchBox](https://gamesdb.launchbox-app.com/), de varias regiones. No necesita clave: la primera vez descarga su base de datos (unos 100 MB) y la guarda resumida en `basilisco-data/launchbox/`; después las búsquedas son instantáneas.
+
+Para el lomo hay una tercera opción, **Buscar en The Spine Archive**: más de 11 000 lomos hechos por la comunidad de [The Spine Archive](https://thespinearchive.com/) (r/SwitchSpines). Están pensados para las cajas de Switch, pero sirven para cualquier caja (con «Ajustar…» los encuadras). No necesita clave: el catálogo (unos 7 MB) se guarda en `basilisco-data/spinearchive/` y se actualiza solo cada semana.
 
 Las claves se guardan en `basilisco-data/settings.json`, junto al `.exe`. No compartas esa carpeta si no quieres compartir tus claves.
 
