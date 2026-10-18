@@ -12,7 +12,8 @@ public sealed record ArtGame(string Id, string Name, string? Detail);
 
 /// <summary>Una imagen disponible para un juego.</summary>
 /// <param name="Label">Texto bajo la miniatura cuando no se saben las medidas (por ejemplo, la región).</param>
-public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null)
+/// <param name="Tall">Imagen muy alta y estrecha (un lomo): la miniatura se enseña tumbada para que se lea.</param>
+public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null, bool Tall = false)
 {
     public string SizeText => Width > 0 && Height > 0 ? $"{Width} × {Height}" : Label ?? "";
 }
@@ -70,8 +71,9 @@ public abstract class ArtProvider
             await File.WriteAllBytesAsync(path, bytes, cancellation);
             return path;
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !cancellation.IsCancellationRequested)
         {
+            // TaskCanceledException sin cancelar nosotros: el servidor no ha respondido a tiempo.
             throw new ArtProviderException("No se ha podido descargar la imagen. Comprueba tu conexión a internet.");
         }
     }

@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.8] - 2026-10-18
+
+- Nuevo botón **Buscar en The Spine Archive** en el lomo (Personalizar): más de 11 000 lomos hechos por la comunidad de [thespinearchive.com](https://thespinearchive.com/), sin clave. El catálogo se descarga la primera vez (unos 7 MB) en `basilisco-data/spinearchive/` y se pone al día solo cada semana (o con «Actualizar catálogo»).
+- En el buscador, los lomos se ven tumbados para que se lea el título, con su autor y su consola.
+- Si una imagen tarda demasiado en descargarse, ahora se avisa en lugar de no hacer nada.
+
 ## [0.3.7] - 2026-10-18
 
 - Los juegos de **Steam** llevan ahora **las mismas horas que en Steam**, también los instalados y los de Steam Familiar. Se leen del Steam de este PC al abrir Basilisco y al volver a él; con la clave de la Web API también se piden a Steam, así que cuenta lo jugado en otros PC.

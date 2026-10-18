@@ -58,6 +58,9 @@ public sealed record CustomizeResult(
 /// <summary>Cara de la caja para la que se busca una imagen en internet.</summary>
 public enum ArtTarget { Front, Back, Spine }
 
+/// <summary>Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox o The Spine Archive.</summary>
+public enum ArtSource { Default, LaunchBox, SpineArchive }
+
 /// <summary>
 /// Menú para cambiar el nombre, el formato, las imágenes, la consola y los filtros de un juego,
 /// con la caja en 3D para girarla. Los cambios solo se aplican al guardar.
@@ -90,7 +93,7 @@ public partial class CustomizePanel : UserControl
     /// El usuario quiere buscar en internet una imagen para esa cara de la caja: nombre, cara, formato,
     /// consola del juego y si es en LaunchBox (la segunda opción) en lugar del servicio habitual.
     /// </summary>
-    public event Action<string, ArtTarget, CoverFormat, string?, bool>? ArtSearchRequested;
+    public event Action<string, ArtTarget, CoverFormat, string?, ArtSource>? ArtSearchRequested;
     public event Action? Closed;
 
     /// <summary>
@@ -661,20 +664,22 @@ public partial class CustomizePanel : UserControl
         _preview.ShowFront();
     }
 
-    void RequestSearch(ArtTarget target, bool launchBox) =>
-        ArtSearchRequested?.Invoke(NameBox.Text.Trim(), target, _format, _platform, launchBox);
+    void RequestSearch(ArtTarget target, ArtSource source) =>
+        ArtSearchRequested?.Invoke(NameBox.Text.Trim(), target, _format, _platform, source);
 
-    void OnSearchFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, launchBox: false);
+    void OnSearchFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, ArtSource.Default);
 
-    void OnSearchBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, launchBox: false);
+    void OnSearchBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, ArtSource.Default);
 
-    void OnSearchSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, launchBox: false);
+    void OnSearchSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, ArtSource.Default);
 
-    void OnLaunchBoxFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, launchBox: true);
+    void OnLaunchBoxFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, ArtSource.LaunchBox);
 
-    void OnLaunchBoxBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, launchBox: true);
+    void OnLaunchBoxBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, ArtSource.LaunchBox);
 
-    void OnLaunchBoxSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, launchBox: true);
+    void OnLaunchBoxSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, ArtSource.LaunchBox);
+
+    void OnSpineArchiveClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, ArtSource.SpineArchive);
 
     // El lado derecho ocupa lo que permita la ventana; si no cabe, se desplaza.
     void OnSizeChanged(object sender, SizeChangedEventArgs e) => SideScroll.MaxHeight = Math.Max(300, ActualHeight - 200);

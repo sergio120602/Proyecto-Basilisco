@@ -142,6 +142,8 @@
                                 ToolTip="Usa un banner de thegamesdb.net, girado para que quepa en el lomo"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxSpineClick" Margin="0,0,10,10"
                                 ToolTip="Fotos reales del lomo de la caja (gamesdb.launchbox-app.com)"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en The Spine Archive" Click="OnSpineArchiveClick" Margin="0,0,10,10"
+                                ToolTip="Lomos hechos por la comunidad (thespinearchive.com), sin clave"/>
                         <Button x:Name="FrameSpineButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameSpineClick" ToolTip="Amplía y mueve la imagen para que cuadre en el lomo"/>
                         <Button x:Name="RemoveSpineImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
