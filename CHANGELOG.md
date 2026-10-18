@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.4] - 2026-10-18
+
+- Las cajas rectangulares de **PC** pasan a la proporción **600 × 900** (2:3), la de las carátulas verticales de Steam y SteamGridDB, con el mismo alto que una caja de DVD (19 × 12,7 × 1,4 cm).
+
 ## [0.3.3] - 2026-10-18
 
 - Arreglado: algunos vídeos de fondo no cargaban. Eran vídeos en **VP9, AV1 o HEVC** (lo habitual en descargas de YouTube), que el reproductor de Basilisco no sabe abrir aunque Windows tenga sus extensiones. Ahora Basilisco los **convierte una sola vez a H.264** con el conversor de Windows (unos segundos) y sustituye el archivo por el convertido; después cargan al momento. Los fondos que ya tenías se arreglan solos.
