@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/logo.jpg" alt="Logo de Basilisco" width="256"></p>
+<p align="center"><img src="docs/logo.png" alt="Logo de Basilisco" width="256"></p>
 
 # 🐍 Proyecto Basilisco
 
@@ -111,6 +111,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.3** — Los vídeos de fondo en VP9, AV1 o HEVC se convierten solos para que carguen
 - [x] **v0.3.4** — Cajas rectangulares de PC en 600 × 900
 - [x] **v0.3.5** — Logo de la aplicación
+- [x] **v0.3.6** — Logo con esquinas redondeadas
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

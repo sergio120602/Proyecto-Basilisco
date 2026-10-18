@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.6] - 2026-10-18
+
+- El **logo** tiene ahora las **esquinas redondeadas** (con transparencia), en el icono del `.exe`, la ventana y el README.
+
 ## [0.3.5] - 2026-10-18
 
 - Nuevo **logo**: San Miguel venciendo al basilisco. Es el icono del `.exe`, de la ventana y de la barra de tareas.
