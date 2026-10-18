@@ -33,7 +33,7 @@ public sealed record BoxShape(double Width, double Height, double Depth)
             "n64" => Cm(12.7, 18.0, 3.4),   // Caja de cartón apaisada de Nintendo 64 (aprox.)
             "gc" => Cm(18.7, 13.5, 1.4),    // Estuche de mini-DVD de GameCube (aprox.)
             "wii" => Dvd,                   // Caja de DVD blanca
-            "wiiu" => Cm(17.0, 13.5, 1.5),  // Caja de Blu-ray azul
+            "wiiu" => Cm(19.0, 13.5, 1.4),  // Caja azul de Wii U: 190 × 135 × 14 mm, como una de DVD
             "nds" => Cm(13.6, 12.4, 1.9),   // Estuche de DS (Europa)
             "pc" => Cm(19.0, 19.0 * 600 / 900, 1.4), // Proporción 600 × 900 (2:3), la de las carátulas de Steam
             _ => Dvd,

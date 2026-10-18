@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.9] - 2026-10-18
+
+- La caja rectangular de **Wii U** mide ahora **190 × 135 × 14 mm** (alto × ancho × grosor), como una de DVD.
+- El **tiempo de juego** se cuenta mientras el juego siga abierto, aunque vuelvas a Basilisco: se miran los procesos que se ejecutan desde la carpeta del juego (también si se abre con un lanzador que se cierra enseguida, o desde Steam).
+- Si cierras Basilisco mientras juegas, la partida queda guardada en `basilisco-data/session.json`: al volver a abrirlo sigue contando si el juego sigue abierto, o apunta lo jugado hasta la última vez que lo vio.
+- Los juegos de los que no se puede saber la carpeta (un enlace, por ejemplo) siguen contando hasta que vuelves a Basilisco.
+
 ## [0.3.8] - 2026-10-18
 
 - Nuevo botón **Buscar en The Spine Archive** en el lomo (Personalizar): más de 11 000 lomos hechos por la comunidad de [thespinearchive.com](https://thespinearchive.com/), sin clave. El catálogo se descarga la primera vez (unos 7 MB) en `basilisco-data/spinearchive/` y se pone al día solo cada semana (o con «Actualizar catálogo»).
