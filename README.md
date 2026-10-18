@@ -107,6 +107,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.0** — Fondo estático o dinámico, color de las letras y tiempo de juego por juego
 - [x] **v0.3.1** — Apariencia general (fondo y color de letras) para todos los juegos
 - [x] **v0.3.3** — Los vídeos de fondo en VP9, AV1 o HEVC se convierten solos para que carguen
+- [x] **v0.3.4** — Cajas rectangulares de PC en 600 × 900
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -134,7 +135,7 @@ Los juegos de Steam se lanzan a través de Steam; si no están instalados, Steam
 
 ## 📦 Formatos de caja
 
-Cada juego puede usar una caja **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (sin franja: la carátula ocupa toda la portada, ideal para las portadas reales de LaunchBox, y con las medidas reales de la caja de su consola: jewel case en PS1, DVD en PS2/Xbox/Wii/PC, Blu-ray en PS3 y Wii U, UMD en PSP, cartón en Game Boy y estuche de DS). Cada formato guarda sus propias imágenes, así que puedes cambiar de uno a otro sin perder nada.
+Cada juego puede usar una caja **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (sin franja: la carátula ocupa toda la portada, ideal para las portadas reales de LaunchBox, y con las medidas reales de la caja de su consola: jewel case en PS1, DVD en PS2/Xbox/Wii, 600 × 900 en PC, Blu-ray en PS3 y Wii U, UMD en PSP, cartón en Game Boy y estuche de DS). Cada formato guarda sus propias imágenes, así que puedes cambiar de uno a otro sin perder nada.
 
 ## 🌐 Carátulas desde internet
 

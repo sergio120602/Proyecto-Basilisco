@@ -35,7 +35,7 @@ public sealed record BoxShape(double Width, double Height, double Depth)
             "wii" => Dvd,                   // Caja de DVD blanca
             "wiiu" => Cm(17.0, 13.5, 1.5),  // Caja de Blu-ray azul
             "nds" => Cm(13.6, 12.4, 1.9),   // Estuche de DS (Europa)
-            "pc" => Dvd,                    // Caja de DVD
+            "pc" => Cm(19.0, 19.0 * 600 / 900, 1.4), // Proporción 600 × 900 (2:3), la de las carátulas de Steam
             _ => Dvd,
         };
 
