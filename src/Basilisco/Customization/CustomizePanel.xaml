@@ -68,9 +68,9 @@
                         <TextBlock Text="h" FontSize="15" Foreground="#1F2630" VerticalAlignment="Center" Margin="8,0,16,0"/>
                         <TextBox x:Name="MinutesBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="64"/>
                         <TextBlock Text="min" FontSize="15" Foreground="#1F2630" VerticalAlignment="Center" Margin="8,0,16,0"/>
-                        <Button Style="{StaticResource PillButton}" Content="A cero" Click="OnResetPlayTimeClick"/>
+                        <Button x:Name="ResetPlayTimeButton" Style="{StaticResource PillButton}" Content="A cero" Click="OnResetPlayTimeClick"/>
                     </StackPanel>
-                    <TextBlock FontSize="12" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
+                    <TextBlock x:Name="PlayTimeHint" FontSize="12" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
                                Text="Se cuenta solo mientras juegas desde Basilisco. Se ve debajo del juego en el carrusel."/>
                 </StackPanel>
 

@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.3.7] - 2026-10-18
+
+- Los juegos de **Steam** llevan ahora **las mismas horas que en Steam**, también los instalados y los de Steam Familiar. Se leen del Steam de este PC al abrir Basilisco y al volver a él; con la clave de la Web API también se piden a Steam, así que cuenta lo jugado en otros PC.
+- Al cerrar un juego de Steam, Basilisco ya no suma su propio tiempo, sino que se pone al día con las horas de Steam, sin contar dos veces.
+- La última partida de los juegos de Steam también viene de Steam.
+- En «Personalizar», las horas de un juego de Steam no se pueden cambiar a mano.
+
 ## [0.3.6] - 2026-10-18
 
 - El **logo** tiene ahora las **esquinas redondeadas** (con transparencia), en el icono del `.exe`, la ventana y el README.

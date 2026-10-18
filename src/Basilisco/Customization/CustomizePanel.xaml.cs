@@ -128,6 +128,14 @@ public partial class CustomizePanel : UserControl
         SyncColor();
         HoursBox.Text = (game.PlayMinutes / 60).ToString();
         MinutesBox.Text = (game.PlayMinutes % 60).ToString();
+        // Los de Steam llevan las horas de Steam, que se ponen solas: no se cambian a mano.
+        var fromSteam = game.SteamAppId is not null;
+        HoursBox.IsReadOnly = MinutesBox.IsReadOnly = fromSteam;
+        HoursBox.Opacity = MinutesBox.Opacity = fromSteam ? 0.6 : 1;
+        ResetPlayTimeButton.Visibility = fromSteam ? Visibility.Collapsed : Visibility.Visible;
+        PlayTimeHint.Text = fromSteam
+            ? "Son las horas que llevas en Steam y se ponen al día solas."
+            : "Se cuenta solo mientras juegas desde Basilisco. Se ve debajo del juego en el carrusel.";
         UpdateBackgroundPreview();
         ReleaseBox.Text = game.ReleaseDate is { } released
             ? released is { Month: 1, Day: 1 } ? released.Year.ToString() : released.ToString("dd/MM/yyyy")

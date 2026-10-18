@@ -81,7 +81,13 @@ public partial class MainWindow : Window
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
-        Activated += (_, _) => { if (BackgroundVideo.Source is not null) BackgroundVideo.Play(); EndPlaySession(returned: true); };
+        Activated += async (_, _) =>
+        {
+            if (BackgroundVideo.Source is not null) BackgroundVideo.Play();
+            EndPlaySession(returned: true);
+            if (DateTime.Now - _lastSteamSync > TimeSpan.FromSeconds(30))
+                await SyncSteamPlaytimeAsync(online: false);
+        };
         Deactivated += (_, _) => BackgroundVideo.Pause();
         ZoomSlider.Value = Math.Clamp(_settings.Zoom, CoverFlow.MinZoom, CoverFlow.MaxZoom);
         ApplyZoom(ZoomSlider.Value, save: false);
@@ -98,7 +104,61 @@ public partial class MainWindow : Window
         };
         _gamepad.Disconnected += () => ShowToast("Mando desconectado");
         Closed += (_, _) => _gamepad.Dispose();
-        Loaded += async (_, _) => await RepairMovedGamesAsync();
+        Loaded += async (_, _) =>
+        {
+            await RepairMovedGamesAsync();
+            await SyncSteamPlaytimeAsync(online: true);
+        };
+    }
+
+    DateTime _lastSteamSync;
+
+    /// <summary>
+    /// Pone a los juegos de Steam las horas que dice Steam (y su última partida). Se leen del Steam de este PC;
+    /// con <paramref name="online"/> y la clave de la Web API, también de los servidores (cuenta lo jugado en otros PC).
+    /// </summary>
+    async Task SyncSteamPlaytimeAsync(bool online)
+    {
+        if (!Games.Any(game => game.SteamAppId is not null))
+            return;
+        _lastSteamSync = DateTime.Now;
+
+        var local = await Task.Run(SteamLocal.Playtimes);
+        var minutes = local.ToDictionary(entry => entry.Key, entry => entry.Value.Minutes);
+        if (online && _settings.SteamApiKey is { Length: > 0 } key && SteamLocal.Accounts().FirstOrDefault() is { } account)
+        {
+            try
+            {
+                foreach (var app in await SteamWeb.OwnedGamesAsync(account.SteamId, key, null, CancellationToken.None))
+                    minutes[app.AppId] = Math.Max(minutes.GetValueOrDefault(app.AppId), app.PlaytimeMinutes);
+            }
+            catch (Exception)
+            {
+                // Sin internet o con la clave mal: se quedan las horas de este PC.
+            }
+        }
+
+        var changed = false;
+        foreach (var game in Games)
+        {
+            if (game.SteamAppId is not { } appId)
+                continue;
+            if (minutes.TryGetValue(appId, out var played) && played != game.PlayMinutes)
+            {
+                game.PlayMinutes = played;
+                changed = true;
+            }
+            if (local.TryGetValue(appId, out var time) && time.LastPlayed > (game.LastPlayed ?? DateTime.MinValue))
+            {
+                game.LastPlayed = time.LastPlayed;
+                changed = true;
+            }
+        }
+        if (!changed)
+            return;
+        Save();
+        if (SelectedGame is not null)
+            ShowDetails(_flow.SelectedIndex);
     }
 
     /// <summary>
@@ -772,11 +832,35 @@ public partial class MainWindow : Window
         if (minutes < 1 || !Games.Contains(session.Game))
             return;
 
+        // Los de Steam no se cuentan aquí: llevan las horas de Steam, que las apunta al cerrar el juego.
+        if (session.Game.SteamAppId is not null)
+        {
+            _ = SyncAfterSteamSessionAsync(session.Game);
+            return;
+        }
+
         session.Game.PlayMinutes += minutes;
         Save();
         if (SelectedGame == session.Game)
             ShowDetails(_flow.SelectedIndex);
         ShowToast($"{session.Game.Name}: +{(minutes < 60 ? $"{minutes} min" : $"{minutes / 60} h {minutes % 60} min")} de juego");
+    }
+
+    /// <summary>Steam tarda unos segundos en apuntar las horas al cerrar el juego: se miran ahora y otra vez al rato.</summary>
+    async Task SyncAfterSteamSessionAsync(Game game)
+    {
+        var before = game.PlayMinutes;
+        foreach (var delay in new[] { 5, 60 })
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delay));
+            await SyncSteamPlaytimeAsync(online: true);
+            if (game.PlayMinutes > before)
+            {
+                var added = game.PlayMinutes - before;
+                ShowToast($"{game.Name}: +{(added < 60 ? $"{added} min" : $"{added / 60} h {added % 60} min")} de juego (Steam)");
+                return;
+            }
+        }
     }
 
     List<string> DescribeGame(Game game)
@@ -1013,6 +1097,9 @@ public partial class MainWindow : Window
             if (familyFilter is not null && app.Source == SteamSource.Family && !game.FilterIds.Contains(familyFilter.Id))
                 game.FilterIds.Add(familyFilter.Id);
         }, askPlatform: false);
+
+        // Los instalados y los de la familia no traen las horas: se leen del Steam de este PC.
+        _ = SyncSteamPlaytimeAsync(online: false);
     }
 
     /// <summary>El filtro con ese nombre; si no existe, se crea.</summary>
