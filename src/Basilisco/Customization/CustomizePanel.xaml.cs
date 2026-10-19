@@ -53,13 +53,15 @@ public sealed class PendingFaces
 /// <param name="Disc">Cambio de la imagen del disco (caja abierta).</param>
 /// <param name="Manual">Cambio de la imagen que hace de manual (caja abierta).</param>
 /// <param name="ManualPdf">Cambio del manual en PDF.</param>
+/// <param name="Inside">Cambio de la imagen del interior de la caja.</param>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
-    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf);
+    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf,
+    ImageChange Inside);
 
 /// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco, el manual o el fondo.</summary>
-public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background }
+public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background, Inside }
 
 /// <summary>
 /// Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox, The Spine Archive
@@ -84,6 +86,7 @@ public partial class CustomizePanel : UserControl
     ImageChange _disc = ImageChange.None;
     ImageChange _manual = ImageChange.None;
     ImageChange _manualPdf = ImageChange.None;
+    ImageChange _inside = ImageChange.None;
     CancellationTokenSource? _manualWork;
     string? _textColor;
     bool _syncingColor;
@@ -139,6 +142,7 @@ public partial class CustomizePanel : UserControl
         _disc = ImageChange.None;
         _manual = ImageChange.None;
         _manualPdf = ImageChange.None;
+        _inside = ImageChange.None;
         _manualWork?.Cancel();
         UpdateExtrasText();
         _textColor = game.TextColor;
@@ -223,6 +227,22 @@ public partial class CustomizePanel : UserControl
 
     public void SetManualImage(string path) => SetExtra(GameExtra.Manual, path);
 
+    public void SetInsideImage(string path) => SetExtra(GameExtra.Inside, path);
+
+    void OnChooseInsideClick(object sender, RoutedEventArgs e)
+    {
+        if (PickImage("Elegir imagen para el interior de la caja") is { } path)
+            SetExtra(GameExtra.Inside, path);
+    }
+
+    void OnSearchInsideClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Inside, ArtSource.Default);
+
+    void OnRemoveInsideClick(object sender, RoutedEventArgs e)
+    {
+        _inside = new ImageChange(null, true);
+        UpdateExtrasText();
+    }
+
     /// <summary>
     /// De una carátula completa (Steam Game Covers) se ha usado una parte: las demás caras se rellenan con el resto,
     /// pero solo las que aún no tienen imagen.
@@ -242,17 +262,20 @@ public partial class CustomizePanel : UserControl
     {
         if (!IsValidImage(path))
             return;
-        if (extra == GameExtra.Disc)
-            _disc = new ImageChange(path, false);
-        else
-            _manual = new ImageChange(path, false);
+        var change = new ImageChange(path, false);
+        switch (extra)
+        {
+            case GameExtra.Disc: _disc = change; break;
+            case GameExtra.Manual: _manual = change; break;
+            default: _inside = change; break;
+        }
         UpdateExtrasText();
     }
 
     /// <summary>Imagen del disco o del manual que tendrá el juego si se guarda ahora.</summary>
     string? CurrentExtra(GameExtra extra)
     {
-        var change = extra == GameExtra.Disc ? _disc : _manual;
+        var change = extra switch { GameExtra.Disc => _disc, GameExtra.Manual => _manual, _ => _inside };
         if (change.NewPath is not null || change.Remove || _game is null)
             return change.NewPath;
         return ImageStore.GetExtraPath(_game, extra);
@@ -266,6 +289,10 @@ public partial class CustomizePanel : UserControl
         ManualText.Text = CurrentExtra(GameExtra.Manual) is { } manual
             ? $"Manual: {Path.GetFileName(manual)}"
             : "Sin imagen de manual: se ve el interior de la caja con el nombre del juego.";
+        InsideText.Text = CurrentExtra(GameExtra.Inside) is { } inside
+            ? $"Interior: {Path.GetFileName(inside)} (se ve a través del plástico, de lado a lado de la caja abierta)"
+            : "Sin imagen: el interior es el plástico de la consola.";
+        RemoveInsideButton.IsEnabled = CurrentExtra(GameExtra.Inside) is not null;
         RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         var pdf = CurrentManualPdf();
@@ -565,7 +592,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside);
         Close();
         Saved?.Invoke(result);
     }

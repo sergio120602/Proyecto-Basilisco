@@ -52,6 +52,9 @@ public sealed class Game
     /// <summary>Imagen que hace de manual en la caja abierta (un póster, un fondo del juego…). Null: el interior liso.</summary>
     public string? Manual { get; set; }
 
+    /// <summary>Imagen del interior de la caja abierta, vista a través del plástico (dentro de basilisco-data/covers).</summary>
+    public string? Inside { get; set; }
+
     /// <summary>El manual para leer, en PDF (dentro de basilisco-data/manuals). Null: aún no tiene.</summary>
     public string? ManualPdf { get; set; }
 

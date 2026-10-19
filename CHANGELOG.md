@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.3] - 2026-10-19
+
+- **Imagen del interior de la caja**: en Personalizar → «Interior de la caja» se puede poner una imagen (tuya o de **SteamGridDB**, con sus fondos y carátulas) que se ve **nítida** dentro de la caja abierta, de lado a lado: la mitad izquierda en la tapa y la derecha debajo del disco. El plástico translúcido le da un velo del color de la consola y su brillo, sin taparla.
+- Si el juego tiene imagen del interior y no tiene manual, ya no se pone el librito de ejemplo, para que se vea la imagen entera.
+- Sin imagen del interior, la caja vuelve a ser del plástico de su consola (sin las carátulas desenfocadas de la 0.5.2).
+
 ## [0.5.2] - 2026-10-19
 
 - El **interior de las cajas** abiertas es ahora de **plástico translúcido**, del color de cada consola: a través de la bandeja se ve, desenfocada, la contraportada por dentro, y alrededor del manual, la portada (como en las cajas transparentes de verdad).

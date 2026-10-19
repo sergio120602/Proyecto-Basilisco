@@ -81,27 +81,37 @@ public static class ImageStore
     }
 
     /// <summary>Ruta de la imagen del disco o del manual del juego, o null si no tiene.</summary>
-    public static string? GetExtraPath(Game game, GameExtra extra) =>
-        Resolve(AppInfo.CoversDirectory, extra == GameExtra.Disc ? game.Disc : game.Manual);
+    public static string? GetExtraPath(Game game, GameExtra extra) => Resolve(AppInfo.CoversDirectory, ExtraFile(game, extra));
+
+    static string? ExtraFile(Game game, GameExtra extra) => extra switch
+    {
+        GameExtra.Disc => game.Disc,
+        GameExtra.Manual => game.Manual,
+        _ => game.Inside,
+    };
+
+    static void SetExtraFile(Game game, GameExtra extra, string? file)
+    {
+        switch (extra)
+        {
+            case GameExtra.Disc: game.Disc = file; break;
+            case GameExtra.Manual: game.Manual = file; break;
+            default: game.Inside = file; break;
+        }
+    }
 
     /// <summary>Copia la imagen como disco o manual del juego y borra la anterior.</summary>
     public static void SetExtra(Game game, GameExtra extra, string sourcePath)
     {
         var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-{extra.ToString().ToLowerInvariant()}");
         RemoveExtra(game, extra);
-        if (extra == GameExtra.Disc)
-            game.Disc = fileName;
-        else
-            game.Manual = fileName;
+        SetExtraFile(game, extra, fileName);
     }
 
     public static void RemoveExtra(Game game, GameExtra extra)
     {
-        Delete(AppInfo.CoversDirectory, extra == GameExtra.Disc ? game.Disc : game.Manual);
-        if (extra == GameExtra.Disc)
-            game.Disc = null;
-        else
-            game.Manual = null;
+        Delete(AppInfo.CoversDirectory, ExtraFile(game, extra));
+        SetExtraFile(game, extra, null);
     }
 
     public static string? GetManualPdfPath(Game game) => Resolve(AppInfo.ManualsDirectory, game.ManualPdf);
@@ -127,6 +137,7 @@ public static class ImageStore
         RemoveBackground(game);
         RemoveExtra(game, GameExtra.Disc);
         RemoveExtra(game, GameExtra.Manual);
+        RemoveExtra(game, GameExtra.Inside);
         foreach (var format in Enum.GetValues<CoverFormat>())
         {
             if (format == CoverFormat.Portrait && game.Portrait is null)

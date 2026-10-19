@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDb = new();
     readonly SteamGridDbProvider _steamGridDbPortrait = new(CoverFormat.Portrait);
     readonly SteamGridDbProvider _steamGridDbHeroes = new(heroes: true);
+    readonly SteamGridDbProvider _steamGridDbInside = new(inside: true);
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
     readonly LaunchBoxProvider _launchBoxFront = new(Face.Front);
@@ -1523,7 +1524,7 @@ public partial class MainWindow : Window
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
         }
-        foreach (var (extra, change) in new[] { (GameExtra.Disc, result.Disc), (GameExtra.Manual, result.Manual) })
+        foreach (var (extra, change) in new[] { (GameExtra.Disc, result.Disc), (GameExtra.Manual, result.Manual), (GameExtra.Inside, result.Inside) })
         {
             try
             {
@@ -1619,12 +1620,13 @@ public partial class MainWindow : Window
             ArtTarget.Spine => Customizer.SetSpineImage,
             ArtTarget.Disc => Customizer.SetDiscImage,
             ArtTarget.Background => Customizer.SetBackgroundImage,
+            ArtTarget.Inside => Customizer.SetInsideImage,
             _ => Customizer.SetManualImage,
         };
 
-        if (target == ArtTarget.Background)
+        if (target is ArtTarget.Background or ArtTarget.Inside)
         {
-            ArtSearch.Open(_steamGridDbHeroes, _settings, gameName, onChosen);
+            ArtSearch.Open(target == ArtTarget.Inside ? _steamGridDbInside : _steamGridDbHeroes, _settings, gameName, onChosen);
             return;
         }
 
