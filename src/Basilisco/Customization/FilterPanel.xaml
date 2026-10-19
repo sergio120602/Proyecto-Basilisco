@@ -4,7 +4,7 @@
              PreviewKeyDown="OnPreviewKeyDown">
     <!-- El fondo oscurece el carrusel y bloquea los clics mientras el menú está abierto -->
     <Grid Background="#A60E1218" MouseLeftButtonDown="OnBackdropMouseDown">
-        <Border Background="#F4F6F9" CornerRadius="20" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center"
+        <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center"
                 MouseLeftButtonDown="OnCardMouseDown">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
@@ -27,11 +27,11 @@
                     </Border>
 
                     <TextBlock Text="ASÍ SE VERÁ ARRIBA" Style="{StaticResource FieldLabel}" Margin="2,20,0,8"/>
-                    <Border Background="#DCE0E7" CornerRadius="14" Padding="10" HorizontalAlignment="Left">
-                        <Border x:Name="PreviewPill" Background="#F4F6F9" CornerRadius="19" Padding="16,7" Effect="{StaticResource PillShadow}">
+                    <Border Background="{DynamicResource LineBrush}" CornerRadius="14" Padding="10" HorizontalAlignment="Left">
+                        <Border x:Name="PreviewPill" Background="{DynamicResource CardBrush}" CornerRadius="19" Padding="16,7" Effect="{StaticResource PillShadow}">
                             <StackPanel Orientation="Horizontal">
                                 <Image x:Name="PreviewIcon" Height="40" MaxWidth="180" Stretch="Uniform"/>
-                                <TextBlock x:Name="PreviewLabel" FontSize="15" FontWeight="SemiBold" Foreground="#1F2630"
+                                <TextBlock x:Name="PreviewLabel" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
                                            VerticalAlignment="Center" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Border>
@@ -39,8 +39,8 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
-                    <TextBlock x:Name="HeaderText" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
-                    <TextBlock x:Name="SubtitleText" FontSize="13" Foreground="#5B6573" Margin="2,4,0,0" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="HeaderText" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock x:Name="SubtitleText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,4,0,0" TextWrapping="Wrap"/>
 
                     <TextBlock Text="NOMBRE" Style="{StaticResource FieldLabel}" Margin="2,26,0,8"/>
                     <TextBox x:Name="NameBox" Style="{StaticResource FieldTextBox}" TextChanged="OnNameChanged"/>
@@ -51,14 +51,14 @@
                         <Button x:Name="RemoveImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
                                 Margin="12,0,0,0" Click="OnRemoveImageClick"/>
                     </StackPanel>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,10,0,0" TextWrapping="Wrap"
+                    <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,10,0,0" TextWrapping="Wrap"
                                Text="También puedes arrastrar una imagen a esta ventana. Se muestra entera, sin deformarla ni recortarla."/>
 
-                    <TextBlock x:Name="ErrorText" FontSize="13" FontWeight="SemiBold" Foreground="#C0392B" Margin="2,14,0,0"
+                    <TextBlock x:Name="ErrorText" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ErrorBrush}" Margin="2,14,0,0"
                                TextWrapping="Wrap" Visibility="Collapsed"/>
 
                     <Grid Margin="0,30,0,0">
-                        <Button x:Name="DeleteButton" Style="{StaticResource PillButton}" Foreground="#C0392B"
+                        <Button x:Name="DeleteButton" Style="{StaticResource PillButton}" Foreground="{DynamicResource ErrorBrush}"
                                 Content="Eliminar filtro" HorizontalAlignment="Left" Click="OnDeleteClick"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Style="{StaticResource PillButton}" Content="Cancelar" Click="OnCancelClick"/>

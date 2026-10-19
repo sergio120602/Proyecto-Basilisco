@@ -36,6 +36,9 @@ public partial class ThemePanel : UserControl
 
     public event Action<ThemeResult>? Saved;
 
+    /// <summary>Se ha elegido otro modo (claro, nocturno o como Windows); se aplica al momento.</summary>
+    public event Action<ColorMode>? ModeChanged;
+
     public bool IsOpen => Visibility == Visibility.Visible;
 
     public ThemePanel()
@@ -47,8 +50,9 @@ public partial class ThemePanel : UserControl
 
     /// <param name="savedBackground">Ruta del fondo general actual, si hay.</param>
     /// <param name="ownCount">Juegos que tienen fondo o color propios.</param>
-    public void Open(string? savedBackground, string? textColor, int ownCount)
+    public void Open(string? savedBackground, string? textColor, int ownCount, ColorMode mode)
     {
+        SyncMode(mode);
         _background = ImageChange.None;
         _savedBackground = savedBackground;
         _textColor = textColor;
@@ -83,15 +87,30 @@ public partial class ThemePanel : UserControl
             }
         }
         PreviewVeil.Visibility = path is null ? Visibility.Collapsed : Visibility.Visible;
-        BackgroundText.Text = path is null ? "Sin fondo: el gris claro de siempre."
+        BackgroundText.Text = path is null ? "Sin fondo: el de siempre."
             : $"{(video ? "Fondo dinámico (vídeo)" : "Fondo estático (imagen)")} · {Path.GetFileName(path)}";
         if (video && path is not null && !VideoConverter.IsPlayable(path))
             BackgroundText.Text = $"Fondo dinámico · {Path.GetFileName(path)} · se convertirá a un formato compatible al usarlo (unos segundos)";
         RemoveButton.IsEnabled = path is not null;
 
-        var color = _textColor is { } hex ? (Color)ColorConverter.ConvertFromString(hex) : Color.FromRgb(0x1F, 0x26, 0x30);
+        var color = _textColor is { } hex ? (Color)ColorConverter.ConvertFromString(hex) : ThemeManager.DefaultText;
         PreviewTitle.Foreground = PreviewTime.Foreground = new SolidColorBrush(color);
         PreviewGlow.Color = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255 > 0.6 ? Colors.Black : Colors.White;
+    }
+
+    void SyncMode(ColorMode mode)
+    {
+        LightToggle.IsChecked = mode == ColorMode.Light;
+        DarkToggle.IsChecked = mode == ColorMode.Dark;
+        SystemToggle.IsChecked = mode == ColorMode.System;
+    }
+
+    void OnModeClick(object sender, RoutedEventArgs e)
+    {
+        var mode = sender == LightToggle ? ColorMode.Light : sender == DarkToggle ? ColorMode.Dark : ColorMode.System;
+        SyncMode(mode);
+        ModeChanged?.Invoke(mode);
+        UpdatePreview();
     }
 
     void UpdateOwn()

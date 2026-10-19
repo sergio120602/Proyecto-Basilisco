@@ -61,7 +61,7 @@ public sealed record SteamImportResult(List<SteamApp> Apps, bool FamilyFilter);
 public partial class SteamPanel : UserControl
 {
     static readonly Brush ErrorBrush = Brushes.Firebrick;
-    static readonly Brush InfoBrush = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
+    static Brush InfoBrush => (Brush)Application.Current.Resources["MutedBrush"];
     static readonly Brush OkBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32));
 
     AppSettings _settings = new();

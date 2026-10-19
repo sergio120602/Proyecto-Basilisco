@@ -9,15 +9,15 @@
         <Style x:Key="PillButton" TargetType="Button">
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#1F2630"/>
-            <Setter Property="Background" Value="#EEF1F5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource PillBrush}"/>
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Pill" Background="{TemplateBinding Background}" CornerRadius="19" Padding="20,8"
-                                BorderBrush="White" BorderThickness="1" Effect="{StaticResource PillShadow}">
+                                BorderBrush="{DynamicResource PillEdgeBrush}" BorderThickness="1" Effect="{StaticResource PillShadow}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -45,14 +45,14 @@
         <Style x:Key="FilterToggle" TargetType="ToggleButton">
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#1F2630"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Pill" Background="#E3E7ED" BorderBrush="#C9CFD8" BorderThickness="1.5"
+                        <Border x:Name="Pill" Background="{DynamicResource ToggleBrush}" BorderBrush="{DynamicResource FieldEdgeBrush}" BorderThickness="1.5"
                                 CornerRadius="16" Padding="14,6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -72,7 +72,7 @@
         </Style>
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#5B6573"/>
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="2,0,0,8"/>
@@ -80,12 +80,12 @@
 
         <Style x:Key="FieldTextBox" TargetType="TextBox">
             <Setter Property="FontSize" Value="18"/>
-            <Setter Property="Foreground" Value="#1B222C"/>
-            <Setter Property="CaretBrush" Value="#1B222C"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="Field" Background="White" CornerRadius="10" BorderBrush="#C9CFD8" BorderThickness="1.5" Padding="12,8">
+                        <Border x:Name="Field" Background="{DynamicResource FieldBrush}" CornerRadius="10" BorderBrush="{DynamicResource FieldEdgeBrush}" BorderThickness="1.5" Padding="12,8">
                             <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>

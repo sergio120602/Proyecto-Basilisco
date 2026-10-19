@@ -4,19 +4,19 @@
              Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
     <!-- Se abre justo después de importar: cada juego elige su consola (y con ella, el borde de su caja) -->
     <Grid Background="#A60E1218">
-        <Border Background="#F4F6F9" CornerRadius="20" Padding="36" Width="820" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="36" Width="820" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
             </Border.Effect>
             <StackPanel>
-                <TextBlock Text="¿De qué consola son?" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
-                <TextBlock x:Name="SubtitleText" FontSize="13" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"/>
+                <TextBlock Text="¿De qué consola son?" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock x:Name="SubtitleText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"/>
 
                 <TextBlock Text="TODOS A" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
                 <WrapPanel x:Name="AllButtons"/>
 
                 <TextBlock Text="UNO A UNO" Style="{StaticResource FieldLabel}" Margin="2,14,0,8"/>
-                <Border Background="White" CornerRadius="12" BorderBrush="#DCE0E7" BorderThickness="1" Padding="6">
+                <Border Background="{DynamicResource FieldBrush}" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="6">
                     <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
                         <ItemsControl x:Name="GamesList">
                             <ItemsControl.ItemTemplate>
@@ -26,7 +26,7 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="220"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="#1F2630"
+                                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
                                                    VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                         <ComboBox Grid.Column="1" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected, Mode=TwoWay}"
                                                   DisplayMemberPath="Name" FontSize="14" Padding="10,5" Focusable="False"/>
