@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.4] - 2026-10-19
+
+- **Ajustar** el manual y el interior de la caja: en Personalizar, «Ajustar…» junto a la imagen del manual y a la del interior abre el editor de encuadre (rueda para ampliar, arrastrar para mover) viendo la caja abierta de frente, con el disco y todo lo elegido.
+- **Manuales originales de [Vimm's Lair](https://vimm.net/manual)** (The Manual Project): en Personalizar → Manual, «Buscar en Vimm's Lair» busca entre sus miles de manuales escaneados de consola, con la portada, la región y la resolución de cada uno. Al elegir uno se abre su página en el navegador para pulsar «Download pdf» (la web solo deja descargar desde un navegador) y Basilisco recoge el PDF de la carpeta de Descargas en cuanto termina.
+
 ## [0.5.3] - 2026-10-19
 
 - **Imagen del interior de la caja**: en Personalizar → «Interior de la caja» se puede poner una imagen (tuya o de **SteamGridDB**, con sus fondos y carátulas) que se ve **nítida** dentro de la caja abierta, de lado a lado: la mitad izquierda en la tapa y la derecha debajo del disco. El plástico translúcido le da un velo del color de la consola y su brillo, sin taparla.

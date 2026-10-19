@@ -54,14 +54,16 @@ public sealed class PendingFaces
 /// <param name="Manual">Cambio de la imagen que hace de manual (caja abierta).</param>
 /// <param name="ManualPdf">Cambio del manual en PDF.</param>
 /// <param name="Inside">Cambio de la imagen del interior de la caja.</param>
+/// <param name="ManualFrame">Encuadre de la imagen del manual (null: llena el librito).</param>
+/// <param name="InsideFrame">Encuadre de la imagen del interior (null: llena la caja abierta).</param>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
     ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf,
-    ImageChange Inside);
+    ImageChange Inside, ImageFrame? ManualFrame, ImageFrame? InsideFrame);
 
 /// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco, el manual o el fondo.</summary>
-public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background, Inside }
+public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background, Inside, ManualPdf }
 
 /// <summary>
 /// Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox, The Spine Archive
@@ -87,6 +89,7 @@ public partial class CustomizePanel : UserControl
     ImageChange _manual = ImageChange.None;
     ImageChange _manualPdf = ImageChange.None;
     ImageChange _inside = ImageChange.None;
+    ImageFrame? _manualFrame, _insideFrame;
     CancellationTokenSource? _manualWork;
     string? _textColor;
     bool _syncingColor;
@@ -143,6 +146,8 @@ public partial class CustomizePanel : UserControl
         _manual = ImageChange.None;
         _manualPdf = ImageChange.None;
         _inside = ImageChange.None;
+        _manualFrame = game.ManualFrame;
+        _insideFrame = game.InsideFrame;
         _manualWork?.Cancel();
         UpdateExtrasText();
         _textColor = game.TextColor;
@@ -237,6 +242,46 @@ public partial class CustomizePanel : UserControl
 
     void OnSearchInsideClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Inside, ArtSource.Default);
 
+    /// <summary>Ajustar la imagen del interior o la del manual, viendo la caja abierta de frente con todo lo elegido.</summary>
+    void OpenCaseFrameEditor(GameExtra extra)
+    {
+        if (_game is null)
+            return;
+        var shape = BoxShape.Of(_format, _platform);
+        var aspect = shape.Width / shape.Height;
+        var plastic = PlatformArt.Plastic(_platform);
+        var discFraction = Math.Min(shape.Width, shape.Height) * 0.88 / shape.Width;
+        var manualPath = CurrentExtra(GameExtra.Manual);
+        var inside = CurrentExtra(GameExtra.Inside) is { } insidePath ? CoverArt.LoadImage(insidePath, 2400) : null;
+        var disc = OpenCaseArt.RenderDisc(CurrentExtra(GameExtra.Disc), CurrentPath(_format, Face.Front));
+        var name = NameBox.Text.Trim();
+
+        if (extra == GameExtra.Inside)
+        {
+            if (inside is null)
+                return;
+            var spread = OpenCaseArt.SpreadSize(aspect);
+            FrameEditor.Open("Ajustar el interior de la caja", _insideFrame ?? OpenCaseArt.FillFrame(inside, spread),
+                CoverArt.FillZoom(new Size(inside.Width, inside.Height), spread, rotateWide: false),
+                frame => OpenCaseArt.RenderSpread(plastic, aspect, discFraction, manualPath, name, inside, _manualFrame, frame, disc),
+                frame => _insideFrame = frame);
+        }
+        else
+        {
+            if (manualPath is null || CoverArt.LoadImage(manualPath, 1400) is not { } manual)
+                return;
+            var booklet = OpenCaseArt.BookletSize(aspect);
+            FrameEditor.Open("Ajustar el manual", _manualFrame ?? OpenCaseArt.FillFrame(manual, booklet),
+                CoverArt.FillZoom(new Size(manual.Width, manual.Height), booklet, rotateWide: false),
+                frame => OpenCaseArt.RenderInside(plastic, aspect, manualPath, name, inside, frame, _insideFrame),
+                frame => _manualFrame = frame);
+        }
+    }
+
+    void OnFrameInsideClick(object sender, RoutedEventArgs e) => OpenCaseFrameEditor(GameExtra.Inside);
+
+    void OnFrameManualClick(object sender, RoutedEventArgs e) => OpenCaseFrameEditor(GameExtra.Manual);
+
     void OnRemoveInsideClick(object sender, RoutedEventArgs e)
     {
         _inside = new ImageChange(null, true);
@@ -263,11 +308,12 @@ public partial class CustomizePanel : UserControl
         if (!IsValidImage(path))
             return;
         var change = new ImageChange(path, false);
+        // Una imagen nueva empieza llenando su hueco.
         switch (extra)
         {
             case GameExtra.Disc: _disc = change; break;
-            case GameExtra.Manual: _manual = change; break;
-            default: _inside = change; break;
+            case GameExtra.Manual: _manual = change; _manualFrame = null; break;
+            default: _inside = change; _insideFrame = null; break;
         }
         UpdateExtrasText();
     }
@@ -292,7 +338,8 @@ public partial class CustomizePanel : UserControl
         InsideText.Text = CurrentExtra(GameExtra.Inside) is { } inside
             ? $"Interior: {Path.GetFileName(inside)} (se ve a través del plástico, de lado a lado de la caja abierta)"
             : "Sin imagen: el interior es el plástico de la consola.";
-        RemoveInsideButton.IsEnabled = CurrentExtra(GameExtra.Inside) is not null;
+        RemoveInsideButton.IsEnabled = FrameInsideButton.IsEnabled = CurrentExtra(GameExtra.Inside) is not null;
+        FrameManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         var pdf = CurrentManualPdf();
@@ -359,6 +406,15 @@ public partial class CustomizePanel : UserControl
     {
         if (CurrentManualPdf() is { } pdf)
             ManualReadRequested?.Invoke(pdf, NameBox.Text.Trim());
+    }
+
+    void OnVimmClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.ManualPdf, ArtSource.Default);
+
+    /// <summary>Pone como manual un PDF descargado (de Vimm's Lair); se guarda al darle a Guardar.</summary>
+    public void SetManualPdfFile(string path)
+    {
+        _manualPdf = new ImageChange(path, false);
+        UpdateExtrasText();
     }
 
     void OnRemoveManualPdfClick(object sender, RoutedEventArgs e)
@@ -592,7 +648,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside, _manualFrame, _insideFrame);
         Close();
         Saved?.Invoke(result);
     }

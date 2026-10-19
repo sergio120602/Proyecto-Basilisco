@@ -125,6 +125,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.5.1** — Modo nocturno
 - [x] **v0.5.2** — Interior translúcido de las cajas y fondos de SteamGridDB
 - [x] **v0.5.3** — Imagen del interior de la caja (propia o de SteamGridDB), nítida a través del plástico
+- [x] **v0.5.4** — Ajustar el manual y el interior de la caja, y manuales originales de Vimm's Lair
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -162,7 +163,7 @@ El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco 
 
 ## 📖 Manuales
 
-Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo (por ejemplo, el manual original escaneado) o quitarlo. Se guardan en `basilisco-data/manuals/`.
+Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo, buscar el **manual original escaneado en [Vimm's Lair](https://vimm.net/manual)** (se abre en el navegador para descargarlo y Basilisco lo recoge de tu carpeta de Descargas) o quitarlo. La imagen del librito y la del interior de la caja se pueden **ajustar** (ampliar y mover). Se guardan en `basilisco-data/manuals/`.
 
 ## 📦 Formatos de caja
 

@@ -163,7 +163,7 @@ public partial class ArtSearchPanel : UserControl
         if (_provider is not { } provider)
             return;
         var cancellation = Restart();
-        SetStatus("Descargando la imagen…");
+        SetStatus(provider.DownloadingText);
         try
         {
             var path = await provider.DownloadImageAsync(image, cancellation);

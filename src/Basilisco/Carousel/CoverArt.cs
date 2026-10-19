@@ -110,7 +110,7 @@ public static class CoverArt
     /// se ve entera (sin deformar ni recortar); con zoom se amplía alrededor del centro y se mueve, y lo que
     /// sale de la cara se recorta. Las imágenes horizontales del lomo se giran para leerse de arriba abajo.
     /// </summary>
-    static void DrawFramed(DrawingContext dc, BitmapSource image, Rect area, ImageFrame frame, bool rotateWide = false)
+    internal static void DrawFramed(DrawingContext dc, BitmapSource image, Rect area, ImageFrame frame, bool rotateWide = false)
     {
         var rotate = rotateWide && image.Width > image.Height;
         double width = rotate ? image.Height : image.Width, height = rotate ? image.Width : image.Height;
