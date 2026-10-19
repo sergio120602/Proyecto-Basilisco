@@ -79,7 +79,8 @@ public sealed class OpenCaseScene
         // La tapa: la portada por fuera (mirando al frente cuando está cerrada) y el manual por dentro.
         var lid = new Model3DGroup();
         lid.Children.Add(Face(new(0, 0, d), new(w, 0, d), new(w, h, d), new(0, h, d), new ImageBrush(cover)));
-        lid.Children.Add(Face(new(w, 0, d - 0.002), new(0, 0, d - 0.002), new(0, h, d - 0.002), new(w, h, d - 0.002), new ImageBrush(inside)));
+        _inside = new ImageBrush(inside);
+        lid.Children.Add(Face(new(w, 0, d - 0.002), new(0, 0, d - 0.002), new(0, h, d - 0.002), new(w, h, d - 0.002), _inside));
         // Gira sobre el lomo: el eje está en x = 0, a media altura de la caja.
         lid.Transform = new RotateTransform3D(_lid, new Point3D(0, 0, d / 2));
 
@@ -108,6 +109,15 @@ public sealed class OpenCaseScene
     }
 
     /// <summary>El disco empieza a girar.</summary>
+    ImageBrush? _inside;
+
+    /// <summary>Cambia el interior de la tapa (cuando se acaba de crear el manual).</summary>
+    public void SetInside(BitmapSource inside)
+    {
+        if (_inside is not null)
+            _inside.ImageSource = inside;
+    }
+
     public void Spin()
     {
         _spinning = true;

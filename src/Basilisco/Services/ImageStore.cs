@@ -104,9 +104,26 @@ public static class ImageStore
             game.Manual = null;
     }
 
+    public static string? GetManualPdfPath(Game game) => Resolve(AppInfo.ManualsDirectory, game.ManualPdf);
+
+    /// <summary>Copia el PDF como manual del juego y borra el anterior.</summary>
+    public static void SetManualPdf(Game game, string sourcePath)
+    {
+        var fileName = Import(sourcePath, AppInfo.ManualsDirectory, $"{game.Id}-manual");
+        RemoveManualPdf(game);
+        game.ManualPdf = fileName;
+    }
+
+    public static void RemoveManualPdf(Game game)
+    {
+        Delete(AppInfo.ManualsDirectory, game.ManualPdf);
+        game.ManualPdf = null;
+    }
+
     /// <summary>Borra todas las imágenes del juego, de todos los formatos (al quitarlo de la biblioteca).</summary>
     public static void RemoveAll(Game game)
     {
+        RemoveManualPdf(game);
         RemoveBackground(game);
         RemoveExtra(game, GameExtra.Disc);
         RemoveExtra(game, GameExtra.Manual);

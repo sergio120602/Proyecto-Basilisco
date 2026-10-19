@@ -33,7 +33,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
 | Importar tu cuenta de Steam (instalados, toda la biblioteca y Steam Familiar) | `S` o botón «Steam» |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
-| Personalizar (nombre, portada, contraportada, lomo, disco, manual, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada, contraportada, lomo, disco, manual en PDF, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
 | Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
 | Cambiar de filtro o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** y **Filtros** de arriba |
@@ -120,6 +120,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.9** — Caja de Wii U de 190 × 135 × 14 mm y tiempo de juego mientras el juego siga abierto
 - [x] **v0.4.0** — Caja abierta con manual y disco (el disco gira al jugar), Steam Game Covers, y discos y manuales de LaunchBox
 - [x] **v0.4.1** — Interfaz adaptada a cualquier resolución y botón para actualizar
+- [x] **v0.5.0** — Manuales en PDF con datos de Steam y LaunchBox, y lector de manuales
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -152,6 +153,10 @@ Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Stea
 Al darle a un juego se abre su caja: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha, en su bandeja. Al darle a **Jugar**, el disco gira, se inicia el juego y la caja se cierra sola.
 
 El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco de Steam Game Covers o de LaunchBox, o para el manual un póster, un fondo o la pantalla de título de LaunchBox. Si no tienen imagen, el disco se dibuja con la portada y el manual es un librito con el nombre del juego.
+
+## 📖 Manuales
+
+Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo (por ejemplo, el manual original escaneado) o quitarlo. Se guardan en `basilisco-data/manuals/`.
 
 ## 📦 Formatos de caja
 

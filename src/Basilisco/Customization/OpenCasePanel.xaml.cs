@@ -20,6 +20,7 @@ public partial class OpenCasePanel : UserControl
 
     readonly OpenCaseScene _scene;
     Game? _game;
+    CarouselItem? _item;
     bool _playing;
     bool _closing;
 
@@ -27,6 +28,11 @@ public partial class OpenCasePanel : UserControl
     public event Action<Game>? PlayRequested;
 
     public event Action? Closed;
+
+    /// <summary>Hay que abrir (o crear) el manual en PDF del juego.</summary>
+    public event Action<Game>? ManualRequested;
+
+    public Game? Game => _game;
 
     public bool IsOpen => Visibility == Visibility.Visible;
 
@@ -42,12 +48,15 @@ public partial class OpenCasePanel : UserControl
     public void Open(Game game, CarouselItem item, bool padMode)
     {
         _game = game;
+        _item = item;
         _playing = false;
         _closing = false;
         TitleText.Text = game.Name;
         DetailText.Text = Platforms.Find(game.Platform)?.Name ?? "";
         PlayButton.IsEnabled = BackButton.IsEnabled = true;
-        HintText.Text = padMode ? "A  Jugar     ·     B  Volver" : "Enter  Jugar     ·     Esc  Volver";
+        HintText.Text = padMode ? "A  Jugar     ·     X  Manual     ·     B  Volver" : "Enter  Jugar     ·     M  Manual     ·     Esc  Volver";
+        ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
+        ManualButton.IsEnabled = true;
 
         var shape = BoxShape.Of(item);
         var plastic = PlatformArt.Plastic(game.Platform);
@@ -63,6 +72,31 @@ public partial class OpenCasePanel : UserControl
 
         Visibility = Visibility.Visible;
         _ = Dispatcher.BeginInvoke(() => Focus(), DispatcherPriority.Input);
+    }
+
+    /// <summary>Vuelve a dibujar el interior de la tapa (al crear el manual, su portada pasa a ser el librito).</summary>
+    public void RefreshManual()
+    {
+        if (_game is not { } game || _item is not { } item)
+            return;
+        var shape = BoxShape.Of(item);
+        _scene.SetInside(OpenCaseArt.RenderInside(PlatformArt.Plastic(game.Platform), shape.Width / shape.Height,
+            ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name));
+        ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
+        ManualButton.IsEnabled = true;
+    }
+
+    /// <summary>Mientras se crea el manual, el botón lo dice.</summary>
+    public void SetManualBusy(string text)
+    {
+        ManualButton.Content = text;
+        ManualButton.IsEnabled = false;
+    }
+
+    public void RequestManual()
+    {
+        if (_game is { } game && !_closing && !_playing && ManualButton.IsEnabled)
+            ManualRequested?.Invoke(game);
     }
 
     async void Play()
@@ -103,7 +137,16 @@ public partial class OpenCasePanel : UserControl
 
     void OnBackClick(object sender, RoutedEventArgs e) => Close();
 
-    void OnViewportClick(object sender, MouseButtonEventArgs e) => Play();
+    // Clic en la caja: a la izquierda está el manual; a la derecha, el disco.
+    void OnViewportClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.GetPosition(CaseViewport).X < CaseViewport.ActualWidth / 2)
+            RequestManual();
+        else
+            Play();
+    }
+
+    void OnManualClick(object sender, RoutedEventArgs e) => RequestManual();
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
@@ -114,6 +157,9 @@ public partial class OpenCasePanel : UserControl
                 break;
             case Key.Escape or Key.Back:
                 Close();
+                break;
+            case Key.M:
+                RequestManual();
                 break;
             default:
                 return;

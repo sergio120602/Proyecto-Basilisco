@@ -30,10 +30,12 @@
                 <Button x:Name="PlayButton" Style="{StaticResource PrimaryButton}" FontSize="20" MinWidth="200" Click="OnPlayClick">
                     <TextBlock><Run Text="▶" FontSize="16"/><Run Text="  Jugar"/></TextBlock>
                 </Button>
+                <Button x:Name="ManualButton" Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Leer el manual" Click="OnManualClick"
+                        ToolTip="El manual del juego en PDF; si aún no tiene, se crea con la información de Steam y LaunchBox"/>
                 <Button x:Name="BackButton" Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Volver" Click="OnBackClick"/>
             </StackPanel>
             <TextBlock x:Name="HintText" FontSize="14" Foreground="#8C95A3" HorizontalAlignment="Center" Margin="0,14,0,0"
-                       Text="Enter  Jugar     ·     Esc  Volver"/>
+                       Text="Enter  Jugar     ·     M  Manual     ·     Esc  Volver"/>
         </StackPanel>
     </Grid>
 </UserControl>

@@ -182,6 +182,15 @@
                                 Click="OnRemoveManualClick"/>
                     </WrapPanel>
                     <TextBlock x:Name="ManualText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button x:Name="CreateManualButton" Style="{StaticResource PillButton}" Content="Crear manual en PDF" Click="OnCreateManualClick" Margin="0,0,10,10"
+                                ToolTip="Escribe el manual con la descripción, la ficha, los requisitos y las capturas de Steam y LaunchBox"/>
+                        <Button Style="{StaticResource PillButton}" Content="Elegir PDF…" Click="OnChooseManualPdfClick" Margin="0,0,10,10"
+                                ToolTip="Un manual tuyo en PDF (por ejemplo, el original escaneado)"/>
+                        <Button x:Name="ReadManualButton" Style="{StaticResource PillButton}" Content="Leer" Click="OnReadManualClick" Margin="0,0,10,10"/>
+                        <Button x:Name="RemoveManualPdfButton" Style="{StaticResource PillButton}" Content="Quitar PDF" Click="OnRemoveManualPdfClick" Margin="0,0,10,10"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="ManualPdfText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"/>
                     <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
                                Text="Se ven al abrir la caja con Enter: el manual a la izquierda y el disco a la derecha. Al darle a Jugar, el disco gira y empieza el juego."/>
 

@@ -3,6 +3,14 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.0] - 2026-10-19
+
+- **Manuales en PDF**: cada juego puede tener su manual de instrucciones en PDF, con texto de verdad (se puede seleccionar, buscar e imprimir). Basilisco lo escribe solo con la información de la **tienda de Steam** (en español: descripción, ficha, requisitos del sistema, compatibilidad con mando, idiomas y capturas) y de **LaunchBox** (descripción, desarrolladora, editora, género, jugadores y capturas, para los juegos que no están en Steam). Lleva la portada del juego en la primera página y la contraportada en la última.
+- **Lector de manuales** dentro de Basilisco, como un librito: la portada sola y después dos páginas a la vez. Se pasa de página con las flechas, la rueda, un clic en la página o el mando, y también se puede abrir en el visor de PDF de Windows.
+- En la caja abierta, nuevo botón **Leer el manual** (`M`, o X en el mando, o un clic en el librito). Si el juego aún no tiene manual, se crea en ese momento y su portada pasa a ser el librito de la caja.
+- En Personalizar → Manual: **Crear manual en PDF**, **Elegir PDF…** (un manual tuyo, por ejemplo el original escaneado), **Leer** y **Quitar PDF**. Se guardan en `basilisco-data/manuals/`.
+- La base de datos de LaunchBox guarda ahora también la ficha de cada juego y sus capturas. La primera vez que se cree un manual con ella se vuelve a descargar (unos 100 MB).
+
 ## [0.4.1] - 2026-10-19
 
 - La interfaz **se adapta a cualquier resolución**: la cabecera, la barra de abajo, el título del juego, los avisos, los menús y todas las ventanas (Personalizar, la caja abierta, los buscadores…) se escalan con el tamaño de la ventana, tomando 1920 × 1080 como referencia. En pantallas pequeñas ya no se pisan los textos y en las grandes (2K, 4K) no se ven diminutos.

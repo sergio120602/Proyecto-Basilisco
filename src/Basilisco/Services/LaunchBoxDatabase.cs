@@ -24,6 +24,10 @@ public sealed record LaunchBoxImage(ArtKind Kind, string Region, string FileName
     };
 }
 
+/// <summary>Ficha de un juego en LaunchBox, para su manual: se lee aparte porque ocupa mucho (sobre todo la descripción).</summary>
+public sealed record LaunchBoxDetails(string Overview, string? Developer, string? Publisher, string? Genres, string? MaxPlayers,
+                                      string? Esrb, string? Rating, string? Cooperative);
+
 /// <param name="released">Fecha de lanzamiento (aaaa-mm-dd) o solo el año (aaaa), si se sabe.</param>
 public sealed class LaunchBoxGame(int id, string name, string platform, string? released)
 {
@@ -55,8 +59,12 @@ public static class LaunchBoxDatabase
     static readonly string Folder = Path.Combine(AppInfo.DataDirectory, "launchbox");
     static readonly string IndexPath = Path.Combine(Folder, "index.tsv.gz");
 
-    // Versión del índice: la 2 añade los discos y las imágenes para el manual. Uno más viejo se rehace al buscar.
-    const int IndexVersion = 2;
+    // Fichas de los juegos (descripción, desarrolladora…), para los manuales. Solo se lee cuando hace falta.
+    static readonly string DetailsPath = Path.Combine(Folder, "details.tsv.gz");
+
+    // Versión del índice: la 2 añade los discos y las imágenes para el manual, y la 3 las fichas y las capturas.
+    // Uno más viejo se rehace al buscar.
+    const int IndexVersion = 3;
     static int _loadedVersion;
     static readonly SemaphoreSlim Lock = new(1, 1);
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(20) };
@@ -269,6 +277,9 @@ public static class LaunchBoxDatabase
             using var gzip = new GZipStream(file, CompressionLevel.Optimal);
             using var writer = new StreamWriter(gzip, new UTF8Encoding(false));
             writer.WriteLine($"V\t{IndexVersion}\t");
+            using var detailsFile = File.Create(DetailsPath + ".tmp");
+            using var detailsGzip = new GZipStream(detailsFile, CompressionLevel.Optimal);
+            using var details = new StreamWriter(detailsGzip, new UTF8Encoding(false));
 
             var games = 0;
             xml.MoveToContent();
@@ -291,6 +302,14 @@ public static class LaunchBoxDatabase
                         var year = fields.GetValueOrDefault("ReleaseDate") is { Length: >= 10 } date ? date[..10]
                                  : fields.GetValueOrDefault("ReleaseYear") ?? "";
                         writer.WriteLine($"G\t{id}\t{Clean(fields.GetValueOrDefault("Platform"))}\t{year}\t{Clean(name)}");
+                        if (fields.GetValueOrDefault("Overview") is { Length: > 0 } overview)
+                        {
+                            // Los saltos de párrafo se guardan como \n para que cada juego ocupe una línea.
+                            var text = overview.Replace("\r", "").Replace("\t", " ").Replace("\n", "\\n");
+                            details.WriteLine(string.Join('\t', id, Clean(fields.GetValueOrDefault("Developer")), Clean(fields.GetValueOrDefault("Publisher")),
+                                Clean(fields.GetValueOrDefault("Genres")), Clean(fields.GetValueOrDefault("MaxPlayers")), Clean(fields.GetValueOrDefault("ESRB")),
+                                Clean(fields.GetValueOrDefault("CommunityRating")), Clean(fields.GetValueOrDefault("Cooperative")), text));
+                        }
                         if (++games % 20000 == 0)
                             status?.Report($"Preparando la base de datos de LaunchBox… {games:N0} juegos");
                         break;
@@ -304,7 +323,46 @@ public static class LaunchBoxDatabase
                 }
             }
         }
+        File.Move(DetailsPath + ".tmp", DetailsPath, overwrite: true);
         File.Move(tempIndex, IndexPath, overwrite: true);
+    }
+
+    /// <summary>
+    /// El juego de LaunchBox que corresponde a uno de Basilisco: el que se llama igual (mejor de la misma consola),
+    /// o el primero de la búsqueda si su nombre empieza igual. Null si no se encuentra.
+    /// </summary>
+    public static LaunchBoxGame? FindGame(string name, string? platform)
+    {
+        if (_games is null)
+            return null;
+        var query = Normalize(name);
+        var exact = _names.Where(entry => entry.Normalized == query).Select(entry => entry.Game).Distinct().ToList();
+        if (exact.Count > 0)
+            return exact.FirstOrDefault(game => game.Platform == platform) ?? exact[0];
+        return Search(name, platform, ArtKind.Front, max: 1).FirstOrDefault(game => Normalize(game.Name).StartsWith(query, StringComparison.Ordinal));
+    }
+
+    /// <summary>La ficha de un juego (se busca en el archivo de fichas, que no se tiene en memoria). Null si no tiene.</summary>
+    public static LaunchBoxDetails? Details(int id)
+    {
+        if (!File.Exists(DetailsPath))
+            return null;
+        var prefix = id.ToString(CultureInfo.InvariantCulture) + "\t";
+        using var file = File.OpenRead(DetailsPath);
+        using var gzip = new GZipStream(file, CompressionMode.Decompress);
+        using var reader = new StreamReader(gzip, Encoding.UTF8);
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            if (!line.StartsWith(prefix, StringComparison.Ordinal))
+                continue;
+            var parts = line.Split('\t');
+            if (parts.Length < 9)
+                return null;
+            string? Field(int index) => parts[index].Length > 0 ? parts[index] : null;
+            return new LaunchBoxDetails(parts[8].Replace("\\n", "\n"), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), Field(7));
+        }
+        return null;
     }
 
     /// <summary>Lee los hijos de texto de un elemento (Name, Platform…) y deja el lector en el siguiente.</summary>
@@ -358,6 +416,7 @@ public static class LaunchBoxDatabase
         "Advertisement Flyer - Front" => "MP",
         "Fanart - Background" => "MF",
         "Screenshot - Game Title" => "MT",
+        "Screenshot - Gameplay" => "MG",
         _ => null,
     };
 
@@ -400,6 +459,7 @@ public static class LaunchBoxDatabase
                             "MP" => (ArtKind.Manual, "Póster"),
                             "MF" => (ArtKind.Manual, "Fondo"),
                             "MT" => (ArtKind.Manual, "Pantalla de título"),
+                            "MG" => (ArtKind.Manual, "Captura"),
                             _ => (ArtKind.Spine, (string?)null),
                         };
                         game.Images.Add(new LaunchBoxImage(kind, parts[3], parts[4], parts[2] is "FR" or "BR", detail));

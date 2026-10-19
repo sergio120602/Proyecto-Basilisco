@@ -83,6 +83,14 @@ public partial class MainWindow : Window
         ThemeEditor.Saved += ApplyTheme;
         CaseView.PlayRequested += Launch;
         CaseView.Closed += () => Focus();
+        CaseView.ManualRequested += game => _ = OpenManualAsync(game);
+        Customizer.ManualReadRequested += (path, title) => ManualReader.Open(path, title, _padMode);
+        ManualReader.Closed += () =>
+        {
+            if (Customizer.IsOpen) Customizer.Focus();
+            else if (CaseView.IsOpen) CaseView.Focus();
+            else Focus();
+        };
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
@@ -149,12 +157,60 @@ public partial class MainWindow : Window
         FrameworkElement[] scaled =
         [
             HeaderBar, FooterBar, TitlePanel, PlayTimeText, Toast,
-            CaseView, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
+            CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
         ];
         foreach (var element in scaled)
             element.LayoutTransform = _uiScale;
         UpdateOverlayLayout();
     }
+
+    // ---- Manuales ----
+
+    /// <summary>
+    /// Abre el manual del juego. Si aún no tiene, lo crea en PDF con la información de Steam y LaunchBox; su portada
+    /// pasa a ser el librito que se ve dentro de la caja (si no tenía ya una imagen de manual).
+    /// </summary>
+    async Task OpenManualAsync(Game game)
+    {
+        if (ImageStore.GetManualPdfPath(game) is { } existing && File.Exists(existing))
+        {
+            ManualReader.Open(existing, game.Name, _padMode);
+            return;
+        }
+
+        CaseView.SetManualBusy("Creando el manual…");
+        try
+        {
+            var pdf = await ManualBuilder.CreateAsync(game, FaceImage(game, Face.Front), FaceImage(game, Face.Back),
+                new Progress<string>(text => { if (CaseView.Game == game) CaseView.SetManualBusy(text); }), CancellationToken.None);
+            await StoreManualAsync(game, pdf);
+            if (CaseView.Game == game)
+                CaseView.RefreshManual();
+            if (ImageStore.GetManualPdfPath(game) is { } created && CaseView.IsOpen && CaseView.Game == game)
+                ManualReader.Open(created, game.Name, _padMode);
+        }
+        catch (Exception ex) when (ex is ArtProviderException or IOException or UnauthorizedAccessException or System.Net.Http.HttpRequestException
+                                   or System.IO.InvalidDataException or System.Xml.XmlException)
+        {
+            ShowToast(ex is ArtProviderException ? ex.Message : $"No se ha podido crear el manual: {ex.Message}");
+            if (CaseView.Game == game)
+                CaseView.RefreshManual();
+        }
+    }
+
+    /// <summary>Guarda el PDF como manual del juego y, si no tenía imagen de manual, pone su portada.</summary>
+    async Task StoreManualAsync(Game game, string pdf, bool coverAsImage = true)
+    {
+        ImageStore.SetManualPdf(game, pdf);
+        if (coverAsImage && game.Manual is null && ImageStore.GetManualPdfPath(game) is { } stored && await PdfRenderer.SaveCoverAsync(stored) is { } cover)
+            ImageStore.SetExtra(game, GameExtra.Manual, cover);
+        Save();
+    }
+
+    /// <summary>La imagen de esa cara en el formato del juego o, si no tiene, en el otro.</summary>
+    static string? FaceImage(Game game, Face face) =>
+        ImageStore.GetPath(game, game.Format, face) ??
+        ImageStore.GetPath(game, game.Format == CoverFormat.Square ? CoverFormat.Portrait : CoverFormat.Square, face);
 
     // ---- Actualizaciones ----
 
@@ -390,7 +446,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
+    bool IsPanelOpen => ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
                         FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
@@ -1432,6 +1488,16 @@ public partial class MainWindow : Window
             {
             }
         }
+        try
+        {
+            if (result.ManualPdf.NewPath is { } manualPdf)
+                _ = StoreManualAsync(game, manualPdf, coverAsImage: result.Manual.NewPath is null);
+            else if (result.ManualPdf.Remove)
+                ImageStore.RemoveManualPdf(game);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
         _lookBackground = "\0"; // Fuerza a recargar el fondo aunque el archivo se llame igual.
         game.Platform = result.Platform;
         game.Format = result.Format;
@@ -1813,6 +1879,22 @@ public partial class MainWindow : Window
             }
             return;
         }
+        if (ManualReader.IsOpen)
+        {
+            switch (action)
+            {
+                case PadAction.Confirm or PadAction.PageRight or PadAction.NextFilter: ManualReader.Flip(1); break;
+                case PadAction.PageLeft or PadAction.PreviousFilter: ManualReader.Flip(-1); break;
+                case PadAction.Back: ManualReader.Close(); break;
+            }
+            return;
+        }
+        // En la caja abierta, X (□ en PlayStation) abre el manual.
+        if (CaseView.IsOpen && !Customizer.IsOpen && action == PadAction.Rotate)
+        {
+            CaseView.RequestManual();
+            return;
+        }
         if (IsPanelOpen)
         {
             if (action == PadAction.Confirm)
@@ -1842,6 +1924,11 @@ public partial class MainWindow : Window
         if (PadIsDuplicate(KeyForDirection(direction, vertical: false)))
             return;
         SetPadMode(true);
+        if (ManualReader.IsOpen)
+        {
+            ManualReader.Flip(direction);
+            return;
+        }
         if (IsPanelOpen)
             return;
         if (_flow.ShelfMode)
