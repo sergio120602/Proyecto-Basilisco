@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbPortrait = new(CoverFormat.Portrait);
     readonly SteamGridDbProvider _steamGridDbHeroes = new(heroes: true);
     readonly SteamGridDbProvider _steamGridDbInside = new(inside: true);
+    readonly VimmManualsProvider _vimm = new();
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
     readonly LaunchBoxProvider _launchBoxFront = new(Face.Front);
@@ -246,7 +247,10 @@ public partial class MainWindow : Window
     {
         ImageStore.SetManualPdf(game, pdf);
         if (coverAsImage && game.Manual is null && ImageStore.GetManualPdfPath(game) is { } stored && await PdfRenderer.SaveCoverAsync(stored) is { } cover)
+        {
             ImageStore.SetExtra(game, GameExtra.Manual, cover);
+            game.ManualFrame = null;
+        }
         Save();
     }
 
@@ -1514,6 +1518,8 @@ public partial class MainWindow : Window
         game.ReleaseDate = result.ReleaseDate;
         game.TextColor = result.TextColor;
         game.PlayMinutes = result.PlayMinutes;
+        game.ManualFrame = result.ManualFrame;
+        game.InsideFrame = result.InsideFrame;
         try
         {
             if (result.Background.NewPath is { } background)
@@ -1621,8 +1627,16 @@ public partial class MainWindow : Window
             ArtTarget.Disc => Customizer.SetDiscImage,
             ArtTarget.Background => Customizer.SetBackgroundImage,
             ArtTarget.Inside => Customizer.SetInsideImage,
+            ArtTarget.ManualPdf => Customizer.SetManualPdfFile,
             _ => Customizer.SetManualImage,
         };
+
+        if (target == ArtTarget.ManualPdf)
+        {
+            _vimm.PlatformHint = platform;
+            ArtSearch.Open(_vimm, _settings, gameName, onChosen);
+            return;
+        }
 
         if (target is ArtTarget.Background or ArtTarget.Inside)
         {

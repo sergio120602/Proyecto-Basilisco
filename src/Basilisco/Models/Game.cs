@@ -55,6 +55,12 @@ public sealed class Game
     /// <summary>Imagen del interior de la caja abierta, vista a través del plástico (dentro de basilisco-data/covers).</summary>
     public string? Inside { get; set; }
 
+    /// <summary>Encuadre de la imagen del manual en la caja abierta. Null: llena el librito.</summary>
+    public ImageFrame? ManualFrame { get; set; }
+
+    /// <summary>Encuadre de la imagen del interior. Null: llena la caja abierta de lado a lado.</summary>
+    public ImageFrame? InsideFrame { get; set; }
+
     /// <summary>El manual para leer, en PDF (dentro de basilisco-data/manuals). Null: aún no tiene.</summary>
     public string? ManualPdf { get; set; }
 

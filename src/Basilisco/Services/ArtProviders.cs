@@ -57,6 +57,9 @@ public abstract class ArtProvider
     public abstract Task<List<ArtGame>> SearchAsync(string term, string key, CancellationToken cancellation);
     public abstract Task<List<ArtImage>> GetImagesAsync(ArtGame game, string key, CancellationToken cancellation);
 
+    /// <summary>Lo que se enseña mientras se descarga lo elegido.</summary>
+    public virtual string DownloadingText => "Descargando la imagen…";
+
     /// <summary>Descarga la imagen elegida y devuelve su ruta. Cada servicio puede prepararla a su manera (recortarla…).</summary>
     public virtual Task<string> DownloadImageAsync(ArtImage image, CancellationToken cancellation) => DownloadAsync(image, cancellation);
 

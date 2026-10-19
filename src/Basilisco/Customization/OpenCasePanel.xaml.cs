@@ -68,8 +68,8 @@ public partial class OpenCasePanel : UserControl
         _inside = ImageStore.GetExtraPath(game, GameExtra.Inside) is { } insidePath ? CoverArt.LoadImage(insidePath, 2400) : null;
         _scene.Show(shape,
             CoverArt.RenderCover(item),
-            OpenCaseArt.RenderInside(plastic, aspect, ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside),
-            OpenCaseArt.RenderTray(plastic, aspect, disc / shape.Width, _inside),
+            OpenCaseArt.RenderInside(plastic, aspect, ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside, game.ManualFrame, game.InsideFrame),
+            OpenCaseArt.RenderTray(plastic, aspect, disc / shape.Width, _inside, game.InsideFrame),
             OpenCaseArt.RenderDisc(ImageStore.GetExtraPath(game, GameExtra.Disc), item.ImagePath),
             disc);
 
@@ -84,7 +84,7 @@ public partial class OpenCasePanel : UserControl
             return;
         var shape = BoxShape.Of(item);
         _scene.SetInside(OpenCaseArt.RenderInside(PlatformArt.Plastic(game.Platform), shape.Width / shape.Height,
-            ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside));
+            ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside, game.ManualFrame, game.InsideFrame));
         ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
         ManualButton.IsEnabled = true;
     }

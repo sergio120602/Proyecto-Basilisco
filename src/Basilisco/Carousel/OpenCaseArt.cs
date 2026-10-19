@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Basilisco.Models;
 
 namespace Basilisco.Carousel;
 
@@ -72,7 +73,7 @@ public static class OpenCaseArt
     /// La bandeja de la caja: plástico translúcido con el hueco del disco y el botón del centro que lo sujeta.
     /// Debajo del plástico se ve, nítida, la mitad derecha de la imagen del interior (<paramref name="inside"/>).
     /// </summary>
-    public static BitmapSource RenderTray(Color plastic, double aspect, double discFraction, BitmapSource? inside = null)
+    public static BitmapSource RenderTray(Color plastic, double aspect, double discFraction, BitmapSource? inside = null, ImageFrame? insideFrame = null)
     {
         var width = 768;
         var height = (int)Math.Round(width / aspect);
@@ -83,7 +84,7 @@ public static class OpenCaseArt
 
         return Render(width, height, dc =>
         {
-            DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 70, rightHalf: true);
+            DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 70, rightHalf: true, insideFrame);
             // El hueco donde descansa el disco, un poco más hondo (también translúcido).
             dc.DrawEllipse(new RadialGradientBrush(WithAlpha(dark, 150), WithAlpha(plastic, 90)), new Pen(new SolidColorBrush(WithAlpha(Shade(plastic, 0.55), 200)), 3),
                 center, radius * 1.03, radius * 1.03);
@@ -106,7 +107,9 @@ public static class OpenCaseArt
     /// </summary>
     /// <param name="inside">La imagen del interior: en la tapa se ve su mitad izquierda, a través del plástico.</param>
     /// <remarks>Con imagen del interior y sin manual, no se pone el librito de ejemplo: así se ve la imagen entera.</remarks>
-    public static BitmapSource RenderInside(Color plastic, double aspect, string? manualPath, string title, BitmapSource? inside = null)
+    /// <param name="manualFrame">Encuadre de la imagen del manual (null: llena el librito).</param>
+    public static BitmapSource RenderInside(Color plastic, double aspect, string? manualPath, string title, BitmapSource? inside = null,
+                                            ImageFrame? manualFrame = null, ImageFrame? insideFrame = null)
     {
         var width = 768;
         var height = (int)Math.Round(width / aspect);
@@ -115,7 +118,7 @@ public static class OpenCaseArt
 
         return Render(width, height, dc =>
         {
-            DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 110, rightHalf: false);
+            DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 110, rightHalf: false, insideFrame);
             dc.DrawRectangle(null, new Pen(new SolidColorBrush(Shade(plastic, 0.5)), 6), new Rect(3, 3, width - 6, height - 6));
             if (manual is null && inside is not null)
                 return;
@@ -127,7 +130,8 @@ public static class OpenCaseArt
             if (manual is not null)
             {
                 dc.PushClip(new RectangleGeometry(booklet, 4, 4));
-                DrawFill(dc, manual, booklet);
+                dc.DrawRectangle(Brushes.Black, null, booklet);
+                CoverArt.DrawFramed(dc, manual, booklet, manualFrame ?? FillFrame(manual, booklet.Size));
                 dc.Pop();
             }
             else
@@ -164,14 +168,15 @@ public static class OpenCaseArt
     /// Plástico translúcido. Si hay imagen del interior, se ve nítida debajo, ocupando las dos mitades de la caja abierta
     /// (la tapa a la izquierda y la bandeja a la derecha), y el plástico solo le da un velo de su color y un brillo.
     /// </summary>
-    static void DrawPlastic(DrawingContext dc, Color plastic, BitmapSource? inside, Rect area, double angle, bool rightHalf)
+    static void DrawPlastic(DrawingContext dc, Color plastic, BitmapSource? inside, Rect area, double angle, bool rightHalf, ImageFrame? frame)
     {
         if (inside is not null)
         {
             // La imagen se encuadra en la caja abierta entera (el doble de ancho) y cada mitad pinta su parte.
             var spread = new Rect(rightHalf ? area.X - area.Width : area.X, area.Y, area.Width * 2, area.Height);
             dc.PushClip(new RectangleGeometry(area));
-            DrawFill(dc, inside, spread);
+            dc.DrawRectangle(new SolidColorBrush(plastic), null, area);
+            CoverArt.DrawFramed(dc, inside, spread, frame ?? FillFrame(inside, spread.Size));
             dc.Pop();
             dc.DrawRectangle(new LinearGradientBrush(WithAlpha(plastic, 110), WithAlpha(Shade(plastic, 1.25), 80), angle), null, area);
         }
@@ -187,6 +192,43 @@ public static class OpenCaseArt
                 new GradientStop(Color.FromArgb(46, 255, 255, 255), 0.45),
                 new GradientStop(Color.FromArgb(0, 255, 255, 255), 0.62),
             ], 35), null, area);
+    }
+
+    /// <summary>El encuadre con el que la imagen llena el hueco (el de siempre, si no se ha ajustado).</summary>
+    public static ImageFrame FillFrame(BitmapSource image, Size area) =>
+        new(CoverArt.FillZoom(new Size(image.Width, image.Height), area, rotateWide: false));
+
+    /// <summary>Tamaño del librito del manual dentro de la tapa (en los píxeles de la textura), para ajustarlo.</summary>
+    public static Size BookletSize(double aspect)
+    {
+        var width = 768.0;
+        var height = Math.Round(width / aspect);
+        var margin = width * 0.085;
+        return new Size(width - 2 * margin, height - 2 * margin);
+    }
+
+    /// <summary>Tamaño de la caja abierta entera (tapa y bandeja), para ajustar la imagen del interior.</summary>
+    public static Size SpreadSize(double aspect) => new(768.0 * 2, Math.Round(768.0 / aspect));
+
+    /// <summary>
+    /// La caja abierta vista de frente, en plano (la tapa a la izquierda y la bandeja con el disco a la derecha),
+    /// para el editor de encuadre.
+    /// </summary>
+    public static BitmapSource RenderSpread(Color plastic, double aspect, double discFraction, string? manualPath, string title,
+                                            BitmapSource? inside, ImageFrame? manualFrame, ImageFrame? insideFrame, BitmapSource? disc)
+    {
+        var lid = RenderInside(plastic, aspect, manualPath, title, inside, manualFrame, insideFrame);
+        var tray = RenderTray(plastic, aspect, discFraction, inside, insideFrame);
+        return Render(lid.PixelWidth + tray.PixelWidth, lid.PixelHeight, dc =>
+        {
+            dc.DrawImage(lid, new Rect(0, 0, lid.PixelWidth, lid.PixelHeight));
+            dc.DrawImage(tray, new Rect(lid.PixelWidth, 0, tray.PixelWidth, tray.PixelHeight));
+            if (disc is not null)
+            {
+                var size = tray.PixelWidth * discFraction;
+                dc.DrawImage(disc, new Rect(lid.PixelWidth + (tray.PixelWidth - size) / 2, (tray.PixelHeight - size) / 2, size, size));
+            }
+        });
     }
 
     static Color WithAlpha(Color color, byte alpha) => Color.FromArgb(alpha, color.R, color.G, color.B);
