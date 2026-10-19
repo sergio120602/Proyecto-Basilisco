@@ -160,11 +160,13 @@ public partial class ArtSearchPanel : UserControl
 
     async Task ChooseAsync(ArtImage image)
     {
+        if (_provider is not { } provider)
+            return;
         var cancellation = Restart();
         SetStatus("Descargando la imagen…");
         try
         {
-            var path = await ArtProvider.DownloadAsync(image, cancellation);
+            var path = await provider.DownloadImageAsync(image, cancellation);
             if (cancellation.IsCancellationRequested)
                 return;
 

@@ -29,6 +29,8 @@ public partial class MainWindow : Window
     readonly LaunchBoxProvider _launchBoxBack = new(Face.Back);
     readonly LaunchBoxProvider _launchBoxSpine = new(Face.Spine);
     readonly SpineArchiveProvider _spineArchive = new();
+    readonly LaunchBoxProvider _launchBoxDisc = new(ArtKind.Disc);
+    readonly LaunchBoxProvider _launchBoxManual = new(ArtKind.Manual);
     readonly Library _library;
     readonly CoverFlow _flow;
 
@@ -79,6 +81,8 @@ public partial class MainWindow : Window
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
         ThemeEditor.Saved += ApplyTheme;
+        CaseView.PlayRequested += Launch;
+        CaseView.Closed += () => Focus();
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
@@ -296,7 +300,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
+    bool IsPanelOpen => CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
                         FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
@@ -660,7 +664,7 @@ public partial class MainWindow : Window
             var game = _visibleGames[index];
             TitleText.Text = game.Name;
             Chips.ItemsSource = DescribeGame(game);
-            ActivateHint.Text = "Jugar";
+            ActivateHint.Text = "Abrir";
             GameHints.Visibility = Visibility.Visible;
         }
 
@@ -1046,7 +1050,11 @@ public partial class MainWindow : Window
         if (IsAddCard(index))
             Import();
         else
-            Launch(_visibleGames[index]);
+        {
+            // Primero se abre la caja (manual y disco); desde ahí, Jugar lanza el juego.
+            var game = _visibleGames[index];
+            CaseView.Open(game, ToCarouselItem(game), _padMode);
+        }
     }
 
     void Import()
@@ -1321,6 +1329,19 @@ public partial class MainWindow : Window
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
         }
+        foreach (var (extra, change) in new[] { (GameExtra.Disc, result.Disc), (GameExtra.Manual, result.Manual) })
+        {
+            try
+            {
+                if (change.NewPath is { } extraPath)
+                    ImageStore.SetExtra(game, extra, extraPath);
+                else if (change.Remove)
+                    ImageStore.RemoveExtra(game, extra);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
         _lookBackground = "\0"; // Fuerza a recargar el fondo aunque el archivo se llame igual.
         game.Platform = result.Platform;
         game.Format = result.Format;
@@ -1387,14 +1408,51 @@ public partial class MainWindow : Window
             return;
         }
 
+        Action<string> onChosen = target switch
+        {
+            ArtTarget.Front => Customizer.SetFrontImage,
+            ArtTarget.Back => Customizer.SetBackImage,
+            ArtTarget.Spine => Customizer.SetSpineImage,
+            ArtTarget.Disc => Customizer.SetDiscImage,
+            _ => Customizer.SetManualImage,
+        };
+
+        if (source == ArtSource.SteamGameCovers)
+        {
+            // Una carátula completa trae portada, lomo y contraportada: las caras vacías se rellenan con el resto.
+            var kind = target switch
+            {
+                ArtTarget.Front => ArtKind.Front,
+                ArtTarget.Back => ArtKind.Back,
+                ArtTarget.Spine => ArtKind.Spine,
+                _ => ArtKind.Disc,
+            };
+            var covers = new SteamGameCoversProvider(kind);
+            ArtSearch.Open(covers, _settings, gameName, path =>
+            {
+                onChosen(path);
+                if (covers.LastParts is { } parts)
+                    Customizer.FillEmptyFaces(parts);
+            });
+            return;
+        }
+
+        if (target is ArtTarget.Disc or ArtTarget.Manual)
+        {
+            var provider = target == ArtTarget.Disc ? _launchBoxDisc : _launchBoxManual;
+            provider.PlatformHint = platform;
+            ArtSearch.Open(provider, _settings, gameName, onChosen);
+            return;
+        }
+
         if (source == ArtSource.LaunchBox)
         {
             // LaunchBox: la segunda opción, con fotos reales de las tres caras de la caja.
-            var (provider, onChosen) = target switch
+            var provider = target switch
             {
-                ArtTarget.Front => (_launchBoxFront, (Action<string>)Customizer.SetFrontImage),
-                ArtTarget.Back => (_launchBoxBack, Customizer.SetBackImage),
-                _ => (_launchBoxSpine, Customizer.SetSpineImage),
+                ArtTarget.Front => _launchBoxFront,
+                ArtTarget.Back => _launchBoxBack,
+                _ => _launchBoxSpine,
             };
             provider.PlatformHint = platform;
             ArtSearch.Open(provider, _settings, gameName, onChosen);

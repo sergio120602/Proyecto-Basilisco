@@ -233,6 +233,8 @@
             </StackPanel>
         </Grid>
 
+        <!-- La caja abierta, al darle a un juego: manual, disco y «Jugar» -->
+        <customization:OpenCasePanel x:Name="CaseView"/>
         <customization:CustomizePanel x:Name="Customizer"/>
         <customization:ArtSearchPanel x:Name="ArtSearch"/>
         <customization:FilterPanel x:Name="FilterEditor"/>

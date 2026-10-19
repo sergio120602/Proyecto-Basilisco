@@ -50,16 +50,21 @@ public sealed class PendingFaces
 /// <param name="Background">Cambio del fondo (imagen o vídeo).</param>
 /// <param name="TextColor">Color de las letras (#RRGGBB) o null para el de siempre.</param>
 /// <param name="PlayMinutes">Tiempo de juego en minutos.</param>
+/// <param name="Disc">Cambio de la imagen del disco (caja abierta).</param>
+/// <param name="Manual">Cambio de la imagen que hace de manual (caja abierta).</param>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
-    ImageChange Background, string? TextColor, int PlayMinutes);
+    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual);
 
-/// <summary>Cara de la caja para la que se busca una imagen en internet.</summary>
-public enum ArtTarget { Front, Back, Spine }
+/// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco o el manual.</summary>
+public enum ArtTarget { Front, Back, Spine, Disc, Manual }
 
-/// <summary>Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox o The Spine Archive.</summary>
-public enum ArtSource { Default, LaunchBox, SpineArchive }
+/// <summary>
+/// Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox, The Spine Archive
+/// o Steam Game Covers.
+/// </summary>
+public enum ArtSource { Default, LaunchBox, SpineArchive, SteamGameCovers }
 
 /// <summary>
 /// Menú para cambiar el nombre, el formato, las imágenes, la consola y los filtros de un juego,
@@ -75,6 +80,8 @@ public partial class CustomizePanel : UserControl
     string? _platform;
     CancellationTokenSource? _autoFetch;
     ImageChange _background = ImageChange.None;
+    ImageChange _disc = ImageChange.None;
+    ImageChange _manual = ImageChange.None;
     string? _textColor;
     bool _syncingColor;
 
@@ -126,6 +133,9 @@ public partial class CustomizePanel : UserControl
         ShowPath(game.Path);
         NameBox.Text = game.Name;
         _background = ImageChange.None;
+        _disc = ImageChange.None;
+        _manual = ImageChange.None;
+        UpdateExtrasText();
         _textColor = game.TextColor;
         BuildSwatches();
         SyncColor();
@@ -204,7 +214,82 @@ public partial class CustomizePanel : UserControl
 
     public void SetSpineImage(string path) => SetImage(Face.Spine, path);
 
-    void SetImage(Face face, string path)
+    public void SetDiscImage(string path) => SetExtra(GameExtra.Disc, path);
+
+    public void SetManualImage(string path) => SetExtra(GameExtra.Manual, path);
+
+    /// <summary>
+    /// De una carátula completa (Steam Game Covers) se ha usado una parte: las demás caras se rellenan con el resto,
+    /// pero solo las que aún no tienen imagen.
+    /// </summary>
+    public void FillEmptyFaces(CoverParts parts)
+    {
+        foreach (var face in Enum.GetValues<Face>())
+        {
+            if (CurrentPath(_format, face) is null && parts.Get(LaunchBoxImage.KindOf(face)) is { } path)
+                SetImage(face, path, show: false);
+        }
+        if (CurrentExtra(GameExtra.Disc) is null && parts.Disc is { } disc)
+            SetExtra(GameExtra.Disc, disc);
+    }
+
+    void SetExtra(GameExtra extra, string path)
+    {
+        if (!IsValidImage(path))
+            return;
+        if (extra == GameExtra.Disc)
+            _disc = new ImageChange(path, false);
+        else
+            _manual = new ImageChange(path, false);
+        UpdateExtrasText();
+    }
+
+    /// <summary>Imagen del disco o del manual que tendrá el juego si se guarda ahora.</summary>
+    string? CurrentExtra(GameExtra extra)
+    {
+        var change = extra == GameExtra.Disc ? _disc : _manual;
+        if (change.NewPath is not null || change.Remove || _game is null)
+            return change.NewPath;
+        return ImageStore.GetExtraPath(_game, extra);
+    }
+
+    void UpdateExtrasText()
+    {
+        DiscText.Text = CurrentExtra(GameExtra.Disc) is { } disc
+            ? $"Disco: {Path.GetFileName(disc)}"
+            : "Sin imagen de disco: se dibuja uno con la portada.";
+        ManualText.Text = CurrentExtra(GameExtra.Manual) is { } manual
+            ? $"Manual: {Path.GetFileName(manual)}"
+            : "Sin imagen de manual: se ve el interior de la caja con el nombre del juego.";
+        RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
+        RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
+    }
+
+    void OnChooseDiscClick(object sender, RoutedEventArgs e)
+    {
+        if (PickImage("Elegir imagen del disco") is { } path)
+            SetExtra(GameExtra.Disc, path);
+    }
+
+    void OnChooseManualClick(object sender, RoutedEventArgs e)
+    {
+        if (PickImage("Elegir imagen para el manual") is { } path)
+            SetExtra(GameExtra.Manual, path);
+    }
+
+    void OnRemoveDiscClick(object sender, RoutedEventArgs e)
+    {
+        _disc = new ImageChange(null, true);
+        UpdateExtrasText();
+    }
+
+    void OnRemoveManualClick(object sender, RoutedEventArgs e)
+    {
+        _manual = new ImageChange(null, true);
+        UpdateExtrasText();
+    }
+
+    void SetImage(Face face, string path, bool show = true)
     {
         if (!IsValidImage(path))
             return;
@@ -215,7 +300,8 @@ public partial class CustomizePanel : UserControl
             ? new ImageFrame(CoverArt.FillZoom(new Size(image.Width, image.Height), CoverArt.SpineSize(_format, _platform), rotateWide: true))
             : ImageFrame.Default);
         UpdatePreview();
-        ShowFace(face);
+        if (show)
+            ShowFace(face);
     }
 
     void ShowFace(Face face)
@@ -404,7 +490,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual);
         Close();
         Saved?.Invoke(result);
     }
@@ -680,6 +766,18 @@ public partial class CustomizePanel : UserControl
     void OnLaunchBoxSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, ArtSource.LaunchBox);
 
     void OnSpineArchiveClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, ArtSource.SpineArchive);
+
+    void OnCoversFrontClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Front, ArtSource.SteamGameCovers);
+
+    void OnCoversBackClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Back, ArtSource.SteamGameCovers);
+
+    void OnCoversSpineClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Spine, ArtSource.SteamGameCovers);
+
+    void OnCoversDiscClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Disc, ArtSource.SteamGameCovers);
+
+    void OnLaunchBoxDiscClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Disc, ArtSource.LaunchBox);
+
+    void OnLaunchBoxManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.LaunchBox);
 
     // El lado derecho ocupa lo que permita la ventana; si no cabe, se desplaza.
     void OnSizeChanged(object sender, SizeChangedEventArgs e) => SideScroll.MaxHeight = Math.Max(300, ActualHeight - 200);

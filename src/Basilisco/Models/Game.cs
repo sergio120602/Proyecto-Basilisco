@@ -46,6 +46,12 @@ public sealed class Game
     /// <summary>Color de las letras con este juego seleccionado (#RRGGBB). Null: el de siempre.</summary>
     public string? TextColor { get; set; }
 
+    /// <summary>Imagen del disco (dentro de basilisco-data/covers), para la caja abierta. Null: se dibuja uno con la portada.</summary>
+    public string? Disc { get; set; }
+
+    /// <summary>Imagen que hace de manual en la caja abierta (un póster, un fondo del juego…). Null: el interior liso.</summary>
+    public string? Manual { get; set; }
+
     public DateTime AddedAt { get; set; }
     public DateTime? LastPlayed { get; set; }
     public int PlayCount { get; set; }

@@ -13,7 +13,8 @@ public sealed record ArtGame(string Id, string Name, string? Detail);
 /// <summary>Una imagen disponible para un juego.</summary>
 /// <param name="Label">Texto bajo la miniatura cuando no se saben las medidas (por ejemplo, la región).</param>
 /// <param name="Tall">Imagen muy alta y estrecha (un lomo): la miniatura se enseña tumbada para que se lea.</param>
-public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null, bool Tall = false)
+/// <param name="Tag">Datos propios del servicio para descargarla (por ejemplo, de qué página sale).</param>
+public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null, bool Tall = false, object? Tag = null)
 {
     public string SizeText => Width > 0 && Height > 0 ? $"{Width} × {Height}" : Label ?? "";
 }
@@ -53,6 +54,9 @@ public abstract class ArtProvider
 
     public abstract Task<List<ArtGame>> SearchAsync(string term, string key, CancellationToken cancellation);
     public abstract Task<List<ArtImage>> GetImagesAsync(ArtGame game, string key, CancellationToken cancellation);
+
+    /// <summary>Descarga la imagen elegida y devuelve su ruta. Cada servicio puede prepararla a su manera (recortarla…).</summary>
+    public virtual Task<string> DownloadImageAsync(ArtImage image, CancellationToken cancellation) => DownloadAsync(image, cancellation);
 
     /// <summary>Descarga la imagen a una carpeta temporal y devuelve su ruta.</summary>
     public static async Task<string> DownloadAsync(ArtImage image, CancellationToken cancellation)
