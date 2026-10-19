@@ -780,7 +780,9 @@ public partial class CustomizePanel : UserControl
     void OnLaunchBoxManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.LaunchBox);
 
     // El lado derecho ocupa lo que permita la ventana; si no cabe, se desplaza.
-    void OnSizeChanged(object sender, SizeChangedEventArgs e) => SideScroll.MaxHeight = Math.Max(300, ActualHeight - 200);
+    // Las dos columnas se desplazan si la ventana es baja.
+    void OnSizeChanged(object sender, SizeChangedEventArgs e) =>
+        SideScroll.MaxHeight = LeftScroll.MaxHeight = Math.Max(300, ActualHeight - 160);
 
     void OnShowFrontClick(object sender, RoutedEventArgs e) => _preview.ShowFront();
 

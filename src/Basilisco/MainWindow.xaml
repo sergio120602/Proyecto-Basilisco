@@ -96,8 +96,8 @@
                     MouseLeftButtonUp="OnViewportMouseUp" MouseRightButtonDown="OnViewportRightMouseDown"
                     LostMouseCapture="OnViewportLostCapture"/>
 
-        <!-- Cabecera -->
-        <Grid VerticalAlignment="Top" Margin="44,30,44,0">
+        <!-- Cabecera (como el resto de la interfaz, se escala con el tamaño de la ventana) -->
+        <Grid x:Name="HeaderBar" VerticalAlignment="Top" Margin="44,30,44,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -123,6 +123,9 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Solo aparece cuando hay una versión nueva en GitHub -->
+                <Button x:Name="UpdateButton" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Visibility="Collapsed"
+                        Click="OnUpdateClick"/>
                 <Button Style="{StaticResource PillButton}" Content="Apariencia" Click="OnThemeClick" Margin="0,0,10,0"
                         ToolTip="Fondo (imagen o vídeo) y color de las letras para todos los juegos (A)"/>
                 <Button Style="{StaticResource PillButton}" Content="Steam" Click="OnSteamClick" Margin="0,0,10,0"
@@ -175,7 +178,7 @@
         </Border>
 
         <!-- Barra de controles -->
-        <Grid VerticalAlignment="Bottom" Margin="44,0,44,26">
+        <Grid x:Name="FooterBar" VerticalAlignment="Bottom" Margin="44,0,44,26">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

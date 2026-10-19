@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.4.1] - 2026-10-19
+
+- La interfaz **se adapta a cualquier resolución**: la cabecera, la barra de abajo, el título del juego, los avisos, los menús y todas las ventanas (Personalizar, la caja abierta, los buscadores…) se escalan con el tamaño de la ventana, tomando 1920 × 1080 como referencia. En pantallas pequeñas ya no se pisan los textos y en las grandes (2K, 4K) no se ven diminutos.
+- En Personalizar, las dos columnas se desplazan si la ventana es baja, así que ya no se corta.
+- Nuevo botón **Actualizar**: cuando hay una versión nueva en GitHub aparece arriba a la derecha (o con la tecla `U`). Descarga el `.exe` nuevo, lo pone en lugar del actual y vuelve a abrir Basilisco, sin tocar la biblioteca ni los ajustes. Se comprueba al abrir Basilisco y cada 6 horas.
+
 ## [0.4.0] - 2026-10-19
 
 - **Caja abierta**: al darle a un juego (`Enter`, clic o A en el mando) ya no se lanza directamente. Primero se abre su caja en 3D: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha. Al darle a **Jugar**, el disco empieza a girar, se inicia el juego y la caja se cierra sola. `Esc` (o B) vuelve al carrusel.
