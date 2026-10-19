@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     readonly AppSettings _settings = AppSettings.Load();
     readonly SteamGridDbProvider _steamGridDb = new();
     readonly SteamGridDbProvider _steamGridDbPortrait = new(CoverFormat.Portrait);
+    readonly SteamGridDbProvider _steamGridDbHeroes = new(heroes: true);
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
     readonly LaunchBoxProvider _launchBoxFront = new(Face.Front);
@@ -1617,8 +1618,15 @@ public partial class MainWindow : Window
             ArtTarget.Back => Customizer.SetBackImage,
             ArtTarget.Spine => Customizer.SetSpineImage,
             ArtTarget.Disc => Customizer.SetDiscImage,
+            ArtTarget.Background => Customizer.SetBackgroundImage,
             _ => Customizer.SetManualImage,
         };
+
+        if (target == ArtTarget.Background)
+        {
+            ArtSearch.Open(_steamGridDbHeroes, _settings, gameName, onChosen);
+            return;
+        }
 
         if (source == ArtSource.SteamGameCovers)
         {

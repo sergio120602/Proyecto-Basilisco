@@ -14,7 +14,9 @@ public sealed record ArtGame(string Id, string Name, string? Detail);
 /// <param name="Label">Texto bajo la miniatura cuando no se saben las medidas (por ejemplo, la región).</param>
 /// <param name="Tall">Imagen muy alta y estrecha (un lomo): la miniatura se enseña tumbada para que se lea.</param>
 /// <param name="Tag">Datos propios del servicio para descargarla (por ejemplo, de qué página sale).</param>
-public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null, bool Tall = false, object? Tag = null)
+/// <param name="Wide">Imagen muy apaisada (un fondo): la miniatura se enseña más ancha.</param>
+public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null, bool Tall = false, object? Tag = null,
+                              bool Wide = false)
 {
     public string SizeText => Width > 0 && Height > 0 ? $"{Width} × {Height}" : Label ?? "";
 }
@@ -132,8 +134,10 @@ public abstract class ArtProvider
 /// <summary>
 /// SteamGridDB (steamgriddb.com): carátulas hechas por la comunidad. Se piden primero las del formato de la caja:
 /// cuadradas (1024 × 1024 y 512 × 512) o verticales (600 × 900 y similares, las más parecidas a 600 × 800).
+/// Con <paramref name="heroes"/>, en lugar de carátulas se buscan sus «heroes»: imágenes grandes y apaisadas
+/// (1920 × 620 o 3840 × 1240) hechas para ser el fondo del juego.
 /// </summary>
-public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square) : ArtProvider
+public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square, bool heroes = false) : ArtProvider
 {
     string Dimensions => format == Models.CoverFormat.Portrait
         ? "600x900,342x482,660x930"
@@ -142,7 +146,7 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
     const string BaseUrl = "https://www.steamgriddb.com/api/v2";
 
     public override string Name => "SteamGridDB";
-    public override string ImageKind => "portada";
+    public override string ImageKind => heroes ? "fondo" : "portada";
     public override string KeyHelp => "Entra en steamgriddb.com con tu cuenta, ve a Preferencias → API y genera una clave (es gratis e inmediata).";
     public override string KeyUrl => "https://www.steamgriddb.com/profile/preferences/api";
 
@@ -168,6 +172,9 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
 
     public override async Task<List<ArtImage>> GetImagesAsync(ArtGame game, string key, CancellationToken cancellation)
     {
+        if (heroes)
+            return await GetGridsAsync(game, key, "", cancellation, "heroes");
+
         // Primero las del formato de la caja; si el juego no tiene, todas las demás (se enseñarán enteras, sin recortar).
         var images = await GetGridsAsync(game, key, $"&dimensions={Dimensions}", cancellation);
         if (images.Count == 0)
@@ -175,9 +182,9 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
         return images;
     }
 
-    async Task<List<ArtImage>> GetGridsAsync(ArtGame game, string key, string filter, CancellationToken cancellation)
+    async Task<List<ArtImage>> GetGridsAsync(ArtGame game, string key, string filter, CancellationToken cancellation, string kind = "grids")
     {
-        using var json = await GetJsonAsync(Request($"/grids/game/{game.Id}?types=static{filter}", key), cancellation);
+        using var json = await GetJsonAsync(Request($"/{kind}/game/{game.Id}?types=static{filter}", key), cancellation);
         var images = new List<ArtImage>();
         if (!json.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
             return images;
@@ -186,7 +193,7 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
         {
             if (GetString(grid, "url") is not { } url)
                 continue;
-            images.Add(new ArtImage(url, GetString(grid, "thumb") ?? url, GetInt(grid, "width"), GetInt(grid, "height")));
+            images.Add(new ArtImage(url, GetString(grid, "thumb") ?? url, GetInt(grid, "width"), GetInt(grid, "height"), Wide: heroes));
         }
         return images;
     }
