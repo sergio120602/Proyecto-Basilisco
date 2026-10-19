@@ -18,7 +18,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Vista previa: la misma caja 3D que se verá en el carrusel; se gira arrastrando -->
-                <StackPanel>
+                <ScrollViewer x:Name="LeftScroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel Margin="0,0,6,0">
                     <Border CornerRadius="14" ClipToBounds="True">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -73,6 +74,7 @@
                     <TextBlock x:Name="PlayTimeHint" FontSize="12" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
                                Text="Se cuenta solo mientras juegas desde Basilisco. Se ve debajo del juego en el carrusel."/>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Con tantas secciones, en pantallas bajas el lado derecho se desplaza -->
                 <ScrollViewer x:Name="SideScroll" Grid.Column="2" VerticalScrollBarVisibility="Auto" Focusable="False">

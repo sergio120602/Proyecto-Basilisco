@@ -86,6 +86,7 @@ public partial class MainWindow : Window
         PlatformPicker.Saved += ApplyPlatforms;
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
+        Root.SizeChanged += (_, _) => UpdateUiScale();
         Activated += async (_, _) =>
         {
             if (BackgroundVideo.Source is not null) BackgroundVideo.Play();
@@ -120,7 +121,96 @@ public partial class MainWindow : Window
             await RepairMovedGamesAsync();
             await RestorePlaySessionAsync();
             await SyncSteamPlaytimeAsync(online: true);
+            await CheckForUpdateAsync();
+            // Y de vez en cuando, por si Basilisco se queda abierto días.
+            var updateTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(6) };
+            updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
+            updateTimer.Start();
         };
+    }
+
+    // ---- Tamaño de la interfaz ----
+
+    // La interfaz está pensada para 1920 × 1080: en pantallas más pequeñas se reduce y en las grandes se amplía,
+    // igual en todo (cabecera, barra de abajo, títulos y menús). Las cajas en 3D ya se ajustan solas.
+    const double DesignWidth = 1920, DesignHeight = 1080;
+    ScaleTransform _uiScale = new(1, 1);
+
+    void UpdateUiScale()
+    {
+        if (Root.ActualWidth <= 0 || Root.ActualHeight <= 0)
+            return;
+        var scale = Math.Clamp(Math.Min(Root.ActualWidth / DesignWidth, Root.ActualHeight / DesignHeight), 0.5, 2.5);
+        if (Math.Abs(scale - _uiScale.ScaleX) < 0.005 && HeaderBar.LayoutTransform == _uiScale)
+            return;
+
+        _uiScale = new ScaleTransform(scale, scale);
+        _uiScale.Freeze();
+        FrameworkElement[] scaled =
+        [
+            HeaderBar, FooterBar, TitlePanel, PlayTimeText, Toast,
+            CaseView, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
+        ];
+        foreach (var element in scaled)
+            element.LayoutTransform = _uiScale;
+        UpdateOverlayLayout();
+    }
+
+    // ---- Actualizaciones ----
+
+    UpdateInfo? _update;
+    bool _updating;
+
+    async Task CheckForUpdateAsync()
+    {
+        if (_updating || await Updater.CheckAsync(CancellationToken.None) is not { } update)
+            return;
+        var isNew = _update?.Version != update.Version;
+        _update = update;
+        UpdateButton.Content = $"Actualizar a {update.Tag}";
+        UpdateButton.ToolTip = "Hay una versión nueva de Basilisco en GitHub: se descarga y se pone sola, sin perder nada (U)";
+        UpdateButton.Visibility = Visibility.Visible;
+        if (isNew)
+            ShowToast($"Hay una versión nueva de Basilisco: {update.Tag}");
+    }
+
+    void OnUpdateClick(object sender, RoutedEventArgs e) => _ = UpdateAsync();
+
+    /// <summary>Descarga la versión nueva, la pone en lugar de esta y la abre. La biblioteca y los ajustes no se tocan.</summary>
+    async Task UpdateAsync()
+    {
+        if (_updating || _update is not { } update)
+            return;
+
+        var notes = update.Notes.Trim();
+        if (notes.Length > 700)
+            notes = notes[..700].TrimEnd() + "…";
+        var answer = MessageBox.Show(this,
+            $"Hay una versión nueva de Basilisco: {update.Tag} (tienes la v{AppInfo.Version}).\n\n{notes}\n\n" +
+            "Se descargará, se pondrá en lugar de esta y Basilisco se volverá a abrir. Tu biblioteca, portadas y ajustes no cambian.\n\n¿Actualizar ahora?",
+            "Actualizar Basilisco", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes)
+            return;
+
+        _updating = true;
+        UpdateButton.IsEnabled = false;
+        try
+        {
+            var path = await Updater.DownloadAsync(update, new Progress<double>(done =>
+                UpdateButton.Content = $"Descargando… {done:P0}"), CancellationToken.None);
+            UpdateButton.Content = "Reiniciando…";
+            Updater.InstallAndRestart(path, update);
+            Close();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Net.Http.HttpRequestException
+                                   or TaskCanceledException or System.ComponentModel.Win32Exception)
+        {
+            MessageBox.Show(this, $"No se ha podido actualizar Basilisco.\n\n{ex.Message}\n\nPuedes descargar la versión nueva a mano desde GitHub.",
+                "Actualizar Basilisco", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UpdateButton.Content = $"Actualizar a {update.Tag}";
+            UpdateButton.IsEnabled = true;
+            _updating = false;
+        }
     }
 
     DateTime _lastSteamSync;
@@ -401,7 +491,7 @@ public partial class MainWindow : Window
     /// <summary>Grupo «Consolas»: las que tienen juegos (y la que estás viendo).</summary>
     void OnConsolesTabClick(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu();
+        var menu = new ContextMenu { LayoutTransform = _uiScale };
         menu.Items.Add(Item("Todas las consolas", () => SelectView(null, _activeFilter), isChecked: _activePlatform is null));
         menu.Items.Add(new Separator());
 
@@ -424,7 +514,7 @@ public partial class MainWindow : Window
     /// <summary>Grupo «Filtros»: tus filtros, crear uno nuevo y editar los que hay.</summary>
     void OnFiltersTabClick(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu();
+        var menu = new ContextMenu { LayoutTransform = _uiScale };
         menu.Items.Add(Item("Todos los filtros", () => SelectView(_activePlatform, null), isChecked: _activeFilter is null));
         menu.Items.Add(new Separator());
 
@@ -464,7 +554,7 @@ public partial class MainWindow : Window
     /// <summary>Menú de orden: personalizado, alfabético, fecha de lanzamiento y fecha de adición.</summary>
     void OnSortTabClick(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu();
+        var menu = new ContextMenu { LayoutTransform = _uiScale };
         foreach (var mode in Enum.GetValues<SortMode>())
         {
             var chosen = mode;
@@ -1884,6 +1974,7 @@ public partial class MainWindow : Window
             case Key.F: OpenFormatEditor(); break;
             case Key.S: OpenSteamImport(); break;
             case Key.A: OpenThemeEditor(); break;
+            case Key.U when _update is not null: _ = UpdateAsync(); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.OemPlus or Key.Add: StepZoom(0.1); break;
             case Key.OemMinus or Key.Subtract: StepZoom(-0.1); break;

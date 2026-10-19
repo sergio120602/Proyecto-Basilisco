@@ -14,6 +14,8 @@ Es **100 % portable**: un único `.exe`, sin instalación de ningún tipo. Lo co
 
 Descarga el último `Basilisco-vX.Y.Z-win-x64.exe` desde **[Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases)** y ábrelo. No necesita instalar nada (ni siquiera .NET).
 
+Cuando sale una versión nueva, Basilisco lo avisa con un botón **Actualizar** arriba a la derecha: se descarga y se pone sola, conservando tu biblioteca.
+
 La biblioteca, las portadas y los filtros se guardan en una carpeta `basilisco-data` junto al `.exe`, así que si mueves el `.exe`, mueve también esa carpeta.
 
 ## 🎯 Objetivo
@@ -43,6 +45,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Fondo y color de las letras para todos los juegos | `A` o botón «Apariencia» |
 | Zoom de las cajas | Barra «Zoom» abajo a la derecha, `Ctrl + rueda` o `+` / `−` |
 | Pantalla completa | `F11` (`Esc` para salir) |
+| Actualizar a la versión nueva (cuando la hay) | `U` o botón «Actualizar a …» arriba a la derecha |
 
 ### 🕹️ Con mando
 
@@ -116,6 +119,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.8** — Lomos de The Spine Archive
 - [x] **v0.3.9** — Caja de Wii U de 190 × 135 × 14 mm y tiempo de juego mientras el juego siga abierto
 - [x] **v0.4.0** — Caja abierta con manual y disco (el disco gira al jugar), Steam Game Covers, y discos y manuales de LaunchBox
+- [x] **v0.4.1** — Interfaz adaptada a cualquier resolución y botón para actualizar
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
