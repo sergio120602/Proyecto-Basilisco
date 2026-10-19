@@ -70,9 +70,9 @@ public static class OpenCaseArt
 
     /// <summary>
     /// La bandeja de la caja: plástico translúcido con el hueco del disco y el botón del centro que lo sujeta.
-    /// A través del plástico se ve, borrosa, la contraportada por dentro (<paramref name="insert"/>).
+    /// Debajo del plástico se ve, nítida, la mitad derecha de la imagen del interior (<paramref name="inside"/>).
     /// </summary>
-    public static BitmapSource RenderTray(Color plastic, double aspect, double discFraction, BitmapSource? insert = null)
+    public static BitmapSource RenderTray(Color plastic, double aspect, double discFraction, BitmapSource? inside = null)
     {
         var width = 768;
         var height = (int)Math.Round(width / aspect);
@@ -83,7 +83,7 @@ public static class OpenCaseArt
 
         return Render(width, height, dc =>
         {
-            DrawPlastic(dc, plastic, insert, new Rect(0, 0, width, height), 70);
+            DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 70, rightHalf: true);
             // El hueco donde descansa el disco, un poco más hondo (también translúcido).
             dc.DrawEllipse(new RadialGradientBrush(WithAlpha(dark, 150), WithAlpha(plastic, 90)), new Pen(new SolidColorBrush(WithAlpha(Shade(plastic, 0.55), 200)), 3),
                 center, radius * 1.03, radius * 1.03);
@@ -104,8 +104,9 @@ public static class OpenCaseArt
     /// El interior de la tapa: el plástico con las pestañas que sujetan el librito, y encima el manual (la imagen,
     /// rellenando el librito). Sin imagen, el nombre del juego en grande, como la portada interior de un manual.
     /// </summary>
-    /// <param name="insert">La portada, que se ve por dentro a través del plástico translúcido de la tapa.</param>
-    public static BitmapSource RenderInside(Color plastic, double aspect, string? manualPath, string title, BitmapSource? insert = null)
+    /// <param name="inside">La imagen del interior: en la tapa se ve su mitad izquierda, a través del plástico.</param>
+    /// <remarks>Con imagen del interior y sin manual, no se pone el librito de ejemplo: así se ve la imagen entera.</remarks>
+    public static BitmapSource RenderInside(Color plastic, double aspect, string? manualPath, string title, BitmapSource? inside = null)
     {
         var width = 768;
         var height = (int)Math.Round(width / aspect);
@@ -114,8 +115,10 @@ public static class OpenCaseArt
 
         return Render(width, height, dc =>
         {
-            DrawPlastic(dc, plastic, insert, new Rect(0, 0, width, height), 110);
+            DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 110, rightHalf: false);
             dc.DrawRectangle(null, new Pen(new SolidColorBrush(Shade(plastic, 0.5)), 6), new Rect(3, 3, width - 6, height - 6));
+            if (manual is null && inside is not null)
+                return;
 
             // El librito, con un margen y su sombra (alrededor se ve el plástico).
             var margin = width * 0.085;
@@ -158,20 +161,19 @@ public static class OpenCaseArt
     }
 
     /// <summary>
-    /// Plástico translúcido: debajo, la carátula vista por dentro (al revés y desenfocada, como a través de un plástico
-    /// esmerilado); encima, el color del plástico de la consola dejando pasar la luz y un brillo en diagonal.
+    /// Plástico translúcido. Si hay imagen del interior, se ve nítida debajo, ocupando las dos mitades de la caja abierta
+    /// (la tapa a la izquierda y la bandeja a la derecha), y el plástico solo le da un velo de su color y un brillo.
     /// </summary>
-    static void DrawPlastic(DrawingContext dc, Color plastic, BitmapSource? insert, Rect area, double angle)
+    static void DrawPlastic(DrawingContext dc, Color plastic, BitmapSource? inside, Rect area, double angle, bool rightHalf)
     {
-        if (insert is not null)
+        if (inside is not null)
         {
-            // Reducida a un tamaño muy pequeño y vuelta a ampliar con suavizado: así queda desenfocada.
-            var scale = 48.0 / Math.Max(insert.PixelWidth, insert.PixelHeight);
-            var blurred = new TransformedBitmap(insert, new ScaleTransform(scale, scale));
-            dc.PushTransform(new ScaleTransform(-1, 1, area.X + area.Width / 2, 0));
-            DrawFill(dc, blurred, area);
+            // La imagen se encuadra en la caja abierta entera (el doble de ancho) y cada mitad pinta su parte.
+            var spread = new Rect(rightHalf ? area.X - area.Width : area.X, area.Y, area.Width * 2, area.Height);
+            dc.PushClip(new RectangleGeometry(area));
+            DrawFill(dc, inside, spread);
             dc.Pop();
-            dc.DrawRectangle(new LinearGradientBrush(WithAlpha(plastic, 170), WithAlpha(Shade(plastic, 1.25), 150), angle), null, area);
+            dc.DrawRectangle(new LinearGradientBrush(WithAlpha(plastic, 110), WithAlpha(Shade(plastic, 1.25), 80), angle), null, area);
         }
         else
         {

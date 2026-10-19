@@ -16,8 +16,11 @@ public enum CoverFormat
 /// <summary>Cara de la caja con imagen propia.</summary>
 public enum Face { Front, Back, Spine }
 
-/// <summary>Lo que hay dentro de la caja abierta: el disco y una imagen que hace de manual. Son del juego, no del formato.</summary>
-public enum GameExtra { Disc, Manual }
+/// <summary>
+/// Lo que hay dentro de la caja abierta: el disco, una imagen que hace de manual y la imagen del interior (la que se ve
+/// a través del plástico). Son del juego, no del formato.
+/// </summary>
+public enum GameExtra { Disc, Manual, Inside }
 
 /// <summary>
 /// Imágenes de un juego para un formato: cada formato tiene las suyas, así que al cambiar de formato

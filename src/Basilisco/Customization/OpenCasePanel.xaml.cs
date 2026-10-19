@@ -21,7 +21,7 @@ public partial class OpenCasePanel : UserControl
     readonly OpenCaseScene _scene;
     Game? _game;
     CarouselItem? _item;
-    System.Windows.Media.Imaging.BitmapSource? _cover, _back;
+    System.Windows.Media.Imaging.BitmapSource? _inside;
     bool _playing;
     bool _closing;
 
@@ -64,14 +64,12 @@ public partial class OpenCasePanel : UserControl
         var aspect = shape.Width / shape.Height;
         // Un disco de 12 cm en una caja de DVD (13,5 cm de ancho); en las cajas pequeñas, que quepa.
         var disc = Math.Min(shape.Width, shape.Height) * 0.88;
-        // El plástico de dentro es translúcido: deja ver la portada (en la tapa) y la contraportada (en la bandeja).
-        var cover = CoverArt.RenderCover(item);
-        _back = CoverArt.RenderBack(item);
-        _cover = cover;
+        // El plástico de dentro es translúcido: deja ver la imagen del interior, si el juego tiene.
+        _inside = ImageStore.GetExtraPath(game, GameExtra.Inside) is { } insidePath ? CoverArt.LoadImage(insidePath, 2400) : null;
         _scene.Show(shape,
-            cover,
-            OpenCaseArt.RenderInside(plastic, aspect, ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, cover),
-            OpenCaseArt.RenderTray(plastic, aspect, disc / shape.Width, _back),
+            CoverArt.RenderCover(item),
+            OpenCaseArt.RenderInside(plastic, aspect, ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside),
+            OpenCaseArt.RenderTray(plastic, aspect, disc / shape.Width, _inside),
             OpenCaseArt.RenderDisc(ImageStore.GetExtraPath(game, GameExtra.Disc), item.ImagePath),
             disc);
 
@@ -86,7 +84,7 @@ public partial class OpenCasePanel : UserControl
             return;
         var shape = BoxShape.Of(item);
         _scene.SetInside(OpenCaseArt.RenderInside(PlatformArt.Plastic(game.Platform), shape.Width / shape.Height,
-            ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _cover));
+            ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside));
         ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
         ManualButton.IsEnabled = true;
     }

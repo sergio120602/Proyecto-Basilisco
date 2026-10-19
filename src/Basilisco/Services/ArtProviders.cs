@@ -137,7 +137,8 @@ public abstract class ArtProvider
 /// Con <paramref name="heroes"/>, en lugar de carátulas se buscan sus «heroes»: imágenes grandes y apaisadas
 /// (1920 × 620 o 3840 × 1240) hechas para ser el fondo del juego.
 /// </summary>
-public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square, bool heroes = false) : ArtProvider
+/// <remarks>Con <paramref name="inside"/>, para el interior de la caja: los «heroes» primero y después todas las carátulas.</remarks>
+public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square, bool heroes = false, bool inside = false) : ArtProvider
 {
     string Dimensions => format == Models.CoverFormat.Portrait
         ? "600x900,342x482,660x930"
@@ -146,7 +147,7 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
     const string BaseUrl = "https://www.steamgriddb.com/api/v2";
 
     public override string Name => "SteamGridDB";
-    public override string ImageKind => heroes ? "fondo" : "portada";
+    public override string ImageKind => inside ? "imagen para el interior" : heroes ? "fondo" : "portada";
     public override string KeyHelp => "Entra en steamgriddb.com con tu cuenta, ve a Preferencias → API y genera una clave (es gratis e inmediata).";
     public override string KeyUrl => "https://www.steamgriddb.com/profile/preferences/api";
 
@@ -174,6 +175,12 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
     {
         if (heroes)
             return await GetGridsAsync(game, key, "", cancellation, "heroes");
+        if (inside)
+        {
+            var all = await GetGridsAsync(game, key, "", cancellation, "heroes");
+            all.AddRange(await GetGridsAsync(game, key, "", cancellation));
+            return all;
+        }
 
         // Primero las del formato de la caja; si el juego no tiene, todas las demás (se enseñarán enteras, sin recortar).
         var images = await GetGridsAsync(game, key, $"&dimensions={Dimensions}", cancellation);
@@ -193,7 +200,8 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
         {
             if (GetString(grid, "url") is not { } url)
                 continue;
-            images.Add(new ArtImage(url, GetString(grid, "thumb") ?? url, GetInt(grid, "width"), GetInt(grid, "height"), Wide: heroes));
+            images.Add(new ArtImage(url, GetString(grid, "thumb") ?? url, GetInt(grid, "width"), GetInt(grid, "height"),
+                Wide: heroes || kind == "heroes" || GetInt(grid, "width") > GetInt(grid, "height") * 1.3));
         }
         return images;
     }
