@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:customization="clr-namespace:Basilisco.Customization"
         Title="Basilisco" Icon="Assets/basilisco.ico" Width="1280" Height="720" MinWidth="900" MinHeight="520"
-        WindowStartupLocation="CenterScreen" WindowState="Maximized"
-        FontFamily="Segoe UI Variable Display, Segoe UI" Background="#D3D8E0"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized" Foreground="{DynamicResource TextBrush}"
+        FontFamily="Segoe UI Variable Display, Segoe UI" Background="{DynamicResource WindowBrush}"
         AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop"
         PreviewKeyDown="OnPreviewKeyDown" MouseWheel="OnMouseWheel">
 
@@ -49,10 +49,10 @@
                                 <Setter TargetName="Pill" Property="Background" Value="#66FFFFFF"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Pill" Property="Background" Value="#F4F6F9"/>
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource CardBrush}"/>
                                 <Setter TargetName="Pill" Property="BorderBrush" Value="White"/>
                                 <Setter TargetName="Pill" Property="Effect" Value="{StaticResource PillShadow}"/>
-                                <Setter Property="Foreground" Value="#1F2630"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -63,11 +63,7 @@
 
     <Grid x:Name="Root">
         <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                <GradientStop Color="#BFC6D1" Offset="0"/>
-                <GradientStop Color="#DCE0E7" Offset="0.4"/>
-                <GradientStop Color="#EDEFF3" Offset="0.75"/>
-            </LinearGradientBrush>
+            <DynamicResource ResourceKey="SceneBrush"/>
         </Grid.Background>
 
         <!-- Fondo propio del juego seleccionado: imagen (estático) o vídeo (dinámico), con fundido al cambiar -->
@@ -82,12 +78,7 @@
         <!-- Suelo brillante sobre el que se reflejan las cajas -->
         <Border x:Name="Floor" IsHitTestVisible="False">
             <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#00C2C9D3" Offset="0"/>
-                    <GradientStop Color="#C2C9D3" Offset="0.12"/>
-                    <GradientStop Color="#D6DAE1" Offset="0.5"/>
-                    <GradientStop Color="#E3E6EB" Offset="1"/>
-                </LinearGradientBrush>
+                <DynamicResource ResourceKey="FloorBrush"/>
             </Border.Background>
         </Border>
 
@@ -105,7 +96,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Basilisco" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource UiText}" VerticalAlignment="Center"/>
-                <TextBlock x:Name="VersionText" FontSize="13" Foreground="#5B6573" Margin="10,6,0,0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="VersionText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="10,6,0,0" VerticalAlignment="Center"/>
             </StackPanel>
 
             <!-- Todos los juegos, los dos grupos (consolas y filtros) y el orden; cada grupo abre su menú -->
@@ -126,6 +117,9 @@
                 <!-- Solo aparece cuando hay una versión nueva en GitHub -->
                 <Button x:Name="UpdateButton" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Visibility="Collapsed"
                         Click="OnUpdateClick"/>
+                <Button x:Name="NightButton" Style="{StaticResource PillButton}" Click="OnNightClick" Margin="0,0,10,0" MinWidth="46"
+                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontWeight="Normal"
+                        ToolTip="Modo nocturno (N)"/>
                 <Button Style="{StaticResource PillButton}" Content="Apariencia" Click="OnThemeClick" Margin="0,0,10,0"
                         ToolTip="Fondo (imagen o vídeo) y color de las letras para todos los juegos (A)"/>
                 <Button Style="{StaticResource PillButton}" Content="Steam" Click="OnSteamClick" Margin="0,0,10,0"
@@ -163,7 +157,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#8D97A6" CornerRadius="14" Padding="14,5" Margin="5,0">
+                        <Border Background="{DynamicResource ChipBrush}" CornerRadius="14" Padding="14,5" Margin="5,0">
                             <TextBlock Text="{Binding}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
                         </Border>
                     </DataTemplate>

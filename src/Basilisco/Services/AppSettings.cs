@@ -31,6 +31,9 @@ public sealed class AppSettings
     /// <summary>Color general de las letras (#RRGGBB). Null: el de siempre.</summary>
     public string? TextColor { get; set; }
 
+    /// <summary>Modo claro, nocturno o el mismo que Windows.</summary>
+    public ColorMode Theme { get; set; } = ColorMode.System;
+
     /// <summary>Zoom del carrusel (barra de abajo a la derecha).</summary>
     public double Zoom { get; set; } = 1.2;
 

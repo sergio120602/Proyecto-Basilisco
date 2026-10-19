@@ -5,7 +5,7 @@
              PreviewKeyDown="OnPreviewKeyDown" SizeChanged="OnSizeChanged">
     <!-- El fondo oscurece el carrusel y bloquea los clics mientras el menú está abierto -->
     <Grid Background="#A60E1218" MouseLeftButtonDown="OnBackdropMouseDown">
-        <Border Background="#F4F6F9" CornerRadius="20" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center"
+        <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center"
                 MouseLeftButtonDown="OnCardMouseDown">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
@@ -22,12 +22,7 @@
                 <StackPanel Margin="0,0,6,0">
                     <Border CornerRadius="14" ClipToBounds="True">
                         <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#CDD3DC" Offset="0"/>
-                                <GradientStop Color="#E6E9EE" Offset="0.79"/>
-                                <GradientStop Color="#D3D8E0" Offset="0.80"/>
-                                <GradientStop Color="#E3E6EB" Offset="1"/>
-                            </LinearGradientBrush>
+                            <DynamicResource ResourceKey="PreviewBrush"/>
                         </Border.Background>
                         <Grid Width="340" Height="340" Cursor="SizeAll">
                             <!-- El fondo del juego detrás de la caja, para ver cómo queda -->
@@ -42,7 +37,7 @@
                         <Button Style="{StaticResource PillButton}" Content="Lomo" Margin="10,0,0,0" Click="OnShowSpineClick"/>
                         <Button Style="{StaticResource PillButton}" Content="Contraportada" Margin="10,0,0,0" Click="OnShowBackClick"/>
                     </StackPanel>
-                    <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="#5B6573" TextWrapping="Wrap"
+                    <TextBlock Margin="2,14,0,0" FontSize="13" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
                                Text="Arrastra la caja para girarla y ver su grosor. Las cuadradas se llenan con carátulas de 1024 × 1024 y las rectangulares con 600 × 800. Otras medidas se ven enteras, con negro en el hueco que sobra; usa «Ajustar…» para ampliarlas."/>
 
                     <!-- Apariencia: fondo, color de las letras y tiempo de juego -->
@@ -54,24 +49,24 @@
                                 ToolTip="Fondo dinámico: un vídeo en bucle y sin sonido"/>
                         <Button x:Name="RemoveBackgroundButton" Style="{StaticResource PillButton}" Content="Quitar" Click="OnRemoveBackgroundClick" Margin="0,0,8,8"/>
                     </WrapPanel>
-                    <TextBlock x:Name="BackgroundText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="BackgroundText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
 
                     <TextBlock Text="COLOR DE LAS LETRAS" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
                     <WrapPanel x:Name="ColorSwatches"/>
                     <DockPanel Margin="0,4,0,0">
-                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center" Margin="10,0,0,0" Text="o un color: #RRGGBB"/>
+                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="10,0,0,0" Text="o un color: #RRGGBB"/>
                         <TextBox x:Name="ColorBox" Style="{StaticResource FieldTextBox}" FontSize="14" TextChanged="OnColorBoxChanged"/>
                     </DockPanel>
 
                     <TextBlock Text="TIEMPO DE JUEGO" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Name="HoursBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="80"/>
-                        <TextBlock Text="h" FontSize="15" Foreground="#1F2630" VerticalAlignment="Center" Margin="8,0,16,0"/>
+                        <TextBlock Text="h" FontSize="15" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="8,0,16,0"/>
                         <TextBox x:Name="MinutesBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="64"/>
-                        <TextBlock Text="min" FontSize="15" Foreground="#1F2630" VerticalAlignment="Center" Margin="8,0,16,0"/>
+                        <TextBlock Text="min" FontSize="15" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="8,0,16,0"/>
                         <Button x:Name="ResetPlayTimeButton" Style="{StaticResource PillButton}" Content="A cero" Click="OnResetPlayTimeClick"/>
                     </StackPanel>
-                    <TextBlock x:Name="PlayTimeHint" FontSize="12" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
+                    <TextBlock x:Name="PlayTimeHint" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"
                                Text="Se cuenta solo mientras juegas desde Basilisco. Se ve debajo del juego en el carrusel."/>
                 </StackPanel>
                 </ScrollViewer>
@@ -79,13 +74,13 @@
                 <!-- Con tantas secciones, en pantallas bajas el lado derecho se desplaza -->
                 <ScrollViewer x:Name="SideScroll" Grid.Column="2" VerticalScrollBarVisibility="Auto" Focusable="False">
                 <StackPanel Margin="0,0,8,0">
-                    <TextBlock Text="Personalizar" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
+                    <TextBlock Text="Personalizar" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
 
                     <TextBlock Text="UBICACIÓN" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Cambiar ubicación…"
                                 Margin="12,0,0,0" Click="OnChangeLocationClick"/>
-                        <TextBlock x:Name="PathText" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center"
+                        <TextBlock x:Name="PathText" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis"/>
                     </DockPanel>
 
@@ -94,7 +89,7 @@
 
                     <TextBlock Text="FECHA DE LANZAMIENTO" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center" Margin="12,0,0,0"
+                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,0,0"
                                    Text="dd/mm/aaaa o solo el año · para ordenar"/>
                         <TextBox x:Name="ReleaseBox" Style="{StaticResource FieldTextBox}" FontSize="15" Width="170" HorizontalAlignment="Left"/>
                     </DockPanel>
@@ -106,7 +101,7 @@
                         <ToggleButton x:Name="PortraitToggle" Style="{StaticResource FilterToggle}" Content="Rectangular · 600 × 800"
                                       Click="OnPortraitClick"/>
                     </WrapPanel>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"
+                    <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextWrapping="Wrap"
                                Text="Cada formato guarda sus propias imágenes: al volver al otro, recuperas las que tenía."/>
                     <TextBlock x:Name="AutoFetchText" FontSize="13" FontWeight="SemiBold" Foreground="#3E6FD8" Margin="2,6,0,0"
                                TextWrapping="Wrap" Visibility="Collapsed"/>
@@ -157,7 +152,7 @@
                         <Button x:Name="RemoveSpineImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
                                 Margin="0,0,10,10" Click="OnRemoveSpineImageClick"/>
                     </WrapPanel>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"
+                    <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextWrapping="Wrap"
                                Text="Las imágenes horizontales se giran para leerse de arriba abajo. También puedes arrastrar una imagen a esta ventana: se pone en la cara de la caja que estés viendo."/>
 
                     <!-- Lo que se ve al abrir la caja: el manual a la izquierda y el disco a la derecha -->
@@ -171,7 +166,7 @@
                         <Button x:Name="RemoveDiscButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Margin="0,0,10,10"
                                 Click="OnRemoveDiscClick"/>
                     </WrapPanel>
-                    <TextBlock x:Name="DiscText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="DiscText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
 
                     <TextBlock Text="MANUAL" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
                     <WrapPanel>
@@ -181,7 +176,7 @@
                         <Button x:Name="RemoveManualButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Margin="0,0,10,10"
                                 Click="OnRemoveManualClick"/>
                     </WrapPanel>
-                    <TextBlock x:Name="ManualText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ManualText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
                     <WrapPanel Margin="0,10,0,0">
                         <Button x:Name="CreateManualButton" Style="{StaticResource PillButton}" Content="Crear manual en PDF" Click="OnCreateManualClick" Margin="0,0,10,10"
                                 ToolTip="Escribe el manual con la descripción, la ficha, los requisitos y las capturas de Steam y LaunchBox"/>
@@ -190,8 +185,8 @@
                         <Button x:Name="ReadManualButton" Style="{StaticResource PillButton}" Content="Leer" Click="OnReadManualClick" Margin="0,0,10,10"/>
                         <Button x:Name="RemoveManualPdfButton" Style="{StaticResource PillButton}" Content="Quitar PDF" Click="OnRemoveManualPdfClick" Margin="0,0,10,10"/>
                     </WrapPanel>
-                    <TextBlock x:Name="ManualPdfText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"/>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
+                    <TextBlock x:Name="ManualPdfText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextWrapping="Wrap"/>
+                    <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"
                                Text="Se ven al abrir la caja con Enter: el manual a la izquierda y el disco a la derecha. Al darle a Jugar, el disco gira y empieza el juego."/>
 
                     <TextBlock Text="CONSOLA" Style="{StaticResource FieldLabel}" Margin="2,12,0,8"/>
@@ -199,10 +194,10 @@
 
                     <TextBlock Text="FILTROS" Style="{StaticResource FieldLabel}" Margin="2,14,0,8"/>
                     <WrapPanel x:Name="FilterToggles"/>
-                    <TextBlock x:Name="NoFiltersText" FontSize="13" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"
+                    <TextBlock x:Name="NoFiltersText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextWrapping="Wrap"
                                Text="Aún no hay filtros. Crea uno con «+ Nuevo filtro» en la parte de arriba."/>
 
-                    <TextBlock x:Name="ErrorText" FontSize="13" FontWeight="SemiBold" Foreground="#C0392B" Margin="2,14,0,0"
+                    <TextBlock x:Name="ErrorText" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ErrorBrush}" Margin="2,14,0,0"
                                TextWrapping="Wrap" Visibility="Collapsed"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,0,0">

@@ -4,7 +4,7 @@
              Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
     <!-- Apariencia general: fondo y color de letras para todos los juegos -->
     <Grid Background="#A60E1218">
-        <Border Background="#F4F6F9" CornerRadius="20" Padding="34" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="34" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
             </Border.Effect>
@@ -18,11 +18,7 @@
                 <!-- Vista previa del fondo con unas letras de ejemplo -->
                 <Border CornerRadius="14" ClipToBounds="True" Height="300" VerticalAlignment="Top">
                     <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#BFC6D1" Offset="0"/>
-                            <GradientStop Color="#DCE0E7" Offset="0.4"/>
-                            <GradientStop Color="#EDEFF3" Offset="0.75"/>
-                        </LinearGradientBrush>
+                        <DynamicResource ResourceKey="SceneBrush"/>
                     </Border.Background>
                     <Grid>
                         <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
@@ -40,11 +36,19 @@
                 </Border>
 
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Apariencia" FontSize="28" FontWeight="SemiBold" Foreground="#1B222C"/>
-                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
+                    <TextBlock Text="Apariencia" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"
                                Text="Para todos los juegos. Si un juego tiene fondo o color propios (en Personalizar), se usan los suyos."/>
 
-                    <TextBlock Text="FONDO" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
+                    <TextBlock Text="MODO" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
+                    <WrapPanel>
+                        <ToggleButton x:Name="LightToggle" Style="{StaticResource FilterToggle}" Content="Claro" Click="OnModeClick"/>
+                        <ToggleButton x:Name="DarkToggle" Style="{StaticResource FilterToggle}" Content="Nocturno" Click="OnModeClick"/>
+                        <ToggleButton x:Name="SystemToggle" Style="{StaticResource FilterToggle}" Content="Como Windows" Click="OnModeClick"
+                                      ToolTip="Claro u oscuro según el modo de Windows (Configuración → Personalización → Colores)"/>
+                    </WrapPanel>
+
+                    <TextBlock Text="FONDO" Style="{StaticResource FieldLabel}" Margin="2,14,0,8"/>
                     <WrapPanel>
                         <Button Style="{StaticResource PillButton}" Content="Imagen…" Click="OnImageClick" Margin="0,0,8,8"
                                 ToolTip="Fondo estático para todos los juegos"/>
@@ -52,12 +56,12 @@
                                 ToolTip="Fondo dinámico: un vídeo en bucle y sin sonido"/>
                         <Button x:Name="RemoveButton" Style="{StaticResource PillButton}" Content="Quitar" Click="OnRemoveClick" Margin="0,0,8,8"/>
                     </WrapPanel>
-                    <TextBlock x:Name="BackgroundText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="BackgroundText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
 
                     <TextBlock Text="COLOR DE LAS LETRAS" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
                     <WrapPanel x:Name="ColorSwatches"/>
                     <DockPanel Margin="0,4,0,0">
-                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#5B6573" VerticalAlignment="Center" Margin="10,0,0,0" Text="o un color: #RRGGBB"/>
+                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="10,0,0,0" Text="o un color: #RRGGBB"/>
                         <TextBox x:Name="ColorBox" Style="{StaticResource FieldTextBox}" FontSize="14" TextChanged="OnColorBoxChanged"/>
                     </DockPanel>
 
@@ -65,7 +69,7 @@
                     <DockPanel>
                         <Button x:Name="ClearOwnButton" DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Quitar las de cada juego"
                                 Margin="10,0,0,0" Click="OnClearOwnClick"/>
-                        <TextBlock x:Name="OwnText" FontSize="13" Foreground="#1F2630" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="OwnText" FontSize="13" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                     </DockPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,28,0,0">

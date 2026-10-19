@@ -43,6 +43,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Editar o eliminar filtro | Menú **Filtros** → «Editar filtro», o clic derecho en Filtros |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
 | Fondo y color de las letras para todos los juegos | `A` o botón «Apariencia» |
+| Modo nocturno (claro, nocturno o como Windows) | `N`, botón de la luna arriba a la derecha, o «Apariencia → Modo» |
 | Zoom de las cajas | Barra «Zoom» abajo a la derecha, `Ctrl + rueda` o `+` / `−` |
 | Pantalla completa | `F11` (`Esc` para salir) |
 | Actualizar a la versión nueva (cuando la hay) | `U` o botón «Actualizar a …» arriba a la derecha |
@@ -121,6 +122,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.4.0** — Caja abierta con manual y disco (el disco gira al jugar), Steam Game Covers, y discos y manuales de LaunchBox
 - [x] **v0.4.1** — Interfaz adaptada a cualquier resolución y botón para actualizar
 - [x] **v0.5.0** — Manuales en PDF con datos de Steam y LaunchBox, y lector de manuales
+- [x] **v0.5.1** — Modo nocturno
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

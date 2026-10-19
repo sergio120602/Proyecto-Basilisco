@@ -15,7 +15,7 @@ namespace Basilisco.Customization;
 public partial class ArtSearchPanel : UserControl
 {
     static readonly Brush ErrorBrush = Brushes.Firebrick;
-    static readonly Brush InfoBrush = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
+    static Brush InfoBrush => (Brush)Application.Current.Resources["MutedBrush"];
 
     AppSettings _settings = new();
     ArtProvider? _provider;

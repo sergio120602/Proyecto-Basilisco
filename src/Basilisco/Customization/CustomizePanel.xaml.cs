@@ -95,7 +95,7 @@ public partial class CustomizePanel : UserControl
         ("Amarillo", "#FFD54A"), ("Celeste", "#7FD3FF"), ("Rosa", "#FF8FB1"), ("Verde", "#8BE38B"),
     ];
 
-    static readonly Brush MutedText = new SolidColorBrush(Color.FromRgb(0x5B, 0x65, 0x73));
+    static Brush MutedText => (Brush)Application.Current.Resources["MutedBrush"];
 
     public event Action<CustomizeResult>? Saved;
 

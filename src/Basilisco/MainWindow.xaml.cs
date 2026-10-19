@@ -63,7 +63,14 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        ThemeManager.Apply(_settings.Theme);
         InitializeComponent();
+        SourceInitialized += (_, _) => ThemeManager.SetTitleBar(this, ThemeManager.IsDark);
+        ThemeManager.Changed += OnThemeChanged;
+        // «Como Windows»: si cambias el modo de Windows con Basilisco abierto, cambia también.
+        SystemEvents.UserPreferenceChanged += OnSystemPreferenceChanged;
+        Closed += (_, _) => SystemEvents.UserPreferenceChanged -= OnSystemPreferenceChanged;
+        UpdateNightButton();
         VersionText.Text = $"v{AppInfo.Version}";
 
         _library = _store.Load();
@@ -81,6 +88,7 @@ public partial class MainWindow : Window
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
         ThemeEditor.Saved += ApplyTheme;
+        ThemeEditor.ModeChanged += SetTheme;
         CaseView.PlayRequested += Launch;
         CaseView.Closed += () => Focus();
         CaseView.ManualRequested += game => _ = OpenManualAsync(game);
@@ -162,6 +170,39 @@ public partial class MainWindow : Window
         foreach (var element in scaled)
             element.LayoutTransform = _uiScale;
         UpdateOverlayLayout();
+    }
+
+    // ---- Modo nocturno ----
+
+    void OnNightClick(object sender, RoutedEventArgs e) => SetTheme(ThemeManager.IsDark ? ColorMode.Light : ColorMode.Dark);
+
+    /// <summary>Cambia el modo y lo recuerda.</summary>
+    void SetTheme(ColorMode mode)
+    {
+        _settings.Theme = mode;
+        _settings.Save();
+        ThemeManager.Apply(mode);
+        UpdateNightButton();
+    }
+
+    void OnThemeChanged()
+    {
+        // El color «automático» de las letras cambia con el modo.
+        ApplyLook(SelectedGame);
+        UpdateNightButton();
+    }
+
+    void OnSystemPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+    {
+        if (_settings.Theme == ColorMode.System && e.Category == UserPreferenceCategory.General)
+            Dispatcher.BeginInvoke(() => ThemeManager.Apply(ColorMode.System));
+    }
+
+    void UpdateNightButton()
+    {
+        // Iconos de Windows: el sol para volver al modo claro y la luna para el nocturno.
+        NightButton.Content = ThemeManager.IsDark ? "" : "";
+        NightButton.ToolTip = ThemeManager.IsDark ? "Pasar al modo claro (N)" : "Pasar al modo nocturno (N)";
     }
 
     // ---- Manuales ----
@@ -548,6 +589,8 @@ public partial class MainWindow : Window
     void OnConsolesTabClick(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu { LayoutTransform = _uiScale };
+        menu.SetResourceReference(BackgroundProperty, "CardBrush");
+        menu.SetResourceReference(ForegroundProperty, "TextBrush");
         menu.Items.Add(Item("Todas las consolas", () => SelectView(null, _activeFilter), isChecked: _activePlatform is null));
         menu.Items.Add(new Separator());
 
@@ -571,6 +614,8 @@ public partial class MainWindow : Window
     void OnFiltersTabClick(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu { LayoutTransform = _uiScale };
+        menu.SetResourceReference(BackgroundProperty, "CardBrush");
+        menu.SetResourceReference(ForegroundProperty, "TextBrush");
         menu.Items.Add(Item("Todos los filtros", () => SelectView(_activePlatform, null), isChecked: _activeFilter is null));
         menu.Items.Add(new Separator());
 
@@ -611,6 +656,8 @@ public partial class MainWindow : Window
     void OnSortTabClick(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu { LayoutTransform = _uiScale };
+        menu.SetResourceReference(BackgroundProperty, "CardBrush");
+        menu.SetResourceReference(ForegroundProperty, "TextBrush");
         foreach (var mode in Enum.GetValues<SortMode>())
         {
             var chosen = mode;
@@ -844,7 +891,7 @@ public partial class MainWindow : Window
     void ApplyLook(Game? game)
     {
         var hexColor = game?.TextColor ?? _settings.TextColor;
-        var color = hexColor is { } hex && ColorConverter.ConvertFromString(hex) is Color custom ? custom : Color.FromRgb(0x1F, 0x26, 0x30);
+        var color = hexColor is { } hex && ColorConverter.ConvertFromString(hex) is Color custom ? custom : ThemeManager.DefaultText;
         Resources["UiText"] = new SolidColorBrush(color);
         // Con letras claras, el halo alrededor del título pasa a ser oscuro para que se lean.
         var light = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255 > 0.6;
@@ -2062,6 +2109,7 @@ public partial class MainWindow : Window
             case Key.S: OpenSteamImport(); break;
             case Key.A: OpenThemeEditor(); break;
             case Key.U when _update is not null: _ = UpdateAsync(); break;
+            case Key.N: SetTheme(ThemeManager.IsDark ? ColorMode.Light : ColorMode.Dark); break;
             case Key.F11: ToggleFullScreen(); break;
             case Key.OemPlus or Key.Add: StepZoom(0.1); break;
             case Key.OemMinus or Key.Subtract: StepZoom(-0.1); break;
@@ -2170,7 +2218,7 @@ public partial class MainWindow : Window
     void OnThemeClick(object sender, RoutedEventArgs e) => OpenThemeEditor();
 
     void OpenThemeEditor() => ThemeEditor.Open(ImageStore.GetGlobalBackgroundPath(_settings), _settings.TextColor,
-        Games.Count(game => game.Background is not null || game.TextColor is not null));
+        Games.Count(game => game.Background is not null || game.TextColor is not null), _settings.Theme);
 
     /// <summary>Apariencia general: fondo y color de las letras para todos los juegos.</summary>
     void ApplyTheme(ThemeResult result)

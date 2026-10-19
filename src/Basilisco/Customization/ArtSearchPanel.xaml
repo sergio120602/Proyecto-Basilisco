@@ -4,13 +4,13 @@
              Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
     <!-- Se abre encima del menú Personalizar -->
     <Grid Background="#A60E1218">
-        <Border Background="#F4F6F9" CornerRadius="20" Padding="32" Width="1000" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="32" Width="1000" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
             </Border.Effect>
             <StackPanel>
                 <Grid>
-                    <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" Foreground="#1B222C" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button x:Name="ChangeKeyButton" Style="{StaticResource PillButton}" Content="Cambiar clave" Click="OnChangeKeyClick"/>
                         <Button Style="{StaticResource PillButton}" Content="Cerrar" Margin="10,0,0,0" Click="OnCloseClick"/>
@@ -19,8 +19,8 @@
 
                 <!-- Clave de la API (la primera vez, o para cambiarla) -->
                 <StackPanel x:Name="KeyView" Margin="0,22,0,0" Visibility="Collapsed">
-                    <TextBlock x:Name="KeyHelpText" FontSize="14" Foreground="#1F2630" TextWrapping="Wrap"/>
-                    <TextBlock FontSize="12" Foreground="#5B6573" Margin="0,6,0,0" TextWrapping="Wrap"
+                    <TextBlock x:Name="KeyHelpText" FontSize="14" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
+                    <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap"
                                Text="La clave se guarda en basilisco-data/settings.json, junto al .exe, para que Basilisco siga siendo portable."/>
                     <DockPanel Margin="0,14,0,0">
                         <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Guardar clave" Margin="10,0,0,0"
@@ -46,21 +46,21 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Background="White" CornerRadius="12" BorderBrush="#DCE0E7" BorderThickness="1">
+                        <Border Background="{DynamicResource FieldBrush}" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
                             <ListBox x:Name="GamesList" BorderThickness="0" Background="Transparent" Margin="4"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="OnGameSelected">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Margin="6,5">
-                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#1F2630" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="#5B6573"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="{DynamicResource MutedBrush}"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
                         </Border>
 
-                        <Border Grid.Column="2" Background="White" CornerRadius="12" BorderBrush="#DCE0E7" BorderThickness="1">
+                        <Border Grid.Column="2" Background="{DynamicResource FieldBrush}" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
                                 <ItemsControl x:Name="ImagesList">
                                     <ItemsControl.ItemsPanel>
@@ -73,11 +73,11 @@
                                             <Button Click="OnImageClick" Cursor="Hand" Margin="6" Focusable="False" ToolTip="Usar esta imagen">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="Tile" Background="#EEF1F5" CornerRadius="10" Padding="6"
+                                                        <Border x:Name="Tile" Background="{DynamicResource PillBrush}" CornerRadius="10" Padding="6"
                                                                 BorderBrush="Transparent" BorderThickness="2">
                                                             <StackPanel>
                                                                 <Image x:Name="Thumb" Source="{Binding ThumbUrl}" Width="150" Height="150" Stretch="Uniform"/>
-                                                                <TextBlock Text="{Binding SizeText}" FontSize="11" Foreground="#5B6573"
+                                                                <TextBlock Text="{Binding SizeText}" FontSize="11" Foreground="{DynamicResource MutedBrush}"
                                                                            HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                                             </StackPanel>
                                                         </Border>
@@ -107,7 +107,7 @@
                     </Grid>
                 </StackPanel>
 
-                <TextBlock x:Name="StatusText" FontSize="13" Foreground="#5B6573" Margin="2,14,0,0" TextWrapping="Wrap"/>
+                <TextBlock x:Name="StatusText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,14,0,0" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
     </Grid>

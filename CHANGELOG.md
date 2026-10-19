@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.1] - 2026-10-19
+
+- **Modo nocturno**: toda la interfaz en colores oscuros (el fondo del carrusel y su suelo, la cabecera, la barra de abajo, los menús, Personalizar, los buscadores y el resto de ventanas), con la barra de título de Windows también oscura.
+- Se cambia con el botón de la luna (o el sol) de arriba a la derecha, con la tecla `N` o en **Apariencia → Modo**: Claro, Nocturno o **Como Windows**, que sigue el modo de Windows (también si lo cambias con Basilisco abierto). Por defecto, como Windows.
+- El color «Automático» de las letras se adapta al modo: oscuro en el claro y claro en el nocturno.
+
 ## [0.5.0] - 2026-10-19
 
 - **Manuales en PDF**: cada juego puede tener su manual de instrucciones en PDF, con texto de verdad (se puede seleccionar, buscar e imprimir). Basilisco lo escribe solo con la información de la **tienda de Steam** (en español: descripción, ficha, requisitos del sistema, compatibilidad con mando, idiomas y capturas) y de **LaunchBox** (descripción, desarrolladora, editora, género, jugadores y capturas, para los juegos que no están en Steam). Lleva la portada del juego en la primera página y la contraportada en la última.
