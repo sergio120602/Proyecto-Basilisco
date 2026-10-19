@@ -8,9 +8,21 @@ using Basilisco.Models;
 
 namespace Basilisco.Services;
 
-/// <summary>Imagen de caja de un juego en LaunchBox.</summary>
+/// <summary>Qué es una imagen descargada: una cara de la caja, el disco o algo que sirve de manual.</summary>
+public enum ArtKind { Front, Back, Spine, Disc, Manual }
+
+/// <summary>Imagen de un juego en LaunchBox.</summary>
 /// <param name="Reconstructed">Rehecha por la comunidad a partir de otras (se ofrece después de las originales).</param>
-public sealed record LaunchBoxImage(Face Face, string Region, string FileName, bool Reconstructed);
+/// <param name="Detail">Para las del manual, qué imagen es (póster, fondo, pantalla de título).</param>
+public sealed record LaunchBoxImage(ArtKind Kind, string Region, string FileName, bool Reconstructed, string? Detail = null)
+{
+    public static ArtKind KindOf(Face face) => face switch
+    {
+        Face.Front => ArtKind.Front,
+        Face.Back => ArtKind.Back,
+        _ => ArtKind.Spine,
+    };
+}
 
 /// <param name="released">Fecha de lanzamiento (aaaa-mm-dd) o solo el año (aaaa), si se sabe.</param>
 public sealed class LaunchBoxGame(int id, string name, string platform, string? released)
@@ -42,6 +54,10 @@ public static class LaunchBoxDatabase
 
     static readonly string Folder = Path.Combine(AppInfo.DataDirectory, "launchbox");
     static readonly string IndexPath = Path.Combine(Folder, "index.tsv.gz");
+
+    // Versión del índice: la 2 añade los discos y las imágenes para el manual. Uno más viejo se rehace al buscar.
+    const int IndexVersion = 2;
+    static int _loadedVersion;
     static readonly SemaphoreSlim Lock = new(1, 1);
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(20) };
 
@@ -55,7 +71,8 @@ public static class LaunchBoxDatabase
     public static DateTime? DownloadedAt => IsDownloaded ? File.GetLastWriteTime(IndexPath) : null;
 
     /// <summary>Descarga la base de datos si no está y la carga en memoria. Con forceDownload, la vuelve a descargar.</summary>
-    public static async Task EnsureReadyAsync(IProgress<string>? status, CancellationToken cancellation, bool forceDownload = false)
+    /// <param name="upgrade">Si el índice descargado es de una versión anterior (sin discos), se vuelve a descargar.</param>
+    public static async Task EnsureReadyAsync(IProgress<string>? status, CancellationToken cancellation, bool forceDownload = false, bool upgrade = false)
     {
         await Lock.WaitAsync(cancellation);
         try
@@ -67,6 +84,13 @@ public static class LaunchBoxDatabase
             }
             if (_games is null)
             {
+                status?.Report("Cargando la base de datos de LaunchBox…");
+                await Task.Run(Load, cancellation);
+            }
+            if (upgrade && _loadedVersion < IndexVersion)
+            {
+                status?.Report("La base de datos de LaunchBox se actualiza para traer también los discos…");
+                await DownloadAndIndexAsync(status, cancellation);
                 status?.Report("Cargando la base de datos de LaunchBox…");
                 await Task.Run(Load, cancellation);
             }
@@ -118,8 +142,8 @@ public static class LaunchBoxDatabase
     }
 
     /// <param name="platform">Plataforma de LaunchBox del juego (si se sabe), para ponerlo primero.</param>
-    /// <param name="face">Solo juegos que tengan imágenes de esa cara.</param>
-    public static List<LaunchBoxGame> Search(string term, string? platform, Face face, int max = 40)
+    /// <param name="kind">Solo juegos que tengan imágenes de esa clase.</param>
+    public static List<LaunchBoxGame> Search(string term, string? platform, ArtKind kind, int max = 40)
     {
         if (_games is null)
             return [];
@@ -132,7 +156,7 @@ public static class LaunchBoxDatabase
         var best = new Dictionary<LaunchBoxGame, int>();
         foreach (var (name, game) in _names)
         {
-            if (!tokens.All(name.Contains) || !game.Images.Any(image => image.Face == face))
+            if (!tokens.All(name.Contains) || !game.Images.Any(image => image.Kind == kind))
                 continue;
 
             var score = name == query ? 100 : name.StartsWith(query, StringComparison.Ordinal) ? 60 : 30;
@@ -148,8 +172,8 @@ public static class LaunchBoxDatabase
     }
 
     /// <summary>Imágenes de una cara del juego, primero las de España y Europa, y las originales antes que las rehechas.</summary>
-    public static List<LaunchBoxImage> ImagesOf(LaunchBoxGame game, Face face) =>
-        game.Images.Where(image => image.Face == face)
+    public static List<LaunchBoxImage> ImagesOf(LaunchBoxGame game, ArtKind kind) =>
+        game.Images.Where(image => image.Kind == kind)
             .OrderBy(image => image.Reconstructed)
             .ThenBy(image => RegionRank(image.Region))
             .ToList();
@@ -244,6 +268,7 @@ public static class LaunchBoxDatabase
             using var file = File.Create(tempIndex);
             using var gzip = new GZipStream(file, CompressionLevel.Optimal);
             using var writer = new StreamWriter(gzip, new UTF8Encoding(false));
+            writer.WriteLine($"V\t{IndexVersion}\t");
 
             var games = 0;
             xml.MoveToContent();
@@ -318,7 +343,10 @@ public static class LaunchBoxDatabase
         return fields;
     }
 
-    /// <summary>Solo interesan las imágenes de la caja: F portada, B contraportada, S lomo (con R si son rehechas).</summary>
+    /// <summary>
+    /// Solo interesan las imágenes de la caja (F portada, B contraportada, S lomo, con R si son rehechas), el disco (D)
+    /// y las que pueden hacer de manual (M): el póster de publicidad (MP), un fondo del juego (MF) y la pantalla de título (MT).
+    /// </summary>
     static string? ImageKind(string? type) => type switch
     {
         "Box - Front" => "F",
@@ -326,6 +354,10 @@ public static class LaunchBoxDatabase
         "Box - Back" => "B",
         "Box - Back - Reconstructed" => "BR",
         "Box - Spine" => "S",
+        "Disc" => "D",
+        "Advertisement Flyer - Front" => "MP",
+        "Fanart - Background" => "MF",
+        "Screenshot - Game Title" => "MT",
         _ => null,
     };
 
@@ -334,6 +366,7 @@ public static class LaunchBoxDatabase
     static void Load()
     {
         var games = new Dictionary<int, LaunchBoxGame>();
+        var version = 1;
         using (var file = File.OpenRead(IndexPath))
         using (var gzip = new GZipStream(file, CompressionMode.Decompress))
         using (var reader = new StreamReader(gzip, Encoding.UTF8))
@@ -342,6 +375,11 @@ public static class LaunchBoxDatabase
             while ((line = reader.ReadLine()) is not null)
             {
                 var parts = line.Split('\t');
+                if (parts[0] == "V")
+                {
+                    version = int.TryParse(parts.ElementAtOrDefault(1), out var v) ? v : 1;
+                    continue;
+                }
                 if (parts.Length < 3 || !int.TryParse(parts[1], out var id))
                     continue;
 
@@ -354,8 +392,17 @@ public static class LaunchBoxDatabase
                         game.AlternateNames.Add(parts[2]);
                         break;
                     case "I" when parts.Length >= 5 && games.TryGetValue(id, out var game):
-                        var face = parts[2][0] switch { 'F' => Face.Front, 'B' => Face.Back, _ => Face.Spine };
-                        game.Images.Add(new LaunchBoxImage(face, parts[3], parts[4], parts[2].EndsWith('R')));
+                        var (kind, detail) = parts[2] switch
+                        {
+                            "F" or "FR" => (ArtKind.Front, null),
+                            "B" or "BR" => (ArtKind.Back, null),
+                            "D" => (ArtKind.Disc, null),
+                            "MP" => (ArtKind.Manual, "Póster"),
+                            "MF" => (ArtKind.Manual, "Fondo"),
+                            "MT" => (ArtKind.Manual, "Pantalla de título"),
+                            _ => (ArtKind.Spine, (string?)null),
+                        };
+                        game.Images.Add(new LaunchBoxImage(kind, parts[3], parts[4], parts[2] is "FR" or "BR", detail));
                         break;
                 }
             }
@@ -371,6 +418,7 @@ public static class LaunchBoxDatabase
         }
         _names = names;
         _games = games;
+        _loadedVersion = version;
     }
 
     /// <summary>Minúsculas, sin tildes ni signos: «Pokémon: Edición Roja» → «pokemon edicion roja».</summary>

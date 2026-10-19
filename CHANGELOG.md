@@ -3,6 +3,14 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.4.0] - 2026-10-19
+
+- **Caja abierta**: al darle a un juego (`Enter`, clic o A en el mando) ya no se lanza directamente. Primero se abre su caja en 3D: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha. Al darle a **Jugar**, el disco empieza a girar, se inicia el juego y la caja se cierra sola. `Esc` (o B) vuelve al carrusel.
+- Nuevas imágenes por juego en Personalizar: **disco** y **manual**. Sin disco, se dibuja uno plateado con la portada; sin manual, un librito con el nombre del juego.
+- Nueva fuente de carátulas: **[Steam Game Covers](https://www.steamgamecovers.com/)**, sin clave, para la portada, la contraportada, el lomo y el disco. Sus plantillas de impresión se recortan solas, sin márgenes, guías ni textos legales. Las carátulas completas (DVD y Blu-ray) se separan en portada, lomo y contraportada, y rellenan las caras que estén vacías. Las de jewel case traen la trasera con su lomo.
+- **LaunchBox** trae ahora también los **discos** y, para el manual, el póster, los fondos y la pantalla de título del juego. La primera búsqueda de un disco o un manual vuelve a descargar su base de datos (unos 100 MB) para incluirlos.
+- En la barra de abajo, «Jugar» pasa a ser «Abrir».
+
 ## [0.3.9] - 2026-10-18
 
 - La caja rectangular de **Wii U** mide ahora **190 × 135 × 14 mm** (alto × ancho × grosor), como una de DVD.

@@ -116,6 +116,8 @@
                                 ToolTip="Descarga una carátula de steamgriddb.com"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxFrontClick" Margin="0,0,10,10"
                                 ToolTip="Fotos reales de la caja, de varias regiones (gamesdb.launchbox-app.com)"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en Steam Game Covers" Click="OnCoversFrontClick" Margin="0,0,10,10"
+                                ToolTip="Carátulas para imprimir de steamgamecovers.com, sin clave; si es completa, rellena también el lomo y la contraportada vacíos"/>
                         <Button x:Name="FrameFrontButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameFrontClick" ToolTip="Amplía y mueve la portada para que cuadre en la caja"/>
                         <Button x:Name="RemoveImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
@@ -129,6 +131,8 @@
                                 ToolTip="Descarga la parte de atrás de la caja desde thegamesdb.net"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxBackClick" Margin="0,0,10,10"
                                 ToolTip="Fotos reales de la parte de atrás de la caja (gamesdb.launchbox-app.com)"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en Steam Game Covers" Click="OnCoversBackClick" Margin="0,0,10,10"
+                                ToolTip="La parte de atrás de una carátula de steamgamecovers.com"/>
                         <Button x:Name="FrameBackButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameBackClick" ToolTip="Amplía y mueve la contraportada para que cuadre en la caja"/>
                         <Button x:Name="RemoveBackImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
@@ -144,6 +148,8 @@
                                 ToolTip="Fotos reales del lomo de la caja (gamesdb.launchbox-app.com)"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en The Spine Archive" Click="OnSpineArchiveClick" Margin="0,0,10,10"
                                 ToolTip="Lomos hechos por la comunidad (thespinearchive.com), sin clave"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en Steam Game Covers" Click="OnCoversSpineClick" Margin="0,0,10,10"
+                                ToolTip="El lomo de una carátula completa de steamgamecovers.com"/>
                         <Button x:Name="FrameSpineButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
                                 Click="OnFrameSpineClick" ToolTip="Amplía y mueve la imagen para que cuadre en el lomo"/>
                         <Button x:Name="RemoveSpineImageButton" Style="{StaticResource PillButton}" Content="Quitar imagen"
@@ -151,6 +157,31 @@
                     </WrapPanel>
                     <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,0,0,0" TextWrapping="Wrap"
                                Text="Las imágenes horizontales se giran para leerse de arriba abajo. También puedes arrastrar una imagen a esta ventana: se pone en la cara de la caja que estés viendo."/>
+
+                    <!-- Lo que se ve al abrir la caja: el manual a la izquierda y el disco a la derecha -->
+                    <TextBlock Text="DISCO" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseDiscClick" Margin="0,0,10,10"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en Steam Game Covers" Click="OnCoversDiscClick" Margin="0,0,10,10"
+                                ToolTip="Pegatinas de disco de steamgamecovers.com, ya recortadas en redondo"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxDiscClick" Margin="0,0,10,10"
+                                ToolTip="Fotos reales del disco (gamesdb.launchbox-app.com)"/>
+                        <Button x:Name="RemoveDiscButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Margin="0,0,10,10"
+                                Click="OnRemoveDiscClick"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="DiscText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+
+                    <TextBlock Text="MANUAL" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseManualClick" Margin="0,0,10,10"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxManualClick" Margin="0,0,10,10"
+                                ToolTip="Un póster, un fondo o la pantalla de título del juego (gamesdb.launchbox-app.com)"/>
+                        <Button x:Name="RemoveManualButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Margin="0,0,10,10"
+                                Click="OnRemoveManualClick"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="ManualText" FontSize="12" Foreground="#5B6573" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock FontSize="13" Foreground="#5B6573" Margin="2,6,0,0" TextWrapping="Wrap"
+                               Text="Se ven al abrir la caja con Enter: el manual a la izquierda y el disco a la derecha. Al darle a Jugar, el disco gira y empieza el juego."/>
 
                     <TextBlock Text="CONSOLA" Style="{StaticResource FieldLabel}" Margin="2,12,0,8"/>
                     <WrapPanel x:Name="PlatformToggles"/>

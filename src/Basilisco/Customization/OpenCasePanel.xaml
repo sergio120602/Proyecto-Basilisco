@@ -1,0 +1,39 @@
+<UserControl x:Class="Basilisco.Customization.OpenCasePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
+    <!-- La caja abierta: el manual a la izquierda, el disco a la derecha y «Jugar» debajo -->
+    <Grid>
+        <Grid.Background>
+            <RadialGradientBrush Center="0.5,0.45" GradientOrigin="0.5,0.4" RadiusX="0.75" RadiusY="0.8">
+                <GradientStop Color="#F2262B33" Offset="0"/>
+                <GradientStop Color="#FA0C0E12" Offset="1"/>
+            </RadialGradientBrush>
+        </Grid.Background>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="56,40,56,0">
+            <TextBlock x:Name="TitleText" FontSize="34" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+            <TextBlock x:Name="DetailText" FontSize="15" Foreground="#A9B1BD" Margin="2,6,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="40,10,40,10">
+            <Viewport3D x:Name="CaseViewport" MouseLeftButtonUp="OnViewportClick" Cursor="Hand"/>
+        </Grid>
+
+        <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,44">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="PlayButton" Style="{StaticResource PrimaryButton}" FontSize="20" MinWidth="200" Click="OnPlayClick">
+                    <TextBlock><Run Text="▶" FontSize="16"/><Run Text="  Jugar"/></TextBlock>
+                </Button>
+                <Button x:Name="BackButton" Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Volver" Click="OnBackClick"/>
+            </StackPanel>
+            <TextBlock x:Name="HintText" FontSize="14" Foreground="#8C95A3" HorizontalAlignment="Center" Margin="0,14,0,0"
+                       Text="Enter  Jugar     ·     Esc  Volver"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

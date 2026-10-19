@@ -80,10 +80,36 @@ public static class ImageStore
         settings.BackgroundIsVideo = false;
     }
 
+    /// <summary>Ruta de la imagen del disco o del manual del juego, o null si no tiene.</summary>
+    public static string? GetExtraPath(Game game, GameExtra extra) =>
+        Resolve(AppInfo.CoversDirectory, extra == GameExtra.Disc ? game.Disc : game.Manual);
+
+    /// <summary>Copia la imagen como disco o manual del juego y borra la anterior.</summary>
+    public static void SetExtra(Game game, GameExtra extra, string sourcePath)
+    {
+        var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-{extra.ToString().ToLowerInvariant()}");
+        RemoveExtra(game, extra);
+        if (extra == GameExtra.Disc)
+            game.Disc = fileName;
+        else
+            game.Manual = fileName;
+    }
+
+    public static void RemoveExtra(Game game, GameExtra extra)
+    {
+        Delete(AppInfo.CoversDirectory, extra == GameExtra.Disc ? game.Disc : game.Manual);
+        if (extra == GameExtra.Disc)
+            game.Disc = null;
+        else
+            game.Manual = null;
+    }
+
     /// <summary>Borra todas las imágenes del juego, de todos los formatos (al quitarlo de la biblioteca).</summary>
     public static void RemoveAll(Game game)
     {
         RemoveBackground(game);
+        RemoveExtra(game, GameExtra.Disc);
+        RemoveExtra(game, GameExtra.Manual);
         foreach (var format in Enum.GetValues<CoverFormat>())
         {
             if (format == CoverFormat.Portrait && game.Portrait is null)

@@ -25,13 +25,13 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Acción | Teclado / ratón |
 | --- | --- |
 | Navegar por el carrusel | `←` `→`, rueda del ratón o clic en una caja lateral |
-| Jugar | `Enter` o clic en la caja central |
+| Abrir la caja (manual y disco) y jugar | `Enter` o clic en la caja central; en la caja abierta, `Enter` o «Jugar» (`Esc` para volver) |
 | Girar la caja (ver grosor y contraportada) | Arrastrar la caja central con el ratón |
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
 | Importar tu cuenta de Steam (instalados, toda la biblioteca y Steam Familiar) | `S` o botón «Steam» |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
-| Personalizar (nombre, portada, contraportada, lomo, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada, contraportada, lomo, disco, manual, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
 | Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
 | Cambiar de filtro o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** y **Filtros** de arriba |
@@ -51,7 +51,7 @@ Funcionan los mandos de **Xbox One / Series / 360**, **PS5 (DualSense)** y **Nin
 | Acción | Xbox | PlayStation | Switch Pro |
 | --- | --- | --- | --- |
 | Navegar | Cruceta / stick izquierdo | Cruceta / stick izquierdo | Cruceta / stick izquierdo |
-| Jugar / aceptar | A | ✕ | A |
+| Abrir la caja, jugar / aceptar | A | ✕ | A |
 | Volver / cancelar | B | ○ | B |
 | Dar la vuelta a la caja | X | □ | Y |
 | Personalizar | Y | △ | X |
@@ -115,6 +115,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.3.7** — Horas de juego de Steam
 - [x] **v0.3.8** — Lomos de The Spine Archive
 - [x] **v0.3.9** — Caja de Wii U de 190 × 135 × 14 mm y tiempo de juego mientras el juego siga abierto
+- [x] **v0.4.0** — Caja abierta con manual y disco (el disco gira al jugar), Steam Game Covers, y discos y manuales de LaunchBox
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -142,6 +143,12 @@ Los juegos de Steam se lanzan a través de Steam; si no están instalados, Steam
 
 Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Steam de tu PC cada vez que abres Basilisco o vuelves a él (y, si has puesto la clave de la Web API, también de los servidores de Steam, que cuentan lo jugado en otros PC).
 
+## 💿 Caja abierta
+
+Al darle a un juego se abre su caja: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha, en su bandeja. Al darle a **Jugar**, el disco gira, se inicia el juego y la caja se cierra sola.
+
+El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco de Steam Game Covers o de LaunchBox, o para el manual un póster, un fondo o la pantalla de título de LaunchBox. Si no tienen imagen, el disco se dibuja con la portada y el manual es un librito con el nombre del juego.
+
 ## 📦 Formatos de caja
 
 Cada juego puede usar una caja **cuadrada** (carátula de 1024 × 1024, franja de la consola a la izquierda) o **rectangular** (sin franja: la carátula ocupa toda la portada, ideal para las portadas reales de LaunchBox, y con las medidas reales de la caja de su consola: jewel case en PS1, DVD en PS2/Xbox/Wii, 600 × 900 en PC, Blu-ray en PS3, caja de 190 × 135 × 14 mm en Wii U, UMD en PSP, cartón en Game Boy y estuche de DS). Cada formato guarda sus propias imágenes, así que puedes cambiar de uno a otro sin perder nada.
@@ -156,6 +163,8 @@ En Personalizar (`E`) puedes buscar y descargar la portada en **SteamGridDB**, y
 Como segunda opción, cada cara tiene un botón **Buscar en LaunchBox**: fotos reales de las cajas (portada, contraportada y lomo) de casi 200 000 juegos de la [base de datos de LaunchBox](https://gamesdb.launchbox-app.com/), de varias regiones. No necesita clave: la primera vez descarga su base de datos (unos 100 MB) y la guarda resumida en `basilisco-data/launchbox/`; después las búsquedas son instantáneas.
 
 Para el lomo hay una tercera opción, **Buscar en The Spine Archive**: más de 11 000 lomos hechos por la comunidad de [The Spine Archive](https://thespinearchive.com/) (r/SwitchSpines). Están pensados para las cajas de Switch, pero sirven para cualquier caja (con «Ajustar…» los encuadras). No necesita clave: el catálogo (unos 7 MB) se guarda en `basilisco-data/spinearchive/` y se actualiza solo cada semana.
+
+**Steam Game Covers** ([steamgamecovers.com](https://www.steamgamecovers.com/)) es otra opción sin clave para la portada, la contraportada, el lomo y el disco. Sus carátulas son plantillas para imprimir: Basilisco quita los márgenes, las guías y los textos, y separa las carátulas completas (DVD y Blu-ray) en portada, lomo y contraportada, que rellenan las caras que estén vacías. Las imágenes son de sus autores y de los dueños de cada juego: úsalas solo para tu colección.
 
 Las claves se guardan en `basilisco-data/settings.json`, junto al `.exe`. No compartas esa carpeta si no quieres compartir tus claves.
 
