@@ -246,5 +246,7 @@
         <customization:FormatPanel x:Name="FormatEditor"/>
         <customization:SteamPanel x:Name="SteamImporter"/>
         <customization:ThemePanel x:Name="ThemeEditor"/>
+        <!-- El lector de manuales va encima de todo: se abre desde la caja abierta y desde Personalizar -->
+        <customization:ManualReaderPanel x:Name="ManualReader"/>
     </Grid>
 </Window>

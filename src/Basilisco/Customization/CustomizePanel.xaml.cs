@@ -52,10 +52,11 @@ public sealed class PendingFaces
 /// <param name="PlayMinutes">Tiempo de juego en minutos.</param>
 /// <param name="Disc">Cambio de la imagen del disco (caja abierta).</param>
 /// <param name="Manual">Cambio de la imagen que hace de manual (caja abierta).</param>
+/// <param name="ManualPdf">Cambio del manual en PDF.</param>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
-    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual);
+    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf);
 
 /// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco o el manual.</summary>
 public enum ArtTarget { Front, Back, Spine, Disc, Manual }
@@ -82,6 +83,8 @@ public partial class CustomizePanel : UserControl
     ImageChange _background = ImageChange.None;
     ImageChange _disc = ImageChange.None;
     ImageChange _manual = ImageChange.None;
+    ImageChange _manualPdf = ImageChange.None;
+    CancellationTokenSource? _manualWork;
     string? _textColor;
     bool _syncingColor;
 
@@ -135,6 +138,8 @@ public partial class CustomizePanel : UserControl
         _background = ImageChange.None;
         _disc = ImageChange.None;
         _manual = ImageChange.None;
+        _manualPdf = ImageChange.None;
+        _manualWork?.Cancel();
         UpdateExtrasText();
         _textColor = game.TextColor;
         BuildSwatches();
@@ -263,6 +268,76 @@ public partial class CustomizePanel : UserControl
             : "Sin imagen de manual: se ve el interior de la caja con el nombre del juego.";
         RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
+        var pdf = CurrentManualPdf();
+        ManualPdfText.Text = pdf is null
+            ? "Sin manual en PDF: se creará al abrirlo desde la caja abierta."
+            : _manualPdf.NewPath is not null ? "Manual en PDF nuevo (se guarda al darle a Guardar)." : "Tiene manual en PDF.";
+        ReadManualButton.IsEnabled = RemoveManualPdfButton.IsEnabled = pdf is not null;
+    }
+
+    /// <summary>El PDF que tendrá el juego como manual si se guarda ahora.</summary>
+    string? CurrentManualPdf()
+    {
+        if (_manualPdf.NewPath is not null || _manualPdf.Remove || _game is null)
+            return _manualPdf.NewPath;
+        return ImageStore.GetManualPdfPath(_game);
+    }
+
+    /// <summary>Hay que leer este PDF (lo abre la ventana principal, encima de este menú).</summary>
+    public event Action<string, string>? ManualReadRequested;
+
+    async void OnCreateManualClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is not { } game)
+            return;
+        _manualWork?.Cancel();
+        var work = _manualWork = new CancellationTokenSource();
+        CreateManualButton.IsEnabled = false;
+        try
+        {
+            // Con el nombre que haya escrito ahora y las caras de la caja que haya elegido (aunque aún no estén guardadas).
+            var draft = new Game { Id = game.Id, Name = NameBox.Text.Trim(), Platform = _platform, SteamAppId = game.SteamAppId };
+            var path = await ManualBuilder.CreateAsync(draft, CurrentPath(_format, Face.Front), CurrentPath(_format, Face.Back),
+                new Progress<string>(text => { if (!work.IsCancellationRequested) ManualPdfText.Text = text; }), work.Token);
+            if (work.IsCancellationRequested)
+                return;
+            _manualPdf = new ImageChange(path, false);
+            UpdateExtrasText();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex) when (ex is ArtProviderException or IOException or UnauthorizedAccessException or System.Net.Http.HttpRequestException
+                                   or InvalidDataException or System.Xml.XmlException)
+        {
+            if (!work.IsCancellationRequested)
+                ManualPdfText.Text = ex is ArtProviderException ? ex.Message : $"No se ha podido crear el manual: {ex.Message}";
+        }
+        finally
+        {
+            CreateManualButton.IsEnabled = true;
+        }
+    }
+
+    void OnChooseManualPdfClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog { Title = "Elegir el manual en PDF", Filter = "Manuales en PDF (*.pdf)|*.pdf" };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true)
+            return;
+        _manualPdf = new ImageChange(dialog.FileName, false);
+        UpdateExtrasText();
+    }
+
+    void OnReadManualClick(object sender, RoutedEventArgs e)
+    {
+        if (CurrentManualPdf() is { } pdf)
+            ManualReadRequested?.Invoke(pdf, NameBox.Text.Trim());
+    }
+
+    void OnRemoveManualPdfClick(object sender, RoutedEventArgs e)
+    {
+        _manualPdf = new ImageChange(null, true);
+        UpdateExtrasText();
     }
 
     void OnChooseDiscClick(object sender, RoutedEventArgs e)
@@ -490,7 +565,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes, _disc, _manual);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf);
         Close();
         Saved?.Invoke(result);
     }
