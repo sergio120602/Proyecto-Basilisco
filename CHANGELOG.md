@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.2] - 2026-10-19
+
+- El **interior de las cajas** abiertas es ahora de **plástico translúcido**, del color de cada consola: a través de la bandeja se ve, desenfocada, la contraportada por dentro, y alrededor del manual, la portada (como en las cajas transparentes de verdad).
+- En Personalizar → Fondo, nuevo botón **Buscar en SteamGridDB**: fondos del juego hechos por la comunidad (sus «heroes», de 1920 × 620 o 3840 × 1240), con miniaturas apaisadas. Usa la misma clave que las portadas.
+
 ## [0.5.1] - 2026-10-19
 
 - **Modo nocturno**: toda la interfaz en colores oscuros (el fondo del carrusel y su suelo, la cabecera, la barra de abajo, los menús, Personalizar, los buscadores y el resto de ventanas), con la barra de título de Windows también oscura.

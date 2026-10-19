@@ -47,6 +47,8 @@
                                 ToolTip="Fondo estático: una imagen detrás del carrusel cuando este juego está seleccionado"/>
                         <Button Style="{StaticResource PillButton}" Content="Vídeo…" Click="OnBackgroundVideoClick" Margin="0,0,8,8"
                                 ToolTip="Fondo dinámico: un vídeo en bucle y sin sonido"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en SteamGridDB" Click="OnSearchBackgroundClick" Margin="0,0,8,8"
+                                ToolTip="Fondos del juego hechos por la comunidad (los «heroes» de steamgriddb.com, de 1920 × 620 o más)"/>
                         <Button x:Name="RemoveBackgroundButton" Style="{StaticResource PillButton}" Content="Quitar" Click="OnRemoveBackgroundClick" Margin="0,0,8,8"/>
                     </WrapPanel>
                     <TextBlock x:Name="BackgroundText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>

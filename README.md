@@ -123,6 +123,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.4.1** — Interfaz adaptada a cualquier resolución y botón para actualizar
 - [x] **v0.5.0** — Manuales en PDF con datos de Steam y LaunchBox, y lector de manuales
 - [x] **v0.5.1** — Modo nocturno
+- [x] **v0.5.2** — Interior translúcido de las cajas y fondos de SteamGridDB
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -153,6 +154,8 @@ Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Stea
 ## 💿 Caja abierta
 
 Al darle a un juego se abre su caja: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha, en su bandeja. Al darle a **Jugar**, el disco gira, se inicia el juego y la caja se cierra sola.
+
+El interior de la caja es de plástico translúcido del color de su consola: a través de él se ven, desenfocadas, la portada y la contraportada por dentro.
 
 El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco de Steam Game Covers o de LaunchBox, o para el manual un póster, un fondo o la pantalla de título de LaunchBox. Si no tienen imagen, el disco se dibuja con la portada y el manual es un librito con el nombre del juego.
 

@@ -85,6 +85,11 @@
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="Tile" Property="BorderBrush" Value="#3E6FD8"/>
                                                             </Trigger>
+                                                            <!-- Los fondos, apaisados -->
+                                                            <DataTrigger Binding="{Binding Wide}" Value="True">
+                                                                <Setter TargetName="Thumb" Property="Width" Value="300"/>
+                                                                <Setter TargetName="Thumb" Property="Height" Value="100"/>
+                                                            </DataTrigger>
                                                             <!-- Los lomos, tumbados (girados a la izquierda) para que el título se lea -->
                                                             <DataTrigger Binding="{Binding Tall}" Value="True">
                                                                 <Setter TargetName="Thumb" Property="Width" Value="40"/>

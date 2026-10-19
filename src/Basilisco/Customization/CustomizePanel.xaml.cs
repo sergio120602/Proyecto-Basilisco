@@ -58,8 +58,8 @@ public sealed record CustomizeResult(
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
     ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf);
 
-/// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco o el manual.</summary>
-public enum ArtTarget { Front, Back, Spine, Disc, Manual }
+/// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco, el manual o el fondo.</summary>
+public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background }
 
 /// <summary>
 /// Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox, The Spine Archive
@@ -853,6 +853,11 @@ public partial class CustomizePanel : UserControl
     void OnLaunchBoxDiscClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Disc, ArtSource.LaunchBox);
 
     void OnLaunchBoxManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.LaunchBox);
+
+    void OnSearchBackgroundClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Background, ArtSource.Default);
+
+    /// <summary>Pone como fondo del juego una imagen descargada (de SteamGridDB).</summary>
+    public void SetBackgroundImage(string path) => SetBackground(path);
 
     // El lado derecho ocupa lo que permita la ventana; si no cabe, se desplaza.
     // Las dos columnas se desplazan si la ventana es baja.
