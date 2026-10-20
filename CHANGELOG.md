@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.7] - 2026-10-20
+
+- Nueva barra **Altura** (abajo a la derecha, junto al zoom) para subir o bajar las cajas del carrusel, y botón **Auto**: con él, cuanto más zoom, más bajan las cajas, lo justo para que el nombre del juego y sus etiquetas nunca las pisen. Viene activado; al quitarlo, la barra se queda donde estaba y se mueve a mano. Se recuerda al cerrar.
+- La altura y el zoom van en su propia línea, encima de la barra de abajo, para que quepan todas las pistas de teclas.
+
 ## [0.5.6] - 2026-10-20
 
 - El **nombre del juego** queda **fijo**, centrado justo debajo de la barra de arriba, con sus etiquetas debajo: ya no se mueve con el zoom ni con el tamaño de la caja seleccionada.

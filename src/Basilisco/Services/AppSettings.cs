@@ -34,6 +34,12 @@ public sealed class AppSettings
     /// <summary>Modo claro, nocturno o el mismo que Windows.</summary>
     public ColorMode Theme { get; set; } = ColorMode.System;
 
+    /// <summary>Altura del carrusel (barra «Altura»): con más, las cajas se ven más abajo.</summary>
+    public double CarouselShift { get; set; }
+
+    /// <summary>Altura automática: las cajas bajan lo justo para no meterse debajo del nombre del juego.</summary>
+    public bool CarouselAutoShift { get; set; } = true;
+
     /// <summary>Zoom del carrusel (barra de abajo a la derecha).</summary>
     public double Zoom { get; set; } = 1.2;
 

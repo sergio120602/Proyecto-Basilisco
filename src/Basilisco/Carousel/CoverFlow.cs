@@ -26,13 +26,32 @@ public sealed class CoverFlow
     public const double CoverHeight = BoxModel.Height;
 
     static readonly Point3D BaseCameraPosition = new(0, 0.7, 3.7);
-    static readonly Point3D CameraTarget = new(0, 0.44, 0);
+    static readonly Point3D BaseCameraTarget = new(0, 0.44, 0);
+
+    // La cámara y el punto al que mira suben o bajan juntos: las cajas se ven más abajo o más arriba sin cambiar la perspectiva.
+    Point3D CameraTarget => BaseCameraTarget + new Vector3D(0, _shift, 0);
+    double _shift;
+
+    /// <summary>Altura de la cámara (unidades de la escena): con más, las cajas se ven más abajo en la pantalla.</summary>
+    public double Shift
+    {
+        get => _shift;
+        set
+        {
+            _shift = Math.Clamp(value, MinShift, MaxShift);
+            _camera.Position = CameraPosition;
+            _camera.LookDirection = CameraTarget - CameraPosition;
+        }
+    }
+
+    public const double MinShift = -0.4;
+    public const double MaxShift = 1.2;
 
     public const double MinZoom = 0.7;
     public const double MaxZoom = 1.8;
 
     // La cámara se acerca o se aleja del centro según el zoom (1 = la distancia original).
-    Point3D CameraPosition => CameraTarget + (BaseCameraPosition - CameraTarget) / _zoom;
+    Point3D CameraPosition => CameraTarget + (BaseCameraPosition - BaseCameraTarget) / _zoom;
     double _zoom = 1;
     PerspectiveCamera _camera = null!;
     const double FieldOfView = 55;
