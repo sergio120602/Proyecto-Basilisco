@@ -135,7 +135,7 @@ public sealed class BoxModel
     public double ArtScale => _artScale;
 
     /// <summary>Con false, no se pintan los reflejos en el suelo (ahorra memoria y tiempo).</summary>
-    public static bool Reflections { get; set; } = true;
+    public static bool Reflections { get; set; }
 
     /// <summary>Pinta la portada y el lomo si aún no los tiene. Es lo que más cuesta: se hace solo con las cajas que se ven.</summary>
     /// <param name="scale">Resolución (1 = completa); si ya estaba pintada a otra, se vuelve a pintar.</param>

@@ -136,6 +136,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.0** — Alineación moderna, botones rectangulares y menú de consolas con imágenes de LaunchBox
 - [x] **v0.6.1** — Alineación moderna en fila recta, de frente
 - [x] **v0.6.2** — Arranque más rápido, menos memoria y opciones de rendimiento
+- [x] **v0.6.3** — Carrusel más fluido: cajas pintadas en bloques de 50 y sin reflejos
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

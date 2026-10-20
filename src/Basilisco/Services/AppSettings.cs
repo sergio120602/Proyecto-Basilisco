@@ -47,7 +47,9 @@ public sealed class AppSettings
     public BoxQuality Quality { get; set; } = BoxQuality.High;
 
     /// <summary>Reflejos de las cajas en el suelo.</summary>
-    public bool Reflections { get; set; } = true;
+    // Con otro nombre que en la 0.6.2 para que, al actualizar, empiecen quitados (hacen que la animación vaya más suave).
+    [System.Text.Json.Serialization.JsonPropertyName("FloorReflections")]
+    public bool Reflections { get; set; }
 
     /// <summary>Los fondos en vídeo se mueven; con false se quedan quietos en el primer fotograma (gastan mucho menos).</summary>
     public bool AnimatedBackgrounds { get; set; } = true;

@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.3] - 2026-10-21
+
+- **Animación del carrusel más fluida**:
+  - Las cajas se pintan por adelantado en **bloques de 50**, mientras el carrusel está quieto. Al llegar a la caja 35 de un bloque se pinta ya el siguiente, así que al deslizar casi todas las cajas están listas.
+  - Todas las cajas se pintan a la misma resolución, así que ya no se vuelven a pintar a mitad del deslizamiento.
+- Los **reflejos en el suelo** vienen quitados: la animación va más suave. Se pueden volver a poner en Apariencia → Rendimiento.
+
 ## [0.6.2] - 2026-10-21
 
 - **Arranque mucho más rápido y menos memoria**: con una biblioteca de 155 juegos, la ventana sale en unos **3 segundos** (antes unos 25) y la aplicación ocupa unos **600 MB** en lugar de 1,5 GB.

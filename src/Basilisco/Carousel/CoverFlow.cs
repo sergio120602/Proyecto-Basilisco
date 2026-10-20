@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 
 namespace Basilisco.Carousel;
 
@@ -516,22 +517,37 @@ public sealed class CoverFlow
         return values[left] + (values[right] - values[left]) * t;
     }
 
-    // Cuántas cajas nuevas se pintan como mucho en cada fotograma al deslizar (cada una tarda unos milisegundos).
+    // Si al deslizar aparece una caja que aún no está pintada, cuántas se pintan como mucho en cada fotograma.
     const int ArtPerFrame = 2;
+
+    // Las cajas se pintan por adelantado en bloques de 50 (la 0-49, la 50-99…). Al llegar a la 35 de un bloque se
+    // pinta ya el siguiente, para que esté listo antes de llegar; y al volver atrás, el anterior. Lo demás se suelta.
+    const int ArtBlock = 50;
+    const int ArtBlockAhead = 35;
 
     /// <summary>Calidad de las cajas (1 alta, 0,75 media, 0,5 baja): la resolución a la que se pintan.</summary>
     public double Quality { get; set; } = 1;
 
-    // La caja del centro y sus vecinas, a la calidad elegida; las demás se ven pequeñas y van a la mitad.
-    double ScaleFor(Slot slot) => slot.Distance <= 1.6 || _shelfBlend > 0 ? Quality : Quality * 0.5;
-    // Las cajas que se alejan más que esto sueltan sus imágenes (y las vuelven a pintar si vuelven).
-    const double ReleaseDistance = MaxVisibleDistance + 2;
     bool _firstArt = true;
+    bool _prerenderQueued;
+
+    /// <summary>Cajas que se mantienen pintadas: el bloque de la seleccionada y, cerca de sus bordes, el vecino.</summary>
+    (int Start, int End) KeptRange()
+    {
+        var start = _target / ArtBlock * ArtBlock;
+        var end = start + ArtBlock;
+        var within = _target - start;
+        if (within >= ArtBlockAhead)
+            end += ArtBlock;
+        if (within < ArtBlock - ArtBlockAhead && start > 0)
+            start -= ArtBlock;
+        return (start, Math.Min(end, _slots.Count));
+    }
 
     /// <summary>
-    /// Pinta las imágenes de las cajas que se ven (las más cercanas al centro primero, unas pocas por fotograma para
-    /// que deslizar vaya fluido) y suelta las de las que están muy lejos. Así, con cientos de juegos solo hay en
-    /// memoria las de una docena de cajas, y el arranque no tiene que pintarlas todas.
+    /// Pinta al momento las cajas que se ven y no estaban pintadas (casi nunca hace falta, porque ya están listas)
+    /// y suelta las que quedan fuera del bloque. El resto del bloque se pinta cuando el carrusel está quieto, de una
+    /// en una, para que deslizar vaya siempre fluido.
     /// </summary>
     void UpdateArt()
     {
@@ -540,25 +556,58 @@ public sealed class CoverFlow
         var pending = false;
         foreach (var slot in _drawOrder.OrderBy(slot => slot.Distance))
         {
-            var scale = ScaleFor(slot);
-            if (slot.Model.HasArt && slot.Model.ArtScale == scale)
+            if (slot.Model.HasArt && slot.Model.ArtScale == Quality)
                 continue;
             if (budget-- > 0)
-                slot.Model.EnsureArt(scale);
+                slot.Model.EnsureArt(Quality);
             else
                 pending = true;
         }
 
-        var position = _position;
-        foreach (var slot in _slots)
+        var (start, end) = KeptRange();
+        for (var i = 0; i < _slots.Count; i++)
         {
-            if (slot.Model.HasArt && Math.Abs(slot.Shown - position) > ReleaseDistance && _shelfBlend == 0)
+            var slot = _slots[i];
+            if (slot.Model.HasArt && (i < start || i >= end) && !_drawOrder.Contains(slot) && _shelfBlend == 0)
                 slot.Model.ReleaseArt();
         }
 
         // Si han quedado cajas sin pintar, se siguen pintando en los siguientes fotogramas.
         if (pending)
             StartAnimation();
+        QueuePrerender();
+    }
+
+    void QueuePrerender()
+    {
+        if (_prerenderQueued)
+            return;
+        _prerenderQueued = true;
+        _viewport.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, Prerender);
+    }
+
+    /// <summary>Pinta la siguiente caja del bloque (la más cercana a la seleccionada) y se vuelve a pedir.</summary>
+    void Prerender()
+    {
+        _prerenderQueued = false;
+        if (_animating)
+            return; // Al pararse el carrusel se vuelve a pedir (UpdateArt).
+
+        var (start, end) = KeptRange();
+        Slot? next = null;
+        var best = int.MaxValue;
+        for (var i = start; i < end; i++)
+        {
+            var model = _slots[i].Model;
+            if ((model.HasArt && model.ArtScale == Quality) || Math.Abs(i - _target) >= best)
+                continue;
+            best = Math.Abs(i - _target);
+            next = _slots[i];
+        }
+        if (next is null)
+            return;
+        next.Model.EnsureArt(Quality);
+        QueuePrerender();
     }
 
     /// <summary>Vuelve a pintar todas las cajas (al cambiar la calidad o los reflejos).</summary>
