@@ -114,6 +114,27 @@ public static class ImageStore
         SetExtraFile(game, extra, null);
     }
 
+    /// <summary>Imagen de la consola para el menú de consolas, o null si no tiene.</summary>
+    public static string? GetPlatformImagePath(string platformId) =>
+        Directory.Exists(AppInfo.PlatformImagesDirectory)
+            ? Directory.EnumerateFiles(AppInfo.PlatformImagesDirectory, platformId + "-*").Where(IsImage).OrderDescending().FirstOrDefault()
+            : null;
+
+    /// <summary>Copia la imagen como la de esa consola y borra la anterior.</summary>
+    public static void SetPlatformImage(string platformId, string sourcePath)
+    {
+        var old = GetPlatformImagePath(platformId);
+        Import(sourcePath, AppInfo.PlatformImagesDirectory, platformId);
+        if (old is not null)
+            Delete(AppInfo.PlatformImagesDirectory, Path.GetFileName(old));
+    }
+
+    public static void RemovePlatformImage(string platformId)
+    {
+        if (GetPlatformImagePath(platformId) is { } path)
+            Delete(AppInfo.PlatformImagesDirectory, Path.GetFileName(path));
+    }
+
     public static string? GetManualPdfPath(Game game) => Resolve(AppInfo.ManualsDirectory, game.ManualPdf);
 
     /// <summary>Copia el PDF como manual del juego y borra el anterior.</summary>

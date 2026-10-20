@@ -41,7 +41,43 @@ public sealed class CoverFlow
             _shift = Math.Clamp(value, MinShift, MaxShift);
             _camera.Position = CameraPosition;
             _camera.LookDirection = CameraTarget - CameraPosition;
+            if (_aligned)
+                ApplyLayout();
         }
+    }
+
+    /// <summary>
+    /// Alineación moderna: las cajas de los lados bajan lo justo para que, en pantalla, su base quede en la misma
+    /// línea recta que la de la caja del centro. Sin ella (la clásica), las del fondo se ven más arriba, en curva.
+    /// </summary>
+    public bool Aligned
+    {
+        get => _aligned;
+        set
+        {
+            _aligned = value;
+            ApplyLayout();
+        }
+    }
+    bool _aligned;
+
+    /// <summary>
+    /// Altura a la que hay que poner una caja a la profundidad <paramref name="z"/> para que su base se vea a la misma
+    /// altura en pantalla que la de la caja del centro (en y = 0, z = 0). La cámara no gira de lado, así que no
+    /// depende de x, y la cuenta es exacta: se iguala la proyección de los dos puntos.
+    /// </summary>
+    double AlignedY(double z)
+    {
+        var c = CameraPosition;
+        var forward = CameraTarget - c;
+        forward.Normalize();
+        var right = Vector3D.CrossProduct(forward, new Vector3D(0, 1, 0));
+        right.Normalize();
+        var up = Vector3D.CrossProduct(right, forward);
+        var v0 = new Point3D(0, 0, 0) - c;
+        var ratio = Vector3D.DotProduct(v0, up) / Vector3D.DotProduct(v0, forward);
+        var denominator = up.Y - ratio * forward.Y;
+        return Math.Abs(denominator) < 1e-9 ? 0 : c.Y + (z - c.Z) * (ratio * forward.Z - up.Z) / denominator;
     }
 
     public const double MinShift = -0.4;
@@ -116,6 +152,8 @@ public sealed class CoverFlow
             _zoom = Math.Clamp(value, MinZoom, MaxZoom);
             _camera.Position = CameraPosition;
             _camera.LookDirection = CameraTarget - CameraPosition;
+            if (_aligned)
+                ApplyLayout();
         }
     }
 
@@ -432,7 +470,8 @@ public sealed class CoverFlow
             var model = slot.Model;
             model.Position.OffsetX = cx + (sx - cx) * blend;
             model.Position.OffsetZ = cz + (sz - cz) * blend;
-            model.Position.OffsetY = slot.Lift * ShelfLift * blend;
+            var alignedY = _aligned && cz < 0 ? AlignedY(cz) * (1 - blend) : 0;
+            model.Position.OffsetY = slot.Lift * ShelfLift * blend + alignedY;
             model.SideRotation.Angle = cAngle + (90 - cAngle) * blend;
             model.SetInspect(slot.Yaw, slot.Pitch);
             model.SetOpacity((carouselVisible ? cOpacity : 0) * (1 - blend) + (shelfVisible ? sOpacity : 0) * blend);

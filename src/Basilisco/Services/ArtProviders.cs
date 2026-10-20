@@ -75,16 +75,24 @@ public abstract class ArtProvider
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, $"{Guid.NewGuid():N}{extension}");
 
-        try
+        // Algunos servidores de imágenes (el de LaunchBox, por ejemplo) a veces se quedan parados en la primera
+        // petición y responden al momento en la segunda: si el primer intento falla o tarda, se prueba otra vez.
+        for (var attempt = 1; ; attempt++)
         {
-            var bytes = await Http.GetByteArrayAsync(image.Url, cancellation);
-            await File.WriteAllBytesAsync(path, bytes, cancellation);
-            return path;
-        }
-        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !cancellation.IsCancellationRequested)
-        {
-            // TaskCanceledException sin cancelar nosotros: el servidor no ha respondido a tiempo.
-            throw new ArtProviderException("No se ha podido descargar la imagen. Comprueba tu conexión a internet.");
+            using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            limit.CancelAfter(attempt == 1 ? TimeSpan.FromSeconds(12) : TimeSpan.FromSeconds(30));
+            try
+            {
+                var bytes = await Http.GetByteArrayAsync(image.Url, limit.Token);
+                await File.WriteAllBytesAsync(path, bytes, cancellation);
+                return path;
+            }
+            catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException or OperationCanceledException && !cancellation.IsCancellationRequested)
+            {
+                // TaskCanceledException sin cancelar nosotros: el servidor no ha respondido a tiempo.
+                if (attempt >= 2)
+                    throw new ArtProviderException("No se ha podido descargar la imagen. Comprueba tu conexión a internet.");
+            }
         }
     }
 

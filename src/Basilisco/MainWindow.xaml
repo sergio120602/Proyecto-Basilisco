@@ -41,7 +41,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Pill" CornerRadius="19" Padding="18,7" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
+                        <Border x:Name="Pill" CornerRadius="5" Padding="18,7" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -181,6 +181,10 @@
             </Grid.RowDefinitions>
             <!-- Altura y zoom del carrusel, en su propia línea encima de la barra para que quepan las pistas -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+                <!-- Alineación de las cajas: clásica (en curva) o moderna (todas las bases en línea recta) -->
+                <ToggleButton x:Name="AlignToggle" Style="{StaticResource FilterToggle}" Content="Alineación moderna" Margin="0,0,30,0"
+                              VerticalAlignment="Center" Click="OnAlignClick"
+                              ToolTip="Moderna: las bases de todas las cajas en línea recta. Clásica: las del fondo se ven más arriba, en curva"/>
                 <!-- Altura del carrusel: a mano o automática (las cajas bajan lo justo para no pisar el nombre del juego) -->
                 <TextBlock Style="{StaticResource HintText}" Text="Altura" Margin="0,0,10,0"/>
                 <Slider x:Name="ShiftSlider" Width="130" VerticalAlignment="Center" Focusable="False"
@@ -254,6 +258,7 @@
         <customization:FormatPanel x:Name="FormatEditor"/>
         <customization:SteamPanel x:Name="SteamImporter"/>
         <customization:ThemePanel x:Name="ThemeEditor"/>
+        <customization:ConsolePanel x:Name="ConsoleEditor"/>
         <!-- El buscador de imágenes se abre encima de Personalizar y del editor de filtros -->
         <customization:ArtSearchPanel x:Name="ArtSearch"/>
         <!-- El lector de manuales va encima de todo: se abre desde la caja abierta y desde Personalizar -->
