@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.8] - 2026-10-20
+
+- Nuevo **menú de filtros**: al pulsar «Filtros» se despliega bajo la barra de arriba una **franja negra** de lado a lado con cada filtro en grande, con su **logotipo** (o su nombre en letras blancas si aún no tiene) y cuántos juegos tiene. Al pasar por encima (o al moverse con las flechas o el mando) la casilla se destaca con un **borde dorado**, y el filtro que se está viendo lleva el borde dorado fino. Al final están «+ Nuevo filtro» y «Editar filtro» (que pasa a elegir qué filtro editar); con clic derecho se edita un filtro directamente. Se cierra con Esc, B o haciendo clic fuera.
+
 ## [0.5.7] - 2026-10-20
 
 - Nueva barra **Altura** (abajo a la derecha, junto al zoom) para subir o bajar las cajas del carrusel, y botón **Auto**: con él, cuanto más zoom, más bajan las cajas, lo justo para que el nombre del juego y sus etiquetas nunca las pisen. Viene activado; al quitarlo, la barra se queda donde estaba y se mueve a mano. Se recuerda al cerrar.

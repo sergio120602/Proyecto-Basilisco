@@ -1,0 +1,24 @@
+<UserControl x:Class="Basilisco.Customization.FilterStripPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
+    <!-- Menú de filtros: una franja negra de lado a lado bajo la barra de arriba, con los logotipos en grande -->
+    <Grid Background="#66000000" MouseLeftButtonDown="OnBackdropMouseDown">
+        <Border x:Name="Strip" VerticalAlignment="Top" Background="#F5060709" BorderBrush="#33E8B923" BorderThickness="0,1,0,1"
+                MouseLeftButtonDown="OnStripMouseDown">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="8" Direction="270" Opacity="0.6"/>
+            </Border.Effect>
+            <DockPanel Margin="44,16,44,18">
+                <DockPanel DockPanel.Dock="Top" Margin="4,0,4,12">
+                    <TextBlock x:Name="HintText" DockPanel.Dock="Right" FontSize="13" Foreground="#8C95A3" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TitleText" Text="FILTROS" FontSize="15" FontWeight="Bold" Foreground="#E8B923" VerticalAlignment="Center"/>
+                </DockPanel>
+                <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                              Focusable="False" PreviewMouseWheel="OnMouseWheel">
+                    <StackPanel x:Name="Tiles" Orientation="Horizontal"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

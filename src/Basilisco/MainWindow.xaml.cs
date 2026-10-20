@@ -94,6 +94,12 @@ public partial class MainWindow : Window
         ThemeEditor.ModeChanged += SetTheme;
         CaseView.PlayRequested += Launch;
         CaseView.Closed += () => Focus();
+        FilterStrip.Closed += () =>
+        {
+            RefreshFilterTabs();
+            if (!IsPanelOpen)
+                Focus();
+        };
         CaseView.ManualRequested += game => _ = OpenManualAsync(game);
         Customizer.ManualReadRequested += (path, title) => ManualReader.Open(path, title, _padMode);
         ManualReader.Closed += () =>
@@ -173,7 +179,7 @@ public partial class MainWindow : Window
         FrameworkElement[] scaled =
         [
             HeaderBar, FooterBar, TitlePanel, PlayTimeText, Toast,
-            CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
+            FilterStrip, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
         ];
         foreach (var element in scaled)
             element.LayoutTransform = _uiScale;
@@ -498,7 +504,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
+    bool IsPanelOpen => FilterStrip.IsOpen || ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
                         FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
@@ -621,38 +627,39 @@ public partial class MainWindow : Window
         ShowMenu(ConsolesTab, menu);
     }
 
-    /// <summary>Grupo «Filtros»: tus filtros, crear uno nuevo y editar los que hay.</summary>
+    /// <summary>
+    /// Grupo «Filtros»: se abre la franja negra con tus filtros (sus logotipos en grande, o el nombre si no tienen),
+    /// y al final «Nuevo filtro» y «Editar filtro».
+    /// </summary>
     void OnFiltersTabClick(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu { LayoutTransform = _uiScale };
-        menu.SetResourceReference(BackgroundProperty, "CardBrush");
-        menu.SetResourceReference(ForegroundProperty, "TextBrush");
-        menu.Items.Add(Item("Todos los filtros", () => SelectView(_activePlatform, null), isChecked: _activeFilter is null));
-        menu.Items.Add(new Separator());
+        RefreshFilterTabs();
+        OpenFilterStrip();
+    }
 
+    void OpenFilterStrip()
+    {
+        static string Games(int count) => count == 1 ? "1 juego" : $"{count} juegos";
+
+        var tiles = new List<FilterTile>
+        {
+            new("Todos los filtros", null, Games(this.Games.Count), _activeFilter is null, () => SelectView(_activePlatform, null)),
+        };
         foreach (var filter in Filters)
         {
-            var image = ImageStore.GetFilterImagePath(filter);
-            var icon = image is null ? null : new Image { Source = CoverArt.LoadImage(image, FilterIconDecodeWidth), Width = 22, Height = 22, Stretch = Stretch.Uniform };
             var chosen = filter;
-            menu.Items.Add(Item($"{filter.Name}  ({CountGames(filter)})", () => SelectView(null, chosen), isChecked: filter == _activeFilter, icon: icon));
+            tiles.Add(new FilterTile(filter.Name, ImageStore.GetFilterImagePath(filter), $"{filter.Name} · {Games(CountGames(filter))}",
+                filter == _activeFilter, () => SelectView(null, chosen), Edit: () => OpenFilterEditor(chosen)));
         }
+        tiles.Add(new FilterTile("+  Nuevo filtro", null, "Crear un filtro", false, () => OpenFilterEditor(null), IsAction: true));
         if (Filters.Count > 0)
-            menu.Items.Add(new Separator());
+            tiles.Add(new FilterTile("Editar filtro", null, "Cambiar el nombre, el logotipo o los juegos", false, () => FilterStrip.StartEditing(),
+                IsAction: true, KeepOpen: true));
 
-        menu.Items.Add(Item("+  Nuevo filtro…", () => OpenFilterEditor(null)));
-        if (Filters.Count > 0)
-        {
-            var edit = Item("Editar filtro", null);
-            foreach (var filter in Filters)
-            {
-                var chosen = filter;
-                edit.Items.Add(Item(filter.Name, () => OpenFilterEditor(chosen)));
-            }
-            menu.Items.Add(edit);
-        }
-
-        ShowMenu(FiltersTab, menu);
+        // Justo debajo de la barra de arriba (en las unidades del panel, que va escalado como el resto).
+        var scale = _uiScale.ScaleX;
+        var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
+        FilterStrip.Open(tiles, top, _padMode);
     }
 
     // Clic derecho en el grupo de filtros con uno activo: editarlo directamente.
@@ -1958,6 +1965,17 @@ public partial class MainWindow : Window
             }
             return;
         }
+        if (FilterStrip.IsOpen)
+        {
+            switch (action)
+            {
+                case PadAction.Confirm: FilterStrip.Choose(); break;
+                case PadAction.Back: InjectKey(Key.Escape); break;
+                case PadAction.PageLeft or PadAction.PreviousFilter: FilterStrip.Move(-1); break;
+                case PadAction.PageRight or PadAction.NextFilter: FilterStrip.Move(1); break;
+            }
+            return;
+        }
         if (ManualReader.IsOpen)
         {
             switch (action)
@@ -2006,6 +2024,11 @@ public partial class MainWindow : Window
         if (ManualReader.IsOpen)
         {
             ManualReader.Flip(direction);
+            return;
+        }
+        if (FilterStrip.IsOpen)
+        {
+            FilterStrip.Move(direction);
             return;
         }
         if (IsPanelOpen)
