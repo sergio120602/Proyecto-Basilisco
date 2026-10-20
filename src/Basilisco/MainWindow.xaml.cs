@@ -106,6 +106,7 @@ public partial class MainWindow : Window
 
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
         Root.SizeChanged += (_, _) => UpdateUiScale();
+        HeaderBar.SizeChanged += (_, _) => UpdateOverlayLayout();
         Activated += async (_, _) =>
         {
             if (BackgroundVideo.Source is not null) BackgroundVideo.Play();
@@ -1231,9 +1232,10 @@ public partial class MainWindow : Window
         if (Viewport.ActualWidth <= 0)
             return;
 
-        // Las cajas rectangulares miden según su consola: el título va justo encima de la seleccionada.
-        var coverTop = _flow.Project(new Point3D(0, _flow.SelectedHeight, 0));
-        TitlePanel.Margin = new Thickness(0, 0, 0, Math.Max(0, Viewport.ActualHeight - coverTop.Y + 24));
+        // El título va siempre en el mismo sitio, centrado justo debajo de la cabecera: no depende del zoom
+        // ni del tamaño de la caja seleccionada.
+        var scale = _uiScale.ScaleX;
+        TitlePanel.Margin = new Thickness(0, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 14 * scale, 0, 0);
 
         // El suelo empieza por detrás de las cajas laterales para que todas apoyen sobre él.
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));

@@ -99,7 +99,7 @@
                 <TextBlock x:Name="VersionText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="10,6,0,0" VerticalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Todos los juegos, los dos grupos (consolas y filtros) y el orden; cada grupo abre su menú -->
+            <!-- Todos los juegos y los dos grupos (consolas y filtros), a la izquierda para dejar libre el centro al título -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="34,0,20,0" VerticalAlignment="Center">
                 <ToggleButton x:Name="AllTab" Style="{StaticResource HeaderTab}" Click="OnAllTabClick"
                               ToolTip="Todos los juegos de la biblioteca"/>
@@ -108,12 +108,13 @@
                 <ToggleButton x:Name="FiltersTab" Style="{StaticResource HeaderTab}" Click="OnFiltersTabClick"
                               MouseRightButtonUp="OnFiltersTabRightClick"
                               ToolTip="Ver solo los juegos de un filtro, crear filtros nuevos o editarlos"/>
-                <Border Width="1" Height="24" Background="#55FFFFFF" Margin="10,0,16,0" VerticalAlignment="Center"/>
-                <ToggleButton x:Name="SortTab" Style="{StaticResource HeaderTab}" Click="OnSortTabClick"
-                              ToolTip="Cambiar el orden de los juegos"/>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- El orden, a la derecha con el resto de opciones -->
+                <ToggleButton x:Name="SortTab" Style="{StaticResource HeaderTab}" Click="OnSortTabClick"
+                              ToolTip="Cambiar el orden de los juegos"/>
+                <Border Width="1" Height="24" Background="#55FFFFFF" Margin="4,0,16,0" VerticalAlignment="Center"/>
                 <!-- Solo aparece cuando hay una versión nueva en GitHub -->
                 <Button x:Name="UpdateButton" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Visibility="Collapsed"
                         Click="OnUpdateClick"/>
@@ -142,7 +143,7 @@
         </TextBlock>
 
         <!-- Título y etiquetas del juego seleccionado -->
-        <StackPanel x:Name="TitlePanel" VerticalAlignment="Bottom" HorizontalAlignment="Center" IsHitTestVisible="False">
+        <StackPanel x:Name="TitlePanel" VerticalAlignment="Top" HorizontalAlignment="Center" IsHitTestVisible="False">
             <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}"
                        HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="1000">
                 <TextBlock.Effect>

@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.6] - 2026-10-20
+
+- El **nombre del juego** queda **fijo**, centrado justo debajo de la barra de arriba, con sus etiquetas debajo: ya no se mueve con el zoom ni con el tamaño de la caja seleccionada.
+- Para dejar libre el centro, el menú **Orden** pasa a la derecha de la barra; a la izquierda quedan «Todos los juegos», «Consolas» y «Filtros».
+
 ## [0.5.5] - 2026-10-20
 
 - Nuevas consolas: **NES**, **Super Nintendo**, **Nintendo Switch** y **Arcade**, con su franja dibujada en la portada, el color de su caja y sus medidas reales (caja de cartón de NES, caja apaisada de Super Nintendo y estuche rojo de Switch). LaunchBox y Vimm's Lair las reconocen.
