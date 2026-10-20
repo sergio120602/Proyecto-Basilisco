@@ -45,6 +45,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Fondo y color de las letras para todos los juegos | `A` o botón «Apariencia» |
 | Modo nocturno (claro, nocturno o como Windows) | `N`, botón de la luna arriba a la derecha, o «Apariencia → Modo» |
 | Zoom de las cajas | Barra «Zoom» abajo a la derecha, `Ctrl + rueda` o `+` / `−` |
+| Subir o bajar las cajas | Barra «Altura» abajo a la derecha; «Auto» las baja solo lo justo para que el nombre del juego no las pise |
 | Pantalla completa | `F11` (`Esc` para salir) |
 | Actualizar a la versión nueva (cuando la hay) | `U` o botón «Actualizar a …» arriba a la derecha |
 
@@ -128,6 +129,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.5.4** — Ajustar el manual y el interior de la caja, y manuales originales de Vimm's Lair
 - [x] **v0.5.5** — NES, Super Nintendo, Nintendo Switch y Arcade, y cartuchos de Nintendo 64, DS y Switch en la caja abierta
 - [x] **v0.5.6** — Nombre del juego fijo y centrado arriba
+- [x] **v0.5.7** — Altura de las cajas, a mano o automática según el zoom
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

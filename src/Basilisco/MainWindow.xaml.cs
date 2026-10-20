@@ -116,6 +116,10 @@ public partial class MainWindow : Window
         };
         Deactivated += (_, _) => BackgroundVideo.Pause();
         ZoomSlider.Value = Math.Clamp(_settings.Zoom, CoverFlow.MinZoom, CoverFlow.MaxZoom);
+        _flow.Shift = _settings.CarouselShift;
+        ShiftSlider.Value = _flow.Shift;
+        AutoShiftToggle.IsChecked = _settings.CarouselAutoShift;
+        ShiftSlider.IsEnabled = !_settings.CarouselAutoShift;
         ApplyZoom(ZoomSlider.Value, save: false);
 
         _gamepad.IsActive = () => IsActive && WindowState != WindowState.Minimized;
@@ -1236,6 +1240,8 @@ public partial class MainWindow : Window
         // ni del tamaño de la caja seleccionada.
         var scale = _uiScale.ScaleX;
         TitlePanel.Margin = new Thickness(0, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 14 * scale, 0, 0);
+        if (_settings.CarouselAutoShift)
+            FitBelowTitle(TitlePanel.Margin.Top + TitlePanel.ActualHeight * scale + 22 * scale);
 
         // El suelo empieza por detrás de las cajas laterales para que todas apoyen sobre él.
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));
@@ -2090,6 +2096,67 @@ public partial class MainWindow : Window
     {
         if (_flow is not null && IsLoaded)
             ApplyZoom(e.NewValue);
+    }
+
+    /// <summary>
+    /// Altura automática: busca cuánto hay que bajar las cajas para que la más alta (una de DVD o cuadrada) empiece
+    /// por debajo de <paramref name="limit"/> (el pie del nombre y sus etiquetas). Si ya caben, se quedan donde siempre.
+    /// </summary>
+    void FitBelowTitle(double limit)
+    {
+        double Top(double shift)
+        {
+            _flow.Shift = shift;
+            return _flow.Project(new System.Windows.Media.Media3D.Point3D(0, BoxModel.Height, 0)).Y;
+        }
+
+        double low = 0, high = CoverFlow.MaxShift;
+        if (Top(0) >= limit)
+        {
+            SyncShiftSlider(0);
+            return;
+        }
+        // Cuanto más sube la cámara, más abajo se ve la caja: se busca el punto justo.
+        for (var i = 0; i < 24; i++)
+        {
+            var middle = (low + high) / 2;
+            if (Top(middle) >= limit)
+                high = middle;
+            else
+                low = middle;
+        }
+        _flow.Shift = high;
+        SyncShiftSlider(high);
+    }
+
+    bool _syncingShift;
+
+    void SyncShiftSlider(double shift)
+    {
+        _syncingShift = true;
+        ShiftSlider.Value = shift;
+        _syncingShift = false;
+    }
+
+    void OnShiftChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_flow is null || !IsLoaded || _syncingShift || _settings.CarouselAutoShift)
+            return;
+        _flow.Shift = e.NewValue;
+        _settings.CarouselShift = _flow.Shift;
+        _settings.Save();
+        UpdateOverlayLayout();
+    }
+
+    void OnAutoShiftClick(object sender, RoutedEventArgs e)
+    {
+        _settings.CarouselAutoShift = AutoShiftToggle.IsChecked == true;
+        ShiftSlider.IsEnabled = !_settings.CarouselAutoShift;
+        // Al quitar el automático, la barra se queda donde lo había dejado y desde ahí se mueve a mano.
+        if (!_settings.CarouselAutoShift)
+            _settings.CarouselShift = _flow.Shift;
+        _settings.Save();
+        UpdateOverlayLayout();
     }
 
     void StepZoom(double delta) => ZoomSlider.Value = Math.Clamp(ZoomSlider.Value + delta, ZoomSlider.Minimum, ZoomSlider.Maximum);

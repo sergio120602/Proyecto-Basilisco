@@ -177,10 +177,28 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Border Height="1" Background="#99FFFFFF" Margin="0,0,0,16"/>
+            <!-- Altura y zoom del carrusel, en su propia línea encima de la barra para que quepan las pistas -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+                <!-- Altura del carrusel: a mano o automática (las cajas bajan lo justo para no pisar el nombre del juego) -->
+                <TextBlock Style="{StaticResource HintText}" Text="Altura" Margin="0,0,10,0"/>
+                <Slider x:Name="ShiftSlider" Width="130" VerticalAlignment="Center" Focusable="False"
+                        Minimum="-0.4" Maximum="1.2" SmallChange="0.05" LargeChange="0.1" IsDirectionReversed="False"
+                        ValueChanged="OnShiftChanged" ToolTip="Sube o baja las cajas"/>
+                <ToggleButton x:Name="AutoShiftToggle" Style="{StaticResource FilterToggle}" Content="Auto" Margin="10,0,30,0"
+                              VerticalAlignment="Center" Click="OnAutoShiftClick"
+                              ToolTip="Automático: cuanto más zoom, más bajan las cajas, para que el nombre del juego nunca las pise"/>
+                <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
+                <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
+                <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
+                        Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
+                        ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
+                <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,0,0"/>
+            </StackPanel>
+            <Border Grid.Row="1" Height="1" Background="#99FFFFFF" Margin="0,0,0,16"/>
             <!-- Pistas de la estantería (orden personalizado) -->
-            <StackPanel x:Name="ShelfHints" Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
+            <StackPanel x:Name="ShelfHints" Grid.Row="2" Orientation="Horizontal" Visibility="Collapsed">
                 <TextBlock Style="{StaticResource HintText}" Text="Estantería" Foreground="#3E6FD8"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="↑"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Coger"/>
@@ -191,7 +209,7 @@
                 <Border Style="{StaticResource KeyBadge}"><TextBlock x:Name="ShelfDoneKey" Style="{StaticResource KeyBadgeText}" Text="Esc"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Terminar"/>
             </StackPanel>
-            <StackPanel x:Name="MainHints" Grid.Row="1" Orientation="Horizontal">
+            <StackPanel x:Name="MainHints" Grid.Row="2" Orientation="Horizontal">
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="NavKey" Text="← →"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="ConfirmKey" Text="Enter"/></Border>
@@ -219,13 +237,7 @@
                 <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
 
             </StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
-                <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
-                <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
-                        Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
-                        ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
-                <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,30,0"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
             </StackPanel>
