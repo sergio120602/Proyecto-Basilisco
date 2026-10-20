@@ -85,7 +85,7 @@ public partial class FilterStripPanel : UserControl
     {
         // El logotipo, lo más grande que quepa; sin logotipo, el nombre en blanco.
         UIElement content;
-        if (tile.ImagePath is not null && CoverArt.LoadImage(tile.ImagePath, 640) is { } logo)
+        if (tile.ImagePath is not null && Thumbnail(tile.ImagePath) is { } logo)
         {
             content = new Image { Source = logo, Stretch = Stretch.Uniform, Margin = new Thickness(10), SnapsToDevicePixels = true };
             RenderOptions.SetBitmapScalingMode(content, BitmapScalingMode.HighQuality);
@@ -269,6 +269,20 @@ public partial class FilterStripPanel : UserControl
     void OnBackdropMouseDown(object sender, MouseButtonEventArgs e) => Close();
 
     void OnStripMouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
+    // Logotipos ya decodificados (las fotos de consola pesan varios MB): abrir el menú otra vez es instantáneo.
+    static readonly Dictionary<string, (DateTime Written, System.Windows.Media.Imaging.BitmapSource Image)> Thumbnails = [];
+
+    static System.Windows.Media.Imaging.BitmapSource? Thumbnail(string path)
+    {
+        var written = System.IO.File.Exists(path) ? System.IO.File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+        if (Thumbnails.TryGetValue(path, out var cached) && cached.Written == written)
+            return cached.Image;
+        if (CoverArt.LoadImage(path, 640) is not { } image)
+            return null;
+        Thumbnails[path] = (written, image);
+        return image;
+    }
 
     static Brush Frozen(Color color)
     {

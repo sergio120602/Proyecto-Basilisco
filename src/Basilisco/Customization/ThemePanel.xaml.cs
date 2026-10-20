@@ -36,6 +36,42 @@ public partial class ThemePanel : UserControl
 
     public event Action<ThemeResult>? Saved;
 
+    /// <summary>Han cambiado las opciones de rendimiento (calidad, reflejos, fondos en vídeo); se aplican al momento.</summary>
+    public event Action<BoxQuality, bool, bool>? PerformanceChanged;
+
+    /// <summary>Quiere optimizar la carpeta de datos (lo hace la ventana principal, que tiene la biblioteca).</summary>
+    public event Action? OptimizeRequested;
+
+    BoxQuality _quality;
+
+    /// <summary>Pone las opciones de rendimiento guardadas (antes de abrir).</summary>
+    public void SetPerformance(BoxQuality quality, bool reflections, bool animated)
+    {
+        _quality = quality;
+        SyncQuality();
+        ReflectionsToggle.IsChecked = reflections;
+        AnimatedToggle.IsChecked = animated;
+    }
+
+    void SyncQuality()
+    {
+        QualityHigh.IsChecked = _quality == BoxQuality.High;
+        QualityMedium.IsChecked = _quality == BoxQuality.Medium;
+        QualityLow.IsChecked = _quality == BoxQuality.Low;
+    }
+
+    void OnQualityClick(object sender, RoutedEventArgs e)
+    {
+        _quality = sender == QualityLow ? BoxQuality.Low : sender == QualityMedium ? BoxQuality.Medium : BoxQuality.High;
+        SyncQuality();
+        OnPerformanceClick(sender, e);
+    }
+
+    void OnPerformanceClick(object sender, RoutedEventArgs e) =>
+        PerformanceChanged?.Invoke(_quality, ReflectionsToggle.IsChecked == true, AnimatedToggle.IsChecked == true);
+
+    void OnOptimizeClick(object sender, RoutedEventArgs e) => OptimizeRequested?.Invoke();
+
     /// <summary>Se ha elegido otro modo (claro, nocturno o como Windows); se aplica al momento.</summary>
     public event Action<ColorMode>? ModeChanged;
 

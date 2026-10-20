@@ -119,7 +119,66 @@ public sealed class BoxModel
 
         SetArt(item);
         if (renderBackNow)
+        {
+            EnsureArt();
             EnsureBack();
+        }
+    }
+
+    bool _hasArt;
+    double _artScale = 1;
+
+    /// <summary>True si ya tiene pintadas la portada y el lomo (las cajas lejanas no las tienen, para ahorrar memoria).</summary>
+    public bool HasArt => _hasArt;
+
+    /// <summary>Resolución a la que están pintadas (1 = completa).</summary>
+    public double ArtScale => _artScale;
+
+    /// <summary>Con false, no se pintan los reflejos en el suelo (ahorra memoria y tiempo).</summary>
+    public static bool Reflections { get; set; } = true;
+
+    /// <summary>Pinta la portada y el lomo si aún no los tiene. Es lo que más cuesta: se hace solo con las cajas que se ven.</summary>
+    /// <param name="scale">Resolución (1 = completa); si ya estaba pintada a otra, se vuelve a pintar.</param>
+    public void EnsureArt(double scale = 1)
+    {
+        if (_hasArt && _artScale == scale)
+            return;
+        var back = _backRendered;
+        _hasArt = true;
+        _artScale = scale;
+        _backRendered = false;
+
+        var previous = CoverArt.RenderScale;
+        CoverArt.RenderScale = scale;
+        try
+        {
+            var front = CoverArt.RenderCover(_item);
+            _front.ImageSource = front;
+            _frontReflection.ImageSource = Reflections ? CoverArt.RenderReflection(front) : null;
+
+            var spine = CoverArt.RenderSpine(_item);
+            _spine.ImageSource = spine;
+            _spineReflection.ImageSource = Reflections ? CoverArt.RenderReflection(spine) : null;
+        }
+        finally
+        {
+            CoverArt.RenderScale = previous;
+        }
+        _back.ImageSource = _backReflection.ImageSource = null;
+        if (back)
+            EnsureBack();
+    }
+
+    /// <summary>Suelta las imágenes pintadas (la caja se ha alejado mucho); se vuelven a pintar si vuelve a verse.</summary>
+    public void ReleaseArt()
+    {
+        if (!_hasArt)
+            return;
+        _hasArt = false;
+        _backRendered = false;
+        _front.ImageSource = _frontReflection.ImageSource = null;
+        _spine.ImageSource = _spineReflection.ImageSource = null;
+        _back.ImageSource = _backReflection.ImageSource = null;
     }
 
     public void SetArt(CarouselItem item)
@@ -146,18 +205,12 @@ public sealed class BoxModel
         _edgeReflection.GradientStops[0].Color = Color.FromArgb(95, plastic.R, plastic.G, plastic.B);
         _edgeReflection.GradientStops[1].Color = Color.FromArgb(0, plastic.R, plastic.G, plastic.B);
 
-        var front = CoverArt.RenderCover(item);
-        _front.ImageSource = front;
-        _frontReflection.ImageSource = CoverArt.RenderReflection(front);
-
-        var spine = CoverArt.RenderSpine(item);
-        _spine.ImageSource = spine;
-        _spineReflection.ImageSource = CoverArt.RenderReflection(spine);
-
-        if (_backRendered)
+        // Las imágenes se pintan al verse la caja (EnsureArt); si ya estaban pintadas, se vuelven a pintar ahora.
+        if (_hasArt)
         {
-            _backRendered = false;
-            EnsureBack();
+            var scale = _artScale;
+            _hasArt = false;
+            EnsureArt(scale);
         }
     }
 
@@ -171,7 +224,7 @@ public sealed class BoxModel
         _pitch.Angle = pitch;
 
         // La contraportada solo se genera cuando hace falta: ahorra memoria con bibliotecas grandes.
-        if (yaw != 0)
+        if (yaw != 0 && _hasArt)
             EnsureBack();
 
         double y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
@@ -195,9 +248,19 @@ public sealed class BoxModel
             return;
 
         _backRendered = true;
-        var back = CoverArt.RenderBack(_item);
+        var previous = CoverArt.RenderScale;
+        CoverArt.RenderScale = _artScale;
+        BitmapSource back;
+        try
+        {
+            back = CoverArt.RenderBack(_item);
+        }
+        finally
+        {
+            CoverArt.RenderScale = previous;
+        }
         _back.ImageSource = back;
-        _backReflection.ImageSource = CoverArt.RenderReflection(back);
+        _backReflection.ImageSource = Reflections ? CoverArt.RenderReflection(back) : null;
     }
 
     GeometryModel3D AddFace(Model3DGroup group, Brush brush)

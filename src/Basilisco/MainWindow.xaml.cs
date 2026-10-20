@@ -97,6 +97,8 @@ public partial class MainWindow : Window
         SteamImporter.ImportRequested += ApplySteamImport;
         ThemeEditor.Saved += ApplyTheme;
         ThemeEditor.ModeChanged += SetTheme;
+        ThemeEditor.PerformanceChanged += ApplyPerformance;
+        ThemeEditor.OptimizeRequested += () => _ = OptimizeDataAsync();
         CaseView.PlayRequested += Launch;
         CaseView.Closed += () => Focus();
         FilterStrip.Closed += () =>
@@ -120,7 +122,7 @@ public partial class MainWindow : Window
         HeaderBar.SizeChanged += (_, _) => UpdateOverlayLayout();
         Activated += async (_, _) =>
         {
-            if (BackgroundVideo.Source is not null) BackgroundVideo.Play();
+            if (BackgroundVideo.Source is not null && _settings.AnimatedBackgrounds) BackgroundVideo.Play();
             EndPlaySession(returned: true);
             if (DateTime.Now - _lastSteamSync > TimeSpan.FromSeconds(30))
                 await SyncSteamPlaytimeAsync(online: false);
@@ -132,6 +134,8 @@ public partial class MainWindow : Window
         AutoShiftToggle.IsChecked = _settings.CarouselAutoShift;
         _flow.Aligned = _settings.CarouselAligned;
         AlignToggle.IsChecked = _settings.CarouselAligned;
+        _flow.Quality = _settings.QualityScale;
+        BoxModel.Reflections = _settings.Reflections;
         ShiftSlider.IsEnabled = !_settings.CarouselAutoShift;
         ApplyZoom(ZoomSlider.Value, save: false);
 
@@ -224,6 +228,66 @@ public partial class MainWindow : Window
         // Iconos de Windows: el sol para volver al modo claro y la luna para el nocturno.
         NightButton.Content = ThemeManager.IsDark ? "" : "";
         NightButton.ToolTip = ThemeManager.IsDark ? "Pasar al modo claro (N)" : "Pasar al modo nocturno (N)";
+    }
+
+    // ---- Rendimiento ----
+
+    /// <summary>Calidad de las cajas, reflejos y fondos en vídeo: se aplican al momento y se recuerdan.</summary>
+    void ApplyPerformance(BoxQuality quality, bool reflections, bool animated)
+    {
+        var repaint = quality != _settings.Quality || reflections != _settings.Reflections;
+        _settings.Quality = quality;
+        _settings.Reflections = reflections;
+        _settings.AnimatedBackgrounds = animated;
+        _settings.Save();
+
+        if (repaint)
+        {
+            _flow.Quality = _settings.QualityScale;
+            BoxModel.Reflections = reflections;
+            _flow.RepaintAll();
+        }
+        if (BackgroundVideo.Source is not null)
+        {
+            if (animated)
+                BackgroundVideo.Play();
+            else
+                BackgroundVideo.Pause();
+        }
+    }
+
+    /// <summary>
+    /// Optimizar la carpeta de datos: primero se mira cuánto se puede ahorrar, se pregunta, y si se acepta se reducen
+    /// las imágenes demasiado grandes y se borran los archivos que ya no usa nada.
+    /// </summary>
+    async Task OptimizeDataAsync()
+    {
+        ShowToast("Mirando la carpeta de datos…");
+        var games = Games.ToList();
+        var filters = Filters.ToList();
+        var report = await Task.Run(() => DataOptimizer.Analyze(games, filters, _settings));
+        if (report.IsEmpty)
+        {
+            MessageBox.Show(this, "La carpeta de datos ya está optimizada: no hay imágenes de más ni archivos sin usar.",
+                "Optimizar datos", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        static string Mb(long bytes) => $"{bytes / 1048576.0:0.#} MB";
+        var lines = new List<string>();
+        if (report.Large.Count > 0)
+            lines.Add($"• Reducir {report.Large.Count} imágenes más grandes de lo que se llega a ver ({Mb(report.LargeBytes)} ahora). Se quedan con el mismo nombre y formato; no se nota en pantalla.");
+        if (report.Orphans.Count > 0)
+            lines.Add($"• Borrar {report.Orphans.Count} archivos que ya no usa ningún juego, filtro ni consola ({Mb(report.OrphanBytes)}).");
+        var answer = MessageBox.Show(this, "Se puede aligerar basilisco-data:\n\n" + string.Join("\n", lines) + "\n\n¿Optimizar ahora?",
+            "Optimizar datos", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes)
+            return;
+
+        ShowToast("Optimizando la carpeta de datos…");
+        var done = await Task.Run(() => DataOptimizer.Apply(report));
+        _flow.RepaintAll();
+        ShowToast($"Datos optimizados: {Mb(done.SavedBytes)} menos");
     }
 
     // ---- Manuales ----
@@ -967,6 +1031,9 @@ public partial class MainWindow : Window
             {
                 BackgroundVideo.Source = new Uri(path);
                 BackgroundVideo.Play();
+                // Fondos quietos: se enseña el primer fotograma y se para (gasta mucho menos procesador).
+                if (!_settings.AnimatedBackgrounds)
+                    PauseVideoWhenReady();
             }
             else
             {
@@ -975,6 +1042,17 @@ public partial class MainWindow : Window
             BackgroundLayer.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(320)));
         };
         BackgroundLayer.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    void PauseVideoWhenReady()
+    {
+        void Opened(object? sender, RoutedEventArgs e)
+        {
+            BackgroundVideo.MediaOpened -= Opened;
+            if (!_settings.AnimatedBackgrounds)
+                BackgroundVideo.Pause();
+        }
+        BackgroundVideo.MediaOpened += Opened;
     }
 
     readonly HashSet<string> _converting = [];
@@ -2356,7 +2434,13 @@ public partial class MainWindow : Window
 
     void OnThemeClick(object sender, RoutedEventArgs e) => OpenThemeEditor();
 
-    void OpenThemeEditor() => ThemeEditor.Open(ImageStore.GetGlobalBackgroundPath(_settings), _settings.TextColor,
+    void OpenThemeEditor()
+    {
+        ThemeEditor.SetPerformance(_settings.Quality, _settings.Reflections, _settings.AnimatedBackgrounds);
+        OpenThemeEditorCore();
+    }
+
+    void OpenThemeEditorCore() => ThemeEditor.Open(ImageStore.GetGlobalBackgroundPath(_settings), _settings.TextColor,
         Games.Count(game => game.Background is not null || game.TextColor is not null), _settings.Theme);
 
     /// <summary>Apariencia general: fondo y color de las letras para todos los juegos.</summary>
