@@ -162,6 +162,8 @@ public sealed partial class VimmManualsProvider : ArtProvider
         "gb" => ["gb", "gameboy"],
         "gba" => ["gba", "gameboyadvance"],
         "nds" => ["ds", "nds", "nintendods"],
+        "nes" => ["nes"],
+        "snes" => ["snes", "supernintendo"],
         _ => [],
     };
 

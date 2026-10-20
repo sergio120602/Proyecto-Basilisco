@@ -126,6 +126,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.5.2** — Interior translúcido de las cajas y fondos de SteamGridDB
 - [x] **v0.5.3** — Imagen del interior de la caja (propia o de SteamGridDB), nítida a través del plástico
 - [x] **v0.5.4** — Ajustar el manual y el interior de la caja, y manuales originales de Vimm's Lair
+- [x] **v0.5.5** — NES, Super Nintendo, Nintendo Switch y Arcade, y cartuchos de Nintendo 64, DS y Switch en la caja abierta
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -137,7 +138,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 
 ## 🎮 Consolas
 
-Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, Nintendo 64, GameCube, Wii, Wii U, Game Boy, Game Boy Advance, Nintendo DS o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
+Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, NES, Super Nintendo, Nintendo 64, GameCube, Wii, Wii U, Nintendo Switch, Game Boy, Game Boy Advance, Nintendo DS, Arcade o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
 
 Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gb.png` (Game Boy), `gba.png` (Game Boy Advance), `n64.png`, `gc.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
 
@@ -157,7 +158,7 @@ Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Stea
 
 Al darle a un juego se abre su caja: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha, en su bandeja. Al darle a **Jugar**, el disco gira, se inicia el juego y la caja se cierra sola.
 
-El interior de la caja es de plástico translúcido del color de su consola. En Personalizar («Interior de la caja») puedes poner una imagen tuya o de SteamGridDB, que se ve nítida a través del plástico, de lado a lado de la caja abierta.
+En Nintendo 64, Nintendo DS y Nintendo Switch, en lugar del disco va su cartucho, que sale de la caja al darle a Jugar. El interior de la caja es de plástico translúcido del color de su consola. En Personalizar («Interior de la caja») puedes poner una imagen tuya o de SteamGridDB, que se ve nítida a través del plástico, de lado a lado de la caja abierta.
 
 El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco de Steam Game Covers o de LaunchBox, o para el manual un póster, un fondo o la pantalla de título de LaunchBox. Si no tienen imagen, el disco se dibuja con la portada y el manual es un librito con el nombre del juego.
 

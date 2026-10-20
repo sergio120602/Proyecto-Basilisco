@@ -28,6 +28,10 @@ public static class PlatformArt
         "wii" => Color.FromRgb(0xF3, 0xF3, 0xF3),
         "wiiu" => Color.FromRgb(0x2E, 0x9F, 0xD0),
         "nds" => Color.FromRgb(0xD8, 0xD9, 0xDB),
+        "nes" => Color.FromRgb(0x14, 0x14, 0x16),
+        "snes" => Color.FromRgb(0x1E, 0x1E, 0x22),
+        "switch" => Color.FromRgb(0xD7, 0x15, 0x1C),
+        "arcade" => Color.FromRgb(0x10, 0x0E, 0x16),
         "pc" => Color.FromRgb(0x18, 0x18, 0x1A),
         _ => DefaultPlastic,
     };
@@ -76,6 +80,10 @@ public static class PlatformArt
             case "wii": DrawWii(dc, band); break;
             case "wiiu": DrawWiiU(dc, band); break;
             case "nds": DrawNds(dc, band); break;
+            case "nes": DrawNes(dc, band); break;
+            case "snes": DrawSnes(dc, band); break;
+            case "switch": DrawSwitch(dc, band); break;
+            case "arcade": DrawArcade(dc, band); break;
             case "pc": DrawPc(dc, band); break;
             default: DrawDefault(dc, band); break;
         }
@@ -230,6 +238,72 @@ public static class PlatformArt
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0xF0, 0xF1, 0xF2), Color.FromRgb(0xC4, 0xC6, 0xC9), 0), null, band);
         VerticalText(dc, "NINTENDO DS", TextArea(band, band.Width * 0.5, band.Width * 0.5), Gray(0x3C), Face("Segoe UI", FontWeights.Black), maxFill: 0.72);
         Separator(dc, band, Color.FromRgb(0xA8, 0xAA, 0xAD));
+    }
+
+    // NES: franja negra con un recuadro rojo arriba y «NINTENDO ENTERTAINMENT SYSTEM» en vertical.
+    static void DrawNes(DrawingContext dc, Rect band)
+    {
+        Fill(dc, band, Color.FromRgb(0x0C, 0x0C, 0x0E));
+        var logo = LogoArea(band);
+        logo.Inflate(-band.Width * 0.06, -band.Width * 0.2);
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xD3, 0x1F, 0x2B)), null, logo);
+        var label = Text("NES", logo.Height * 0.7, White, Face("Segoe UI", FontWeights.Black));
+        dc.DrawText(label, new Point(logo.X + (logo.Width - label.Width) / 2, logo.Y + (logo.Height - label.Height) / 2));
+        VerticalText(dc, "ENTERTAINMENT SYSTEM", TextArea(band, logo.Bottom + band.Width * 0.4, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Bold), maxFill: 0.5);
+        Separator(dc, band, Color.FromRgb(0x30, 0x30, 0x34));
+    }
+
+    // Super Nintendo: franja gris oscura con los cuatro botones de colores arriba y «SUPER NINTENDO» en vertical.
+    static void DrawSnes(DrawingContext dc, Rect band)
+    {
+        dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x2A, 0x2A, 0x30), Color.FromRgb(0x16, 0x16, 0x1A), 90), null, band);
+        var logo = LogoArea(band);
+        var r = logo.Width * 0.17;
+        var c = new Point(logo.X + logo.Width / 2, logo.Y + logo.Height / 2);
+        (Color Color, Vector Offset)[] buttons =
+        [
+            (Color.FromRgb(0xE2, 0x2B, 0x2B), new Vector(r * 1.25, 0)),
+            (Color.FromRgb(0xF2, 0xC2, 0x1B), new Vector(0, r * 1.25)),
+            (Color.FromRgb(0x2E, 0x9E, 0x4F), new Vector(-r * 1.25, 0)),
+            (Color.FromRgb(0x2B, 0x5C, 0xC8), new Vector(0, -r * 1.25)),
+        ];
+        foreach (var (color, offset) in buttons)
+            dc.DrawEllipse(new SolidColorBrush(color), null, c + offset, r, r);
+        VerticalText(dc, "SUPER NINTENDO", TextArea(band, logo.Bottom + band.Width * 0.35, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Black, FontStyles.Italic), maxFill: 0.62);
+        Separator(dc, band, Color.FromRgb(0x3A, 0x3A, 0x40));
+    }
+
+    // Nintendo Switch: franja roja con los dos mandos dibujados arriba y «NINTENDO SWITCH» en vertical.
+    static void DrawSwitch(DrawingContext dc, Rect band)
+    {
+        Fill(dc, band, Color.FromRgb(0xE6, 0x00, 0x12));
+        var logo = LogoArea(band);
+        logo.Inflate(-band.Width * 0.08, -band.Width * 0.04);
+        var half = logo.Width / 2;
+        var pen = new Pen(White, logo.Width * 0.07);
+        var left = new Rect(logo.X, logo.Y, half - logo.Width * 0.04, logo.Height);
+        dc.DrawRoundedRectangle(null, pen, left, half * 0.5, half * 0.5);
+        dc.DrawEllipse(White, null, new Point(left.X + left.Width / 2, left.Y + left.Height * 0.32), half * 0.15, half * 0.15);
+        var right = new Rect(logo.X + half + logo.Width * 0.04, logo.Y, half - logo.Width * 0.04, logo.Height);
+        dc.DrawRoundedRectangle(White, null, right, half * 0.5, half * 0.5);
+        dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xE6, 0x00, 0x12)), null, new Point(right.X + right.Width / 2, right.Y + right.Height * 0.66), half * 0.15, half * 0.15);
+        VerticalText(dc, "NINTENDO SWITCH", TextArea(band, logo.Bottom + band.Width * 0.4, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Bold), maxFill: 0.62);
+        Separator(dc, band, Color.FromRgb(0xA8, 0x00, 0x0E));
+    }
+
+    // Arcade: franja negra con una palanca de recreativa arriba y «ARCADE» en vertical, en rosa neón.
+    static void DrawArcade(DrawingContext dc, Rect band)
+    {
+        dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x14, 0x0C, 0x24), Color.FromRgb(0x06, 0x05, 0x0A), 90), null, band);
+        var logo = LogoArea(band);
+        var neon = new SolidColorBrush(Color.FromRgb(0xFF, 0x3E, 0xC8));
+        var stick = new Point(logo.X + logo.Width / 2, logo.Y + logo.Height * 0.62);
+        dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(0x2C, 0x2C, 0x34)), null,
+            new Rect(logo.X + logo.Width * 0.12, stick.Y, logo.Width * 0.76, logo.Height * 0.26), logo.Width * 0.06, logo.Width * 0.06);
+        dc.DrawLine(new Pen(new SolidColorBrush(Color.FromRgb(0xB8, 0xBC, 0xC4)), logo.Width * 0.08), stick, new Point(stick.X, logo.Y + logo.Height * 0.25));
+        dc.DrawEllipse(neon, null, new Point(stick.X, logo.Y + logo.Height * 0.2), logo.Width * 0.18, logo.Width * 0.18);
+        VerticalText(dc, "ARCADE", TextArea(band, logo.Bottom + band.Width * 0.35, band.Width * 0.5), neon, Face("Segoe UI", FontWeights.Black), maxFill: 0.62);
+        Separator(dc, band, Color.FromRgb(0x2A, 0x1C, 0x40));
     }
 
     // PC: franja gris muy oscura con la etiqueta «PC» arriba y «PC GAME» en vertical.

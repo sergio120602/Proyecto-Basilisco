@@ -250,10 +250,9 @@ public partial class CustomizePanel : UserControl
         var shape = BoxShape.Of(_format, _platform);
         var aspect = shape.Width / shape.Height;
         var plastic = PlatformArt.Plastic(_platform);
-        var discFraction = Math.Min(shape.Width, shape.Height) * 0.88 / shape.Width;
         var manualPath = CurrentExtra(GameExtra.Manual);
         var inside = CurrentExtra(GameExtra.Inside) is { } insidePath ? CoverArt.LoadImage(insidePath, 2400) : null;
-        var disc = OpenCaseArt.RenderDisc(CurrentExtra(GameExtra.Disc), CurrentPath(_format, Face.Front));
+        var content = CartridgeArt.ContentFor(_platform, shape, CurrentExtra(GameExtra.Disc), CurrentPath(_format, Face.Front));
         var name = NameBox.Text.Trim();
 
         if (extra == GameExtra.Inside)
@@ -263,7 +262,7 @@ public partial class CustomizePanel : UserControl
             var spread = OpenCaseArt.SpreadSize(aspect);
             FrameEditor.Open("Ajustar el interior de la caja", _insideFrame ?? OpenCaseArt.FillFrame(inside, spread),
                 CoverArt.FillZoom(new Size(inside.Width, inside.Height), spread, rotateWide: false),
-                frame => OpenCaseArt.RenderSpread(plastic, aspect, discFraction, manualPath, name, inside, _manualFrame, frame, disc),
+                frame => OpenCaseArt.RenderSpread(plastic, shape, manualPath, name, inside, _manualFrame, frame, content),
                 frame => _insideFrame = frame);
         }
         else
@@ -331,7 +330,7 @@ public partial class CustomizePanel : UserControl
     {
         DiscText.Text = CurrentExtra(GameExtra.Disc) is { } disc
             ? $"Disco: {Path.GetFileName(disc)}"
-            : "Sin imagen de disco: se dibuja uno con la portada.";
+            : "Sin imagen: el disco o la pegatina del cartucho llevan la portada.";
         ManualText.Text = CurrentExtra(GameExtra.Manual) is { } manual
             ? $"Manual: {Path.GetFileName(manual)}"
             : "Sin imagen de manual: se ve el interior de la caja con el nombre del juego.";
