@@ -41,14 +41,13 @@ public sealed class CoverFlow
             _shift = Math.Clamp(value, MinShift, MaxShift);
             _camera.Position = CameraPosition;
             _camera.LookDirection = CameraTarget - CameraPosition;
-            if (_aligned)
-                ApplyLayout();
         }
     }
 
     /// <summary>
-    /// Alineación moderna: las cajas de los lados bajan lo justo para que, en pantalla, su base quede en la misma
-    /// línea recta que la de la caja del centro. Sin ella (la clásica), las del fondo se ven más arriba, en curva.
+    /// Alineación moderna: todas las cajas de frente, sin girar y a la misma profundidad, una al lado de otra en una
+    /// fila recta (como la biblioteca de Steam en modo Big Picture): las bases y los altos quedan en línea horizontal.
+    /// Sin ella, la clásica: las de los lados giradas y apiladas hacia el fondo.
     /// </summary>
     public bool Aligned
     {
@@ -60,25 +59,6 @@ public sealed class CoverFlow
         }
     }
     bool _aligned;
-
-    /// <summary>
-    /// Altura a la que hay que poner una caja a la profundidad <paramref name="z"/> para que su base se vea a la misma
-    /// altura en pantalla que la de la caja del centro (en y = 0, z = 0). La cámara no gira de lado, así que no
-    /// depende de x, y la cuenta es exacta: se iguala la proyección de los dos puntos.
-    /// </summary>
-    double AlignedY(double z)
-    {
-        var c = CameraPosition;
-        var forward = CameraTarget - c;
-        forward.Normalize();
-        var right = Vector3D.CrossProduct(forward, new Vector3D(0, 1, 0));
-        right.Normalize();
-        var up = Vector3D.CrossProduct(right, forward);
-        var v0 = new Point3D(0, 0, 0) - c;
-        var ratio = Vector3D.DotProduct(v0, up) / Vector3D.DotProduct(v0, forward);
-        var denominator = up.Y - ratio * forward.Y;
-        return Math.Abs(denominator) < 1e-9 ? 0 : c.Y + (z - c.Z) * (ratio * forward.Z - up.Z) / denominator;
-    }
 
     public const double MinShift = -0.4;
     public const double MaxShift = 1.2;
@@ -152,8 +132,6 @@ public sealed class CoverFlow
             _zoom = Math.Clamp(value, MinZoom, MaxZoom);
             _camera.Position = CameraPosition;
             _camera.LookDirection = CameraTarget - CameraPosition;
-            if (_aligned)
-                ApplyLayout();
         }
     }
 
@@ -431,6 +409,10 @@ public sealed class CoverFlow
         // la separación es la misma para todas las laterales, nunca se cruzan entre ellas.
         var neighborOffset = NeighborOffsetX * (0.5 + 0.5 * CenterWidth() / BoxShape.Square.Width);
 
+        // Fila moderna: el centro de cada caja, una junto a otra según su ancho.
+        var rowCenters = _aligned ? RowCenters() : null;
+        var rowFocus = rowCenters is null ? 0 : Interpolate(rowCenters, _position);
+
         // Estantería: el centro de cada lomo, uno junto a otro según el grosor de cada caja.
         var blend = _shelfBlend;
         var centers = blend > 0 ? ShelfCenters() : null;
@@ -451,6 +433,16 @@ public sealed class CoverFlow
             var cz = -(near * NeighborDepth + stacked * StackSpacingDepth);
             var cAngle = side * near * SideAngle;
             var cOpacity = distance <= FadeStart ? 1 : Math.Max(0, (MaxVisibleDistance - distance) / (MaxVisibleDistance - FadeStart));
+            if (rowCenters is not null)
+            {
+                // De frente y a la misma profundidad que la del centro: la fila queda recta en pantalla.
+                cx = Interpolate(rowCenters, slot.Shown) - rowFocus;
+                cz = 0;
+                cAngle = 0;
+                var reach = Math.Abs(cx);
+                carouselVisible = reach < RowVisible;
+                cOpacity = reach <= RowFadeStart ? 1 : Math.Max(0, (RowVisible - reach) / (RowVisible - RowFadeStart));
+            }
 
             // Posición en la estantería: girada 90° (el lomo mira a la cámara) y con los lomos alineados.
             double sx = 0, sz = 0, sOpacity = 0;
@@ -470,8 +462,7 @@ public sealed class CoverFlow
             var model = slot.Model;
             model.Position.OffsetX = cx + (sx - cx) * blend;
             model.Position.OffsetZ = cz + (sz - cz) * blend;
-            var alignedY = _aligned && cz < 0 ? AlignedY(cz) * (1 - blend) : 0;
-            model.Position.OffsetY = slot.Lift * ShelfLift * blend + alignedY;
+            model.Position.OffsetY = slot.Lift * ShelfLift * blend;
             model.SideRotation.Angle = cAngle + (90 - cAngle) * blend;
             model.SetInspect(slot.Yaw, slot.Pitch);
             model.SetOpacity((carouselVisible ? cOpacity : 0) * (1 - blend) + (shelfVisible ? sOpacity : 0) * blend);
@@ -484,6 +475,20 @@ public sealed class CoverFlow
         // Las partes semitransparentes (reflejos y cajas lejanas) se pintan de atrás hacia delante.
         _drawOrder.Sort((a, b) => b.Distance.CompareTo(a.Distance));
         SyncScene();
+    }
+
+    // Fila moderna: hueco entre cajas y hasta dónde se ven (se desvanecen hacia los bordes).
+    const double RowGap = 0.1;
+    const double RowFadeStart = 2.6;
+    const double RowVisible = 3.6;
+
+    /// <summary>Centro de cada caja en la fila moderna (cada una ocupa su ancho más un hueco).</summary>
+    double[] RowCenters()
+    {
+        var centers = new double[_slots.Count];
+        for (var i = 1; i < _slots.Count; i++)
+            centers[i] = centers[i - 1] + (BoxModel.WidthOf(_slots[i - 1].Item) + BoxModel.WidthOf(_slots[i].Item)) / 2 + RowGap;
+        return centers;
     }
 
     /// <summary>Centro de cada lomo en la estantería (cada caja ocupa su grosor más un pequeño hueco).</summary>
