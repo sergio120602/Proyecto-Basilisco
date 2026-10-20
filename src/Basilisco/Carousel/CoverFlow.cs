@@ -474,6 +474,7 @@ public sealed class CoverFlow
 
         // Las partes semitransparentes (reflejos y cajas lejanas) se pintan de atrás hacia delante.
         _drawOrder.Sort((a, b) => b.Distance.CompareTo(a.Distance));
+        UpdateArt();
         SyncScene();
     }
 
@@ -515,11 +516,68 @@ public sealed class CoverFlow
         return values[left] + (values[right] - values[left]) * t;
     }
 
+    // Cuántas cajas nuevas se pintan como mucho en cada fotograma al deslizar (cada una tarda unos milisegundos).
+    const int ArtPerFrame = 2;
+
+    /// <summary>Calidad de las cajas (1 alta, 0,75 media, 0,5 baja): la resolución a la que se pintan.</summary>
+    public double Quality { get; set; } = 1;
+
+    // La caja del centro y sus vecinas, a la calidad elegida; las demás se ven pequeñas y van a la mitad.
+    double ScaleFor(Slot slot) => slot.Distance <= 1.6 || _shelfBlend > 0 ? Quality : Quality * 0.5;
+    // Las cajas que se alejan más que esto sueltan sus imágenes (y las vuelven a pintar si vuelven).
+    const double ReleaseDistance = MaxVisibleDistance + 2;
+    bool _firstArt = true;
+
+    /// <summary>
+    /// Pinta las imágenes de las cajas que se ven (las más cercanas al centro primero, unas pocas por fotograma para
+    /// que deslizar vaya fluido) y suelta las de las que están muy lejos. Así, con cientos de juegos solo hay en
+    /// memoria las de una docena de cajas, y el arranque no tiene que pintarlas todas.
+    /// </summary>
+    void UpdateArt()
+    {
+        var budget = _firstArt ? int.MaxValue : ArtPerFrame;
+        _firstArt = false;
+        var pending = false;
+        foreach (var slot in _drawOrder.OrderBy(slot => slot.Distance))
+        {
+            var scale = ScaleFor(slot);
+            if (slot.Model.HasArt && slot.Model.ArtScale == scale)
+                continue;
+            if (budget-- > 0)
+                slot.Model.EnsureArt(scale);
+            else
+                pending = true;
+        }
+
+        var position = _position;
+        foreach (var slot in _slots)
+        {
+            if (slot.Model.HasArt && Math.Abs(slot.Shown - position) > ReleaseDistance && _shelfBlend == 0)
+                slot.Model.ReleaseArt();
+        }
+
+        // Si han quedado cajas sin pintar, se siguen pintando en los siguientes fotogramas.
+        if (pending)
+            StartAnimation();
+    }
+
+    /// <summary>Vuelve a pintar todas las cajas (al cambiar la calidad o los reflejos).</summary>
+    public void RepaintAll()
+    {
+        foreach (var slot in _slots)
+            slot.Model.ReleaseArt();
+        _firstArt = true;
+        ApplyLayout();
+    }
+
     void SyncScene()
     {
         _desiredModels.Clear();
-        foreach (var slot in _drawOrder)
-            _desiredModels.Add(slot.Model.Reflection);
+        if (BoxModel.Reflections)
+        {
+            foreach (var slot in _drawOrder)
+                _desiredModels.Add(slot.Model.Reflection);
+        }
         foreach (var slot in _drawOrder)
             _desiredModels.Add(slot.Model.Box);
 

@@ -3,6 +3,19 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.2] - 2026-10-21
+
+- **Arranque mucho más rápido y menos memoria**: con una biblioteca de 155 juegos, la ventana sale en unos **3 segundos** (antes unos 25) y la aplicación ocupa unos **600 MB** en lugar de 1,5 GB.
+  - Las cajas solo se pintan cuando se ven, unas pocas en cada fotograma, y las que quedan lejos sueltan sus imágenes. La del centro y sus vecinas van a resolución completa; las del fondo, a la mitad.
+  - Cada imagen se lee una sola vez, ya al tamaño que se va a ver, en lugar de leerse entera y reducirse después.
+  - La base de datos de LaunchBox se suelta de la memoria si no se usa en 3 minutos y se vuelve a cargar sola cuando hace falta.
+  - Las imágenes de los menús de filtros y consolas se guardan ya preparadas, así que abrirlos otra vez es instantáneo.
+- Nueva sección **Rendimiento** en Apariencia:
+  - **Calidad de las cajas** (Alta, Media o Baja). En Baja la memoria baja unos 100 MB más.
+  - **Reflejos en el suelo**: se pueden quitar.
+  - **Fondos en vídeo en movimiento**: sin esta opción, el vídeo se queda quieto en el primer fotograma y gasta mucho menos procesador.
+  - Botón **Optimizar datos…**: reduce las imágenes de `basilisco-data` que son más grandes de lo que se llega a ver (mismo nombre y formato) y borra los archivos que ya no usa ningún juego. Antes de tocar nada, dice cuánto se ahorra y pide confirmación.
+
 ## [0.6.1] - 2026-10-20
 
 - Arreglada la **alineación moderna**: en lugar de bajar las cajas de los lados (que acababan por debajo del suelo), ahora todas las cajas quedan **de frente, sin girar y a la misma profundidad**, una al lado de otra en una **fila recta horizontal**, como la biblioteca de Steam en modo Big Picture. Las bases y los altos quedan en línea con cualquier zoom.

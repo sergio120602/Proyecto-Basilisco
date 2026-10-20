@@ -43,8 +43,20 @@ public sealed class AppSettings
     /// <summary>Alineación moderna del carrusel: las bases de todas las cajas en línea recta.</summary>
     public bool CarouselAligned { get; set; }
 
+    /// <summary>Calidad de las cajas: la resolución a la que se pintan (menos calidad, menos memoria).</summary>
+    public BoxQuality Quality { get; set; } = BoxQuality.High;
+
+    /// <summary>Reflejos de las cajas en el suelo.</summary>
+    public bool Reflections { get; set; } = true;
+
+    /// <summary>Los fondos en vídeo se mueven; con false se quedan quietos en el primer fotograma (gastan mucho menos).</summary>
+    public bool AnimatedBackgrounds { get; set; } = true;
+
     /// <summary>Zoom del carrusel (barra de abajo a la derecha).</summary>
     public double Zoom { get; set; } = 1.2;
+
+    /// <summary>Escala de las texturas según la calidad.</summary>
+    public double QualityScale => Quality switch { BoxQuality.Medium => 0.75, BoxQuality.Low => 0.5, _ => 1.0 };
 
     public static AppSettings Load()
     {
@@ -73,3 +85,7 @@ public sealed class AppSettings
         }
     }
 }
+
+/// <summary>Calidad de las cajas del carrusel.</summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BoxQuality>))]
+public enum BoxQuality { High, Medium, Low }

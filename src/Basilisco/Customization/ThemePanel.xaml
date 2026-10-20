@@ -65,6 +65,27 @@
                         <TextBox x:Name="ColorBox" Style="{StaticResource FieldTextBox}" FontSize="14" TextChanged="OnColorBoxChanged"/>
                     </DockPanel>
 
+                    <!-- Rendimiento: menos calidad o sin reflejos, menos memoria; y limpiar la carpeta de datos -->
+                    <TextBlock Text="RENDIMIENTO" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
+                    <WrapPanel>
+                        <TextBlock Text="Calidad de las cajas" FontSize="13" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="2,0,12,8"/>
+                        <ToggleButton x:Name="QualityHigh" Style="{StaticResource FilterToggle}" Content="Alta" Click="OnQualityClick"/>
+                        <ToggleButton x:Name="QualityMedium" Style="{StaticResource FilterToggle}" Content="Media" Click="OnQualityClick"/>
+                        <ToggleButton x:Name="QualityLow" Style="{StaticResource FilterToggle}" Content="Baja" Click="OnQualityClick"
+                                      ToolTip="Las cajas a la mitad de resolución: ocupan la cuarta parte de memoria"/>
+                    </WrapPanel>
+                    <WrapPanel>
+                        <ToggleButton x:Name="ReflectionsToggle" Style="{StaticResource FilterToggle}" Content="Reflejos en el suelo" Click="OnPerformanceClick"/>
+                        <ToggleButton x:Name="AnimatedToggle" Style="{StaticResource FilterToggle}" Content="Fondos en vídeo en movimiento" Click="OnPerformanceClick"
+                                      ToolTip="Sin esto, los fondos en vídeo se quedan quietos: gastan mucho menos procesador"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,2,0,0">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Optimizar datos…" Margin="10,0,0,0" Click="OnOptimizeClick"
+                                ToolTip="Reduce las imágenes más grandes de lo necesario y borra los archivos que ya no usa ningún juego"/>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   Text="Aligera basilisco-data: imágenes más pequeñas y sin restos."/>
+                    </DockPanel>
+
                     <TextBlock Text="JUEGOS CON APARIENCIA PROPIA" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
                     <DockPanel>
                         <Button x:Name="ClearOwnButton" DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Quitar las de cada juego"

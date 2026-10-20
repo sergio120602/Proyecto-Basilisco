@@ -157,7 +157,7 @@ public static class CoverArt
             dc.PushOpacityMask(new LinearGradientBrush(Color.FromArgb(95, 0, 0, 0), Color.FromArgb(0, 0, 0, 0), new Point(0, 1), new Point(0, 0.5)));
             dc.DrawImage(face, new Rect(0, 0, width, height));
             dc.Pop();
-        });
+        }, scaled: false);
     }
 
     /// <summary>Carga una imagen sin bloquear el archivo. Devuelve null si no se puede leer.</summary>
@@ -166,15 +166,22 @@ public static class CoverArt
     {
         try
         {
-            var image = Decode(path, decodeWidth: 0);
-            if (image.PixelWidth > maxWidth)
-                image = Decode(path, maxWidth);
-            return image;
+            // Una sola decodificación, ya al tamaño que hace falta (antes se decodificaba entera y luego otra vez reducida).
+            var width = PixelWidthOf(path);
+            return Decode(path, width > maxWidth ? maxWidth : 0);
         }
         catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
             return null;
         }
+    }
+
+    /// <summary>Ancho de la imagen leyendo solo su cabecera (sin decodificarla entera).</summary>
+    static int PixelWidthOf(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation | BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
+        return decoder.Frames[0].PixelWidth;
     }
 
     static BitmapImage Decode(string path, int decodeWidth)
@@ -356,12 +363,25 @@ public static class CoverArt
             TextAlignment = alignment,
         };
 
-    static BitmapSource Rasterize(int width, int height, Action<DrawingContext> draw)
+    /// <summary>
+    /// Escala a la que se pintan las caras (1 = resolución completa). El carrusel la baja para las cajas lejanas y
+    /// según la calidad elegida: a la mitad, la imagen ocupa la cuarta parte de memoria.
+    /// </summary>
+    public static double RenderScale { get; set; } = 1;
+
+    static BitmapSource Rasterize(int width, int height, Action<DrawingContext> draw, bool scaled = true)
     {
+        var scale = scaled ? RenderScale : 1;
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
+        {
+            if (scale != 1)
+                dc.PushTransform(new ScaleTransform(scale, scale));
             draw(dc);
+        }
 
+        width = Math.Max(1, (int)Math.Round(width * scale));
+        height = Math.Max(1, (int)Math.Round(height * scale));
         var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(visual);
         bitmap.Freeze();

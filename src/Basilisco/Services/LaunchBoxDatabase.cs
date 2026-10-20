@@ -72,6 +72,31 @@ public static class LaunchBoxDatabase
     static Dictionary<int, LaunchBoxGame>? _games;
     static List<(string Normalized, LaunchBoxGame Game)> _names = [];
 
+    // La base de datos cargada ocupa cientos de MB: si no se usa en un rato, se suelta (y se vuelve a cargar sola,
+    // en unos segundos, la próxima vez que haga falta).
+    static readonly TimeSpan UnloadAfter = TimeSpan.FromMinutes(3);
+    static DateTime _lastUse = DateTime.Now;
+    static readonly Timer UnloadTimer = new(_ => UnloadIfIdle(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+
+    static void Touch() => _lastUse = DateTime.Now;
+
+    static void UnloadIfIdle()
+    {
+        if (_games is null || DateTime.Now - _lastUse < UnloadAfter || !Lock.Wait(0))
+            return;
+        try
+        {
+            _games = null;
+            _names = [];
+            _loadedVersion = 0;
+        }
+        finally
+        {
+            Lock.Release();
+        }
+        GC.Collect(2, GCCollectionMode.Optimized, blocking: false, compacting: true);
+    }
+
     /// <summary>True si ya está descargada (aunque aún no se haya cargado en memoria).</summary>
     public static bool IsDownloaded => File.Exists(IndexPath);
 
@@ -82,6 +107,7 @@ public static class LaunchBoxDatabase
     /// <param name="upgrade">Si el índice descargado es de una versión anterior (sin discos), se vuelve a descargar.</param>
     public static async Task EnsureReadyAsync(IProgress<string>? status, CancellationToken cancellation, bool forceDownload = false, bool upgrade = false)
     {
+        Touch();
         await Lock.WaitAsync(cancellation);
         try
         {
@@ -112,6 +138,7 @@ public static class LaunchBoxDatabase
     /// <summary>Carga el índice si ya está descargado; nunca descarga (para las imágenes por defecto, que no preguntan).</summary>
     public static async Task<bool> TryLoadAsync(CancellationToken cancellation)
     {
+        Touch();
         if (_games is not null)
             return true;
         if (!IsDownloaded)
@@ -120,7 +147,11 @@ public static class LaunchBoxDatabase
         return _games is not null;
     }
 
-    public static LaunchBoxGame? Find(int id) => _games?.GetValueOrDefault(id);
+    public static LaunchBoxGame? Find(int id)
+    {
+        Touch();
+        return _games?.GetValueOrDefault(id);
+    }
 
     /// <summary>
     /// Fecha de lanzamiento de un juego por su nombre: solo si el nombre coincide de verdad (o un nombre alternativo),
@@ -128,6 +159,7 @@ public static class LaunchBoxDatabase
     /// </summary>
     public static DateTime? FindReleaseDate(string name, string? platform)
     {
+        Touch();
         if (_games is null)
             return null;
 
@@ -153,6 +185,7 @@ public static class LaunchBoxDatabase
     /// <param name="kind">Solo juegos que tengan imágenes de esa clase.</param>
     public static List<LaunchBoxGame> Search(string term, string? platform, ArtKind kind, int max = 40)
     {
+        Touch();
         if (_games is null)
             return [];
 
@@ -337,6 +370,7 @@ public static class LaunchBoxDatabase
     /// </summary>
     public static LaunchBoxGame? FindGame(string name, string? platform)
     {
+        Touch();
         if (_games is null)
             return null;
         var query = Normalize(name);
