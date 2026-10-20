@@ -85,6 +85,10 @@
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="Tile" Property="BorderBrush" Value="#3E6FD8"/>
                                                             </Trigger>
+                                                            <!-- Los logotipos, sobre fondo oscuro (suelen ser blancos y transparentes) -->
+                                                            <DataTrigger Binding="{Binding Dark}" Value="True">
+                                                                <Setter TargetName="Tile" Property="Background" Value="#1B1F26"/>
+                                                            </DataTrigger>
                                                             <!-- Los fondos, apaisados -->
                                                             <DataTrigger Binding="{Binding Wide}" Value="True">
                                                                 <Setter TargetName="Thumb" Property="Width" Value="300"/>

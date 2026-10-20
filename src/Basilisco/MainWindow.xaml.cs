@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbPortrait = new(CoverFormat.Portrait);
     readonly SteamGridDbProvider _steamGridDbHeroes = new(heroes: true);
     readonly SteamGridDbProvider _steamGridDbInside = new(inside: true);
+    readonly SteamGridDbProvider _steamGridDbLogos = new(logos: true);
     readonly VimmManualsProvider _vimm = new();
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
@@ -88,6 +89,7 @@ public partial class MainWindow : Window
         FormatEditor.Applied += ApplyFormat;
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
+        FilterEditor.LogoSearchRequested += name => ArtSearch.Open(_steamGridDbLogos, _settings, name, FilterEditor.SetImage);
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
         ThemeEditor.Saved += ApplyTheme;

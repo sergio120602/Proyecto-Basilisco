@@ -131,6 +131,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.5.6** — Nombre del juego fijo y centrado arriba
 - [x] **v0.5.7** — Altura de las cajas, a mano o automática según el zoom
 - [x] **v0.5.8** — Menú de filtros en una franja con los logotipos en grande
+- [x] **v0.5.9** — Logotipos de SteamGridDB para los filtros
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

@@ -248,13 +248,14 @@
         <customization:FilterStripPanel x:Name="FilterStrip"/>
         <customization:OpenCasePanel x:Name="CaseView"/>
         <customization:CustomizePanel x:Name="Customizer"/>
-        <customization:ArtSearchPanel x:Name="ArtSearch"/>
         <customization:FilterPanel x:Name="FilterEditor"/>
         <customization:FolderImportPanel x:Name="FolderImporter"/>
         <customization:PlatformPickerPanel x:Name="PlatformPicker"/>
         <customization:FormatPanel x:Name="FormatEditor"/>
         <customization:SteamPanel x:Name="SteamImporter"/>
         <customization:ThemePanel x:Name="ThemeEditor"/>
+        <!-- El buscador de imágenes se abre encima de Personalizar y del editor de filtros -->
+        <customization:ArtSearchPanel x:Name="ArtSearch"/>
         <!-- El lector de manuales va encima de todo: se abre desde la caja abierta y desde Personalizar -->
         <customization:ManualReaderPanel x:Name="ManualReader"/>
     </Grid>

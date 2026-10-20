@@ -27,6 +27,11 @@ public partial class FilterPanel : UserControl
     public event Action<FilterResult>? Saved;
     public event Action<GameFilter>? DeleteRequested;
 
+    /// <summary>Buscar un logotipo en SteamGridDB (con el nombre del filtro); lo abre la ventana principal.</summary>
+    public event Action<string>? LogoSearchRequested;
+
+    void OnSearchLogoClick(object sender, RoutedEventArgs e) => LogoSearchRequested?.Invoke(NameBox.Text.Trim());
+
     public bool IsOpen => Visibility == Visibility.Visible;
 
     public FilterPanel()

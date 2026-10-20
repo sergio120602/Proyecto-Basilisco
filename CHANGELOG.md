@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.9] - 2026-10-20
+
+- Las imágenes de los **filtros** se pueden buscar en **SteamGridDB**: en el editor de filtros, «Buscar en SteamGridDB» busca los **logotipos** del juego (PNG con fondo transparente, hechos por la comunidad) con el nombre del filtro. Las miniaturas de los logotipos se ven sobre fondo oscuro, porque muchos son blancos.
+- El buscador de imágenes se abre ahora por encima del editor de filtros.
+
 ## [0.5.8] - 2026-10-20
 
 - Nuevo **menú de filtros**: al pulsar «Filtros» se despliega bajo la barra de arriba una **franja negra** de lado a lado con cada filtro en grande, con su **logotipo** (o su nombre en letras blancas si aún no tiene) y cuántos juegos tiene. Al pasar por encima (o al moverse con las flechas o el mando) la casilla se destaca con un **borde dorado**, y el filtro que se está viendo lleva el borde dorado fino. Al final están «+ Nuevo filtro» y «Editar filtro» (que pasa a elegir qué filtro editar); con clic derecho se edita un filtro directamente. Se cierra con Esc, B o haciendo clic fuera.
