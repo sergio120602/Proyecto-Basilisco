@@ -73,7 +73,9 @@ public static class OpenCaseArt
     /// La bandeja de la caja: plástico translúcido con el hueco del disco y el botón del centro que lo sujeta.
     /// Debajo del plástico se ve, nítida, la mitad derecha de la imagen del interior (<paramref name="inside"/>).
     /// </summary>
-    public static BitmapSource RenderTray(Color plastic, double aspect, double discFraction, BitmapSource? inside = null, ImageFrame? insideFrame = null)
+    /// <param name="cartSlot">Para un cartucho: su tamaño (en fracción del ancho y el alto de la bandeja). Null: un disco.</param>
+    public static BitmapSource RenderTray(Color plastic, double aspect, double discFraction, BitmapSource? inside = null, ImageFrame? insideFrame = null,
+                                          Size? cartSlot = null)
     {
         var width = 768;
         var height = (int)Math.Round(width / aspect);
@@ -85,6 +87,15 @@ public static class OpenCaseArt
         return Render(width, height, dc =>
         {
             DrawPlastic(dc, plastic, inside, new Rect(0, 0, width, height), 70, rightHalf: true, insideFrame);
+            if (cartSlot is { } slot)
+            {
+                // El hueco a medida donde encaja el cartucho.
+                var place = ContentCenter(cartridge: true);
+                var hole = new Rect(width * (place.X - slot.Width / 2) - 8, height * (place.Y - slot.Height / 2) - 8, width * slot.Width + 16, height * slot.Height + 16);
+                dc.DrawRoundedRectangle(new SolidColorBrush(WithAlpha(dark, 150)), new Pen(new SolidColorBrush(WithAlpha(Shade(plastic, 0.55), 200)), 3), hole, 14, 14);
+                dc.DrawRectangle(null, new Pen(new SolidColorBrush(Shade(plastic, 0.5)), 6), new Rect(3, 3, width - 6, height - 6));
+                return;
+            }
             // El hueco donde descansa el disco, un poco más hondo (también translúcido).
             dc.DrawEllipse(new RadialGradientBrush(WithAlpha(dark, 150), WithAlpha(plastic, 90)), new Pen(new SolidColorBrush(WithAlpha(Shade(plastic, 0.55), 200)), 3),
                 center, radius * 1.03, radius * 1.03);
@@ -194,6 +205,9 @@ public static class OpenCaseArt
             ], 35), null, area);
     }
 
+    /// <summary>Dónde va el disco (en el centro) o el cartucho (un poco más arriba), en fracción de la bandeja.</summary>
+    public static Point ContentCenter(bool cartridge) => cartridge ? new Point(0.5, 0.56) : new Point(0.5, 0.5);
+
     /// <summary>El encuadre con el que la imagen llena el hueco (el de siempre, si no se ha ajustado).</summary>
     public static ImageFrame FillFrame(BitmapSource image, Size area) =>
         new(CoverArt.FillZoom(new Size(image.Width, image.Height), area, rotateWide: false));
@@ -214,22 +228,25 @@ public static class OpenCaseArt
     /// La caja abierta vista de frente, en plano (la tapa a la izquierda y la bandeja con el disco a la derecha),
     /// para el editor de encuadre.
     /// </summary>
-    public static BitmapSource RenderSpread(Color plastic, double aspect, double discFraction, string? manualPath, string title,
-                                            BitmapSource? inside, ImageFrame? manualFrame, ImageFrame? insideFrame, BitmapSource? disc)
+    public static BitmapSource RenderSpread(Color plastic, BoxShape shape, string? manualPath, string title,
+                                            BitmapSource? inside, ImageFrame? manualFrame, ImageFrame? insideFrame, CaseContent content)
     {
+        var aspect = shape.Width / shape.Height;
         var lid = RenderInside(plastic, aspect, manualPath, title, inside, manualFrame, insideFrame);
-        var tray = RenderTray(plastic, aspect, discFraction, inside, insideFrame);
+        var tray = RenderTray(plastic, aspect, content.Size.Width / shape.Width, inside, insideFrame, SlotOf(content, shape));
         return Render(lid.PixelWidth + tray.PixelWidth, lid.PixelHeight, dc =>
         {
             dc.DrawImage(lid, new Rect(0, 0, lid.PixelWidth, lid.PixelHeight));
             dc.DrawImage(tray, new Rect(lid.PixelWidth, 0, tray.PixelWidth, tray.PixelHeight));
-            if (disc is not null)
-            {
-                var size = tray.PixelWidth * discFraction;
-                dc.DrawImage(disc, new Rect(lid.PixelWidth + (tray.PixelWidth - size) / 2, (tray.PixelHeight - size) / 2, size, size));
-            }
+            var center = ContentCenter(content.Cartridge);
+            var (w, h) = (tray.PixelWidth * content.Size.Width / shape.Width, tray.PixelHeight * content.Size.Height / shape.Height);
+            dc.DrawImage(content.Image, new Rect(lid.PixelWidth + tray.PixelWidth * center.X - w / 2, tray.PixelHeight * center.Y - h / 2, w, h));
         });
     }
+
+    /// <summary>El hueco del cartucho en la bandeja (fracción de su ancho y alto), o null si es un disco.</summary>
+    public static Size? SlotOf(CaseContent content, BoxShape shape) =>
+        content.Cartridge ? new Size(content.Size.Width / shape.Width, content.Size.Height / shape.Height) : null;
 
     static Color WithAlpha(Color color, byte alpha) => Color.FromArgb(alpha, color.R, color.G, color.B);
 

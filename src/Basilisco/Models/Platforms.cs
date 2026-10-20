@@ -13,13 +13,17 @@ public static class Platforms
         new("psp", "PSP"),
         new("xbox", "Xbox"),
         new("x360", "Xbox 360"),
+        new("nes", "NES"),
+        new("snes", "Super Nintendo"),
         new("n64", "Nintendo 64"),
         new("gc", "GameCube"),
         new("wii", "Wii"),
         new("wiiu", "Wii U"),
+        new("switch", "Nintendo Switch"),
         new("gb", "Game Boy"),
         new("gba", "Game Boy Advance"),
         new("nds", "Nintendo DS"),
+        new("arcade", "Arcade"),
         new("pc", "PC"),
     ];
 

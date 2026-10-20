@@ -62,16 +62,15 @@ public partial class OpenCasePanel : UserControl
         var shape = BoxShape.Of(item);
         var plastic = PlatformArt.Plastic(game.Platform);
         var aspect = shape.Width / shape.Height;
-        // Un disco de 12 cm en una caja de DVD (13,5 cm de ancho); en las cajas pequeñas, que quepa.
-        var disc = Math.Min(shape.Width, shape.Height) * 0.88;
+        // Un disco de 12 cm en una caja de DVD (13,5 cm de ancho), o el cartucho de las consolas que lo usan.
+        var content = CartridgeArt.ContentFor(game.Platform, shape, ImageStore.GetExtraPath(game, GameExtra.Disc), item.ImagePath);
         // El plástico de dentro es translúcido: deja ver la imagen del interior, si el juego tiene.
         _inside = ImageStore.GetExtraPath(game, GameExtra.Inside) is { } insidePath ? CoverArt.LoadImage(insidePath, 2400) : null;
         _scene.Show(shape,
             CoverArt.RenderCover(item),
             OpenCaseArt.RenderInside(plastic, aspect, ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside, game.ManualFrame, game.InsideFrame),
-            OpenCaseArt.RenderTray(plastic, aspect, disc / shape.Width, _inside, game.InsideFrame),
-            OpenCaseArt.RenderDisc(ImageStore.GetExtraPath(game, GameExtra.Disc), item.ImagePath),
-            disc);
+            OpenCaseArt.RenderTray(plastic, aspect, content.Size.Width / shape.Width, _inside, game.InsideFrame, OpenCaseArt.SlotOf(content, shape)),
+            content);
 
         Visibility = Visibility.Visible;
         _ = Dispatcher.BeginInvoke(() => Focus(), DispatcherPriority.Input);

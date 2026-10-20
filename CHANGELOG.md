@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.5.5] - 2026-10-20
+
+- Nuevas consolas: **NES**, **Super Nintendo**, **Nintendo Switch** y **Arcade**, con su franja dibujada en la portada, el color de su caja y sus medidas reales (caja de cartón de NES, caja apaisada de Super Nintendo y estuche rojo de Switch). LaunchBox y Vimm's Lair las reconocen.
+- **Cartuchos** en la caja abierta: los juegos de **Nintendo 64**, **Nintendo DS** y **Nintendo Switch** llevan su cartucho en lugar de un disco, dibujado como el de verdad y con la imagen del juego en la pegatina (la de «Disco o cartucho» si tiene, o la portada). Va en un hueco a su medida en la bandeja y, al darle a Jugar, sale de la caja hacia arriba en lugar de girar.
+
 ## [0.5.4] - 2026-10-19
 
 - **Ajustar** el manual y el interior de la caja: en Personalizar, «Ajustar…» junto a la imagen del manual y a la del interior abre el editor de encuadre (rueda para ampliar, arrastrar para mover) viendo la caja abierta de frente, con el disco y todo lo elegido.

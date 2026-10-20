@@ -26,6 +26,8 @@ public sealed class OpenCaseScene
 
     readonly AxisAngleRotation3D _lid = new(new Vector3D(0, 1, 0), 0);
     readonly AxisAngleRotation3D _disc = new(new Vector3D(0, 0, 1), 0);
+    readonly TranslateTransform3D _lift = new();
+    bool _cartridge;
     readonly TranslateTransform3D _shift = new();
 
     BoxShape _shape = BoxShape.Square;
@@ -61,8 +63,10 @@ public sealed class OpenCaseScene
     public bool IsSpinning => _spinning;
 
     /// <param name="cover">La portada tal como se ve en el carrusel (por fuera de la tapa).</param>
-    public void Show(BoxShape shape, BitmapSource cover, BitmapSource inside, BitmapSource tray, BitmapSource disc, double discDiameter)
+    /// <param name="content">El disco (gira al jugar) o el cartucho (se levanta, como al sacarlo para meterlo en la consola).</param>
+    public void Show(BoxShape shape, BitmapSource cover, BitmapSource inside, BitmapSource tray, CaseContent content)
     {
+        _cartridge = content.Cartridge;
         _shape = shape;
         double w = shape.Width, h = shape.Height, d = Math.Max(shape.Depth, 0.03);
         var plastic = new SolidColorBrush(Color.FromRgb(0x20, 0x22, 0x27));
@@ -84,11 +88,15 @@ public sealed class OpenCaseScene
         // Gira sobre el lomo: el eje está en x = 0, a media altura de la caja.
         lid.Transform = new RotateTransform3D(_lid, new Point3D(0, 0, d / 2));
 
-        // El disco, encima de la bandeja; gira sobre su centro.
-        var r = discDiameter / 2;
-        var discModel = Face(new(w / 2 - r, h / 2 - r, 0.004), new(w / 2 + r, h / 2 - r, 0.004),
-                             new(w / 2 + r, h / 2 + r, 0.004), new(w / 2 - r, h / 2 + r, 0.004), new ImageBrush(disc));
-        discModel.Transform = new RotateTransform3D(_disc, new Point3D(w / 2, h / 2, 0));
+        // El disco o el cartucho, encima de la bandeja. El disco gira sobre su centro; el cartucho se levanta.
+        var (rx, ry) = (content.Size.Width / 2, content.Size.Height / 2);
+        var center = OpenCaseArt.ContentCenter(content.Cartridge);
+        // En la escena la altura crece hacia arriba; en las texturas, hacia abajo.
+        var (cx, cy) = (w * center.X, h * (1 - center.Y));
+        var discModel = Face(new(cx - rx, cy - ry, 0.004), new(cx + rx, cy - ry, 0.004),
+                             new(cx + rx, cy + ry, 0.004), new(cx - rx, cy + ry, 0.004), new ImageBrush(content.Image));
+        _lift.OffsetX = _lift.OffsetY = _lift.OffsetZ = 0;
+        discModel.Transform = new Transform3DGroup { Children = { new RotateTransform3D(_disc, new Point3D(cx, cy, 0)), _lift } };
 
         // Lo transparente (el disco) va al final para que se vea lo que hay detrás.
         var group = new Model3DGroup { Transform = _shift };
@@ -170,8 +178,18 @@ public sealed class OpenCaseScene
         if (_spinning)
         {
             _spinTime += dt;
-            _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp);
-            _disc.Angle = (_disc.Angle - _spin * 360 * dt) % 360;
+            if (_cartridge)
+            {
+                // El cartucho sale de la caja hacia arriba, acercándose un poco.
+                var t = Ease(Math.Min(1, _spinTime / SpinRamp));
+                _lift.OffsetY = t * _shape.Height * 0.8;
+                _lift.OffsetZ = t * 0.25;
+            }
+            else
+            {
+                _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp);
+                _disc.Angle = (_disc.Angle - _spin * 360 * dt) % 360;
+            }
         }
         Apply();
 

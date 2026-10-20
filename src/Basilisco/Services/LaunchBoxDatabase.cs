@@ -213,6 +213,10 @@ public static class LaunchBoxDatabase
         "wii" => "Nintendo Wii",
         "wiiu" => "Nintendo Wii U",
         "nds" => "Nintendo DS",
+        "nes" => "Nintendo Entertainment System",
+        "snes" => "Super Nintendo Entertainment System",
+        "switch" => "Nintendo Switch",
+        "arcade" => "Arcade",
         "pc" => "Windows",
         _ => null,
     };
