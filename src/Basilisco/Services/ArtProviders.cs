@@ -15,8 +15,9 @@ public sealed record ArtGame(string Id, string Name, string? Detail);
 /// <param name="Tall">Imagen muy alta y estrecha (un lomo): la miniatura se enseña tumbada para que se lea.</param>
 /// <param name="Tag">Datos propios del servicio para descargarla (por ejemplo, de qué página sale).</param>
 /// <param name="Wide">Imagen muy apaisada (un fondo): la miniatura se enseña más ancha.</param>
+/// <param name="Dark">Se enseña sobre fondo oscuro (los logotipos suelen ser blancos y con fondo transparente).</param>
 public sealed record ArtImage(string Url, string ThumbUrl, int Width, int Height, string? Label = null, bool Tall = false, object? Tag = null,
-                              bool Wide = false)
+                              bool Wide = false, bool Dark = false)
 {
     public string SizeText => Width > 0 && Height > 0 ? $"{Width} × {Height}" : Label ?? "";
 }
@@ -141,7 +142,9 @@ public abstract class ArtProvider
 /// (1920 × 620 o 3840 × 1240) hechas para ser el fondo del juego.
 /// </summary>
 /// <remarks>Con <paramref name="inside"/>, para el interior de la caja: los «heroes» primero y después todas las carátulas.</remarks>
-public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square, bool heroes = false, bool inside = false) : ArtProvider
+/// <remarks>Con <paramref name="logos"/>, los logotipos del juego (PNG con fondo transparente), para los filtros.</remarks>
+public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square, bool heroes = false, bool inside = false,
+                                        bool logos = false) : ArtProvider
 {
     string Dimensions => format == Models.CoverFormat.Portrait
         ? "600x900,342x482,660x930"
@@ -150,7 +153,7 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
     const string BaseUrl = "https://www.steamgriddb.com/api/v2";
 
     public override string Name => "SteamGridDB";
-    public override string ImageKind => inside ? "imagen para el interior" : heroes ? "fondo" : "portada";
+    public override string ImageKind => logos ? "logotipo" : inside ? "imagen para el interior" : heroes ? "fondo" : "portada";
     public override string KeyHelp => "Entra en steamgriddb.com con tu cuenta, ve a Preferencias → API y genera una clave (es gratis e inmediata).";
     public override string KeyUrl => "https://www.steamgriddb.com/profile/preferences/api";
 
@@ -178,6 +181,8 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
     {
         if (heroes)
             return await GetGridsAsync(game, key, "", cancellation, "heroes");
+        if (logos)
+            return await GetGridsAsync(game, key, "", cancellation, "logos");
         if (inside)
         {
             var all = await GetGridsAsync(game, key, "", cancellation, "heroes");
@@ -204,7 +209,7 @@ public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.Cover
             if (GetString(grid, "url") is not { } url)
                 continue;
             images.Add(new ArtImage(url, GetString(grid, "thumb") ?? url, GetInt(grid, "width"), GetInt(grid, "height"),
-                Wide: heroes || kind == "heroes" || GetInt(grid, "width") > GetInt(grid, "height") * 1.3));
+                Wide: heroes || kind == "heroes" || GetInt(grid, "width") > GetInt(grid, "height") * 1.3, Dark: kind == "logos"));
         }
         return images;
     }
