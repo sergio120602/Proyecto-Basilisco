@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.1] - 2026-10-20
+
+- Arreglada la **alineación moderna**: en lugar de bajar las cajas de los lados (que acababan por debajo del suelo), ahora todas las cajas quedan **de frente, sin girar y a la misma profundidad**, una al lado de otra en una **fila recta horizontal**, como la biblioteca de Steam en modo Big Picture. Las bases y los altos quedan en línea con cualquier zoom.
+
 ## [0.6.0] - 2026-10-20
 
 - **Alineación moderna** del carrusel (botón abajo a la derecha, junto a la altura): las cajas de los lados bajan lo justo para que la base de todas quede en **línea recta** con la del centro. Sin él, la alineación clásica (las del fondo más arriba, en curva). Se recuerda al cerrar.
