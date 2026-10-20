@@ -244,6 +244,8 @@
         </Grid>
 
         <!-- La caja abierta, al darle a un juego: manual, disco y «Jugar» -->
+        <!-- Menú de filtros: franja negra con los logotipos, bajo la barra de arriba -->
+        <customization:FilterStripPanel x:Name="FilterStrip"/>
         <customization:OpenCasePanel x:Name="CaseView"/>
         <customization:CustomizePanel x:Name="Customizer"/>
         <customization:ArtSearchPanel x:Name="ArtSearch"/>
