@@ -21,6 +21,9 @@ public static class AppInfo
     /// <summary>Fondos propios de cada juego (imágenes y vídeos).</summary>
     public static string BackgroundsDirectory { get; } = Path.Combine(DataDirectory, "backgrounds");
 
+    /// <summary>Imágenes de las consolas para el menú de consolas (&lt;consola&gt;.png, .jpg…).</summary>
+    public static string PlatformImagesDirectory { get; } = Path.Combine(DataDirectory, "platforms");
+
     /// <summary>Manuales de los juegos en PDF (creados por Basilisco o elegidos por el usuario).</summary>
     public static string ManualsDirectory { get; } = Path.Combine(DataDirectory, "manuals");
 }

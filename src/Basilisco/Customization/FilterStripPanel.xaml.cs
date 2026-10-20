@@ -34,6 +34,7 @@ public partial class FilterStripPanel : UserControl
     int _current;
     bool _editing;
     bool _padMode;
+    string _title = "FILTROS", _editTitle = "";
 
     public event Action? Closed;
 
@@ -46,8 +47,13 @@ public partial class FilterStripPanel : UserControl
     }
 
     /// <param name="top">Dónde empieza la franja (justo debajo de la barra de arriba), en las unidades de este panel.</param>
-    public void Open(IReadOnlyList<FilterTile> tiles, double top, bool padMode)
+    /// <param name="title">Título de la franja («FILTROS», «CONSOLAS»).</param>
+    /// <param name="editTitle">Título mientras se elige qué editar.</param>
+    public void Open(IReadOnlyList<FilterTile> tiles, double top, bool padMode, string title = "FILTROS",
+                     string editTitle = "ELIGE EL FILTRO QUE QUIERES EDITAR")
     {
+        _title = title;
+        _editTitle = editTitle;
         Strip.Margin = new Thickness(0, top, 0, 0);
         _padMode = padMode;
         _editing = false;
@@ -168,7 +174,7 @@ public partial class FilterStripPanel : UserControl
 
     void UpdateHint()
     {
-        TitleText.Text = _editing ? "ELIGE EL FILTRO QUE QUIERES EDITAR" : "FILTROS";
+        TitleText.Text = _editing ? _editTitle : _title;
         HintText.Text = _padMode
             ? "← →  Elegir     ·     A  Aceptar     ·     B  Cerrar"
             : "← →  Elegir     ·     Enter  Aceptar     ·     Clic derecho  Editar     ·     Esc  Cerrar";

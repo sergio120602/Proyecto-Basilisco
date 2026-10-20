@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.0] - 2026-10-20
+
+- **Alineación moderna** del carrusel (botón abajo a la derecha, junto a la altura): las cajas de los lados bajan lo justo para que la base de todas quede en **línea recta** con la del centro. Sin él, la alineación clásica (las del fondo más arriba, en curva). Se recuerda al cerrar.
+- **Botones rectangulares** en lugar de redondeados en toda la aplicación (la barra de arriba, los menús, los paneles y las opciones).
+- El menú de **Consolas** es ahora la misma **franja negra** que el de filtros, con la **imagen de cada consola** en grande (o su nombre en blanco) y el borde dorado. Con «Personalizar consola» (o clic derecho) se le pone imagen: la foto de la consola de la base de datos de **LaunchBox**, una imagen propia o ninguna. Se guardan en `basilisco-data/platforms/`.
+- Si el servidor de imágenes no responde a la primera (pasa a veces con el de LaunchBox), la descarga se reintenta sola.
+
 ## [0.5.9] - 2026-10-20
 
 - Las imágenes de los **filtros** se pueden buscar en **SteamGridDB**: en el editor de filtros, «Buscar en SteamGridDB» busca los **logotipos** del juego (PNG con fondo transparente, hechos por la comunidad) con el nombre del filtro. Las miniaturas de los logotipos se ven sobre fondo oscuro, porque muchos son blancos.

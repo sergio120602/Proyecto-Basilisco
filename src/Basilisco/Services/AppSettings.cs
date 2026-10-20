@@ -40,6 +40,9 @@ public sealed class AppSettings
     /// <summary>Altura automática: las cajas bajan lo justo para no meterse debajo del nombre del juego.</summary>
     public bool CarouselAutoShift { get; set; } = true;
 
+    /// <summary>Alineación moderna del carrusel: las bases de todas las cajas en línea recta.</summary>
+    public bool CarouselAligned { get; set; }
+
     /// <summary>Zoom del carrusel (barra de abajo a la derecha).</summary>
     public double Zoom { get; set; } = 1.2;
 

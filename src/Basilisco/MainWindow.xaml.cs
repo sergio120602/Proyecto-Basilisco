@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbHeroes = new(heroes: true);
     readonly SteamGridDbProvider _steamGridDbInside = new(inside: true);
     readonly SteamGridDbProvider _steamGridDbLogos = new(logos: true);
+    readonly LaunchBoxPlatformProvider _launchBoxPlatforms = new();
     readonly VimmManualsProvider _vimm = new();
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
@@ -89,6 +90,8 @@ public partial class MainWindow : Window
         FormatEditor.Applied += ApplyFormat;
         FilterEditor.Saved += ApplyFilter;
         FilterEditor.DeleteRequested += DeleteFilter;
+        ConsoleEditor.LaunchBoxRequested += platform => ArtSearch.Open(_launchBoxPlatforms, _settings, platform.Name, ConsoleEditor.SetImage);
+        ConsoleEditor.Closed += () => Focus();
         FilterEditor.LogoSearchRequested += name => ArtSearch.Open(_steamGridDbLogos, _settings, name, FilterEditor.SetImage);
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
@@ -127,6 +130,8 @@ public partial class MainWindow : Window
         _flow.Shift = _settings.CarouselShift;
         ShiftSlider.Value = _flow.Shift;
         AutoShiftToggle.IsChecked = _settings.CarouselAutoShift;
+        _flow.Aligned = _settings.CarouselAligned;
+        AlignToggle.IsChecked = _settings.CarouselAligned;
         ShiftSlider.IsEnabled = !_settings.CarouselAutoShift;
         ApplyZoom(ZoomSlider.Value, save: false);
 
@@ -181,7 +186,7 @@ public partial class MainWindow : Window
         FrameworkElement[] scaled =
         [
             HeaderBar, FooterBar, TitlePanel, PlayTimeText, Toast,
-            FilterStrip, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
+            FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
         ];
         foreach (var element in scaled)
             element.LayoutTransform = _uiScale;
@@ -506,7 +511,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => FilterStrip.IsOpen || ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
+    bool IsPanelOpen => ConsoleEditor.IsOpen || FilterStrip.IsOpen || ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
                         FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
@@ -605,28 +610,35 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Grupo «Consolas»: las que tienen juegos (y la que estás viendo).</summary>
+    /// <remarks>
+    /// Se abre la misma franja negra que la de los filtros: cada consola con su imagen (de LaunchBox o propia) o su
+    /// nombre, y «Personalizar consola» al final para ponerle imagen.
+    /// </remarks>
     void OnConsolesTabClick(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu { LayoutTransform = _uiScale };
-        menu.SetResourceReference(BackgroundProperty, "CardBrush");
-        menu.SetResourceReference(ForegroundProperty, "TextBrush");
-        menu.Items.Add(Item("Todas las consolas", () => SelectView(null, _activeFilter), isChecked: _activePlatform is null));
-        menu.Items.Add(new Separator());
+        RefreshFilterTabs();
+        static string Games(int count) => count == 1 ? "1 juego" : $"{count} juegos";
 
-        var any = false;
+        var tiles = new List<FilterTile>
+        {
+            new("Todas las consolas", null, Games(this.Games.Count), _activePlatform is null, () => SelectView(null, _activeFilter)),
+        };
         foreach (var platform in Platforms.All)
         {
             var count = CountGames(platform);
             if (count == 0 && platform.Id != _activePlatform)
                 continue;
-            any = true;
-            var id = platform.Id;
-            menu.Items.Add(Item($"{platform.Name}  ({count})", () => SelectView(id, null), isChecked: id == _activePlatform));
+            var chosen = platform;
+            tiles.Add(new FilterTile(platform.Name, ImageStore.GetPlatformImagePath(platform.Id), $"{platform.Name} · {Games(count)}",
+                platform.Id == _activePlatform, () => SelectView(chosen.Id, null), Edit: () => ConsoleEditor.Open(chosen)));
         }
-        if (!any)
-            menu.Items.Add(Item("Aún no hay juegos con consola (elígela en Personalizar)", null, enabled: false));
+        if (tiles.Count > 1)
+            tiles.Add(new FilterTile("Personalizar consola", null, "Ponerle una imagen (de LaunchBox o tuya)", false,
+                () => FilterStrip.StartEditing(), IsAction: true, KeepOpen: true));
 
-        ShowMenu(ConsolesTab, menu);
+        var scale = _uiScale.ScaleX;
+        var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
+        FilterStrip.Open(tiles, top, _padMode, "CONSOLAS", "ELIGE LA CONSOLA QUE QUIERES PERSONALIZAR");
     }
 
     /// <summary>
@@ -2170,6 +2182,15 @@ public partial class MainWindow : Window
         _flow.Shift = e.NewValue;
         _settings.CarouselShift = _flow.Shift;
         _settings.Save();
+        UpdateOverlayLayout();
+    }
+
+    /// <summary>Cambia entre la alineación clásica (en curva) y la moderna (las bases en línea recta).</summary>
+    void OnAlignClick(object sender, RoutedEventArgs e)
+    {
+        _settings.CarouselAligned = AlignToggle.IsChecked == true;
+        _settings.Save();
+        _flow.Aligned = _settings.CarouselAligned;
         UpdateOverlayLayout();
     }
 
