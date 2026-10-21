@@ -242,6 +242,10 @@
 
             </StackPanel>
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- Descarga masiva: rellena lo que les falte a los juegos (portada, contraportada, lomo, interior, disco, manual) -->
+                <Button x:Name="MetadataButton" Style="{StaticResource PillButton}" Content="Descarga Metadatos Actualización" Margin="0,0,30,0"
+                        VerticalAlignment="Center" Focusable="False" Click="OnMetadataClick"
+                        ToolTip="Busca y pone sola la portada, contraportada, lomo, interior de la caja, disco y manual de los juegos a los que les falte"/>
                 <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
             </StackPanel>

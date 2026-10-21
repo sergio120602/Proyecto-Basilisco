@@ -2,6 +2,9 @@ using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Basilisco.Services;
 
@@ -185,6 +188,98 @@ public sealed partial class SpineArchiveProvider : ArtProvider
             .Select(spine => new ArtImage(spine.ImageUrl, spine.ImageUrl, 0, 0,
                 string.Join(" · ", new[] { spine.Author, spine.Platform }.Where(text => !string.IsNullOrEmpty(text))), Tall: true))
             .ToList() ?? []);
+
+    /// <summary>
+    /// Quita de un lomo la franja de arriba con el logotipo de Nintendo Switch (para los juegos de otras consolas).
+    /// La franja es de un solo color de lado a lado (casi siempre rojo) con el logotipo en blanco encima: se buscan las
+    /// filas seguidas desde arriba que son de ese color y se corta justo debajo. En los lomos de Switch ocupa del 12 al
+    /// 17 % de la altura; si no se encuentra una así, el lomo se deja como está. Devuelve la ruta del lomo (temporal).
+    /// </summary>
+    public static string HideConsoleLogo(string path)
+    {
+        BitmapSource image;
+        try
+        {
+            var decoded = new BitmapImage();
+            decoded.BeginInit();
+            decoded.UriSource = new Uri(path, UriKind.Absolute);
+            decoded.CacheOption = BitmapCacheOption.OnLoad;
+            decoded.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+            decoded.EndInit();
+            image = new FormatConvertedBitmap(decoded, PixelFormats.Bgra32, null, 0);
+            image.Freeze();
+        }
+        catch (Exception ex) when (ex is IOException or NotSupportedException or ArgumentException or InvalidOperationException
+                                   or System.Runtime.InteropServices.COMException)
+        {
+            return path;
+        }
+
+        int width = image.PixelWidth, height = image.PixelHeight;
+        if (height < width * 4)
+            return path; // No es un lomo.
+        var stride = width * 4;
+        var pixels = new byte[stride * height];
+        image.CopyPixels(pixels, stride, 0);
+
+        // Color de la franja: el de una fila de arriba (la mediana de cada canal, para que no cuente el logotipo).
+        var top = Math.Max(1, height / 200);
+        byte Median(int channel)
+        {
+            var values = new byte[width];
+            for (var x = 0; x < width; x++)
+                values[x] = pixels[top * stride + x * 4 + channel];
+            Array.Sort(values);
+            return values[width / 2];
+        }
+        int b = Median(0), g = Median(1), r = Median(2);
+
+        // Filas de ese color (al menos un 30 %: el resto es el logotipo); se aceptan huecos cortos entre las letras.
+        var end = -1;
+        var misses = 0;
+        var maxGap = Math.Max(2, height / 100);
+        for (var y = top; y < height / 4; y++)
+        {
+            var same = 0;
+            for (var x = 0; x < width; x++)
+            {
+                var o = y * stride + x * 4;
+                if (Math.Abs(pixels[o] - b) + Math.Abs(pixels[o + 1] - g) + Math.Abs(pixels[o + 2] - r) < 90)
+                    same++;
+            }
+            if (same >= width * 0.3)
+            {
+                end = y;
+                misses = 0;
+            }
+            else if (++misses > maxGap)
+            {
+                break;
+            }
+        }
+
+        var band = (end + 1) / (double)height;
+        if (band < 0.08 || band > 0.22)
+            return path;
+
+        // La franja mide siempre lo mismo (la plantilla de Switch 2 y la de Switch 1): si el dibujo de debajo es de un color
+        // parecido, se ha contado de más, así que se ajusta a la medida de la plantilla más cercana.
+        foreach (var template in new[] { 0.126, 0.166 })
+        {
+            if (Math.Abs(band - template) <= 0.025)
+                band = Math.Min(band, template);
+        }
+        var cut = Math.Min(height - 1, (int)Math.Round(band * height) + height / 250);
+        var cropped = new CroppedBitmap(image, new Int32Rect(0, cut, width, height - cut));
+        var folder = Path.Combine(Path.GetTempPath(), "Basilisco");
+        Directory.CreateDirectory(folder);
+        var file = Path.Combine(folder, $"{Guid.NewGuid():N}.png");
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(cropped));
+        using (var stream = File.Create(file))
+            encoder.Save(stream);
+        return file;
+    }
 
     [GeneratedRegex(@"\b(ii|iii|iv|v|vi|vii|viii|ix|x)\b")]
     private static partial Regex RomanNumeral();

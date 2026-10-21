@@ -1803,36 +1803,114 @@ public partial class MainWindow : Window
         }
     }
 
+    MetadataFetcher? _metadata;
+    MetadataFetcher Metadata => _metadata ??= new MetadataFetcher(_settings);
+
     /// <summary>
-    /// Imagen por defecto para una cara de un formato: la portada de SteamGridDB (con las medidas del formato)
-    /// y la contraportada de TheGamesDB. Null si falta la clave, no hay resultados o el servicio no responde.
+    /// Imagen por defecto para una cara de un formato, con el orden de servicios de cada parte (ver <see cref="MetadataFetcher"/>).
+    /// Null si no se encuentra. LaunchBox solo se usa si su base de datos ya está descargada.
     /// </summary>
-    /// <remarks>Si no hay resultado y la base de datos de LaunchBox ya está descargada, se prueba con ella.</remarks>
-    async Task<string?> AutoFetchAsync(string name, string? platform, CoverFormat format, Face face, CancellationToken cancellation)
+    Task<string?> AutoFetchAsync(string name, string? platform, CoverFormat format, Face face, CancellationToken cancellation) =>
+        Metadata.FetchAsync(name, platform, format, MetadataFetcher.PartOf(face), cancellation);
+
+    CancellationTokenSource? _metadataRun;
+
+    /// <summary>
+    /// «Descarga Metadatos Actualización»: a todos los juegos a los que les falta alguna parte (portada, contraportada,
+    /// lomo, interior, disco o manual) se les busca sola, con el orden de servicios de cada parte. Lo que ya tienen no se
+    /// toca. Mientras se descarga, el mismo botón la cancela.
+    /// </summary>
+    async Task DownloadMissingMetadataAsync()
     {
-        // Las cajas rectangulares no llevan franja: la portada real de LaunchBox (con su franja impresa) va primero.
-        if (format == CoverFormat.Portrait && face == Face.Front && LaunchBoxDatabase.IsDownloaded)
+        if (_metadataRun is { } running)
         {
-            _launchBoxFront.PlatformHint = platform;
-            if (await ArtAutoFetch.FirstImageAsync(_launchBoxFront, _settings, name, cancellation) is { } real)
-                return real;
+            running.Cancel();
+            return;
         }
 
-        ArtProvider? provider = face switch
+        var games = Games.Where(game => MetadataFetcher.Missing(game).Count > 0).ToList();
+        if (games.Count == 0)
         {
-            Face.Front => format == CoverFormat.Portrait ? _steamGridDbPortrait : _steamGridDb,
-            Face.Back => _theGamesDb,
-            _ => null,
-        };
-        if (provider is not null && await ArtAutoFetch.FirstImageAsync(provider, _settings, name, cancellation) is { } path)
-            return path;
+            ShowToast("Todos los juegos tienen ya todas sus imágenes");
+            return;
+        }
 
-        if (!LaunchBoxDatabase.IsDownloaded || face == Face.Spine)
-            return null;
-        var launchBox = face == Face.Front ? _launchBoxFront : _launchBoxBack;
-        launchBox.PlatformHint = platform;
-        return await ArtAutoFetch.FirstImageAsync(launchBox, _settings, name, cancellation);
+        var answer = MessageBox.Show(this,
+            $"A {games.Count} {(games.Count == 1 ? "juego le falta" : "juegos les falta")} alguna imagen (portada, contraportada, lomo, interior de la caja, disco o manual).\n\n" +
+            "Se buscarán en LaunchBox, SteamGridDB, The Spine Archive y Steam Game Covers y se pondrán solo donde falten; lo que ya tienen no se toca. " +
+            (LaunchBoxDatabase.IsDownloaded ? "" : "La primera vez se descarga la base de datos de LaunchBox (unos minutos). ") +
+            "Puede tardar un rato.\n\n¿Empezar?",
+            "Descarga Metadatos Actualización", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes)
+            return;
+
+        using var run = _metadataRun = new CancellationTokenSource();
+        var cancellation = run.Token;
+        MetadataButton.Content = "Cancelar descarga";
+        var parts = 0;
+        var changedGames = 0;
+        var done = 0;
+        try
+        {
+            await Metadata.PrepareAsync(new Progress<string>(text => ShowToast(text)), cancellation);
+
+            foreach (var game in games)
+            {
+                ShowToast($"Descargando metadatos… {++done} de {games.Count}: {game.Name}");
+                var changed = false;
+                foreach (var part in MetadataFetcher.Missing(game))
+                {
+                    var path = await Metadata.FetchAsync(game.Name, game.Platform, game.Format, part, cancellation);
+                    // Mientras se buscaba ha podido quitarse el juego o recibir otra imagen.
+                    if (path is null || !Games.Contains(game) || !MetadataFetcher.Missing(game).Contains(part))
+                        continue;
+                    try
+                    {
+                        switch (part)
+                        {
+                            case MetadataPart.Front: ImageStore.Set(game, game.Format, Face.Front, path); break;
+                            case MetadataPart.Back: ImageStore.Set(game, game.Format, Face.Back, path); break;
+                            case MetadataPart.Spine: ImageStore.Set(game, game.Format, Face.Spine, path); break;
+                            case MetadataPart.Inside: ImageStore.SetExtra(game, GameExtra.Inside, path); break;
+                            case MetadataPart.Disc: ImageStore.SetExtra(game, GameExtra.Disc, path); break;
+                            default: ImageStore.SetExtra(game, GameExtra.Manual, path); break;
+                        }
+                        changed = true;
+                        parts++;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                    }
+                }
+
+                if (!changed)
+                    continue;
+                changedGames++;
+                Save();
+                var index = _visibleGames.IndexOf(game);
+                if (index >= 0)
+                {
+                    _flow.UpdateItem(index, ToCarouselItem(game));
+                    if (index == _flow.SelectedIndex)
+                        ShowDetails(index);
+                }
+            }
+            ShowToast(parts == 0
+                ? "No se ha encontrado ninguna imagen nueva"
+                : $"Metadatos descargados: {parts} {(parts == 1 ? "imagen" : "imágenes")} en {changedGames} {(changedGames == 1 ? "juego" : "juegos")}");
+        }
+        catch (OperationCanceledException)
+        {
+            ShowToast($"Descarga cancelada: {parts} {(parts == 1 ? "imagen puesta" : "imágenes puestas")} en {changedGames} {(changedGames == 1 ? "juego" : "juegos")}");
+        }
+        finally
+        {
+            _metadataRun = null;
+            MetadataButton.Content = "Descarga Metadatos Actualización";
+        }
     }
+
+    void OnMetadataClick(object sender, RoutedEventArgs e) => _ = DownloadMissingMetadataAsync();
 
     void OpenFormatEditor() => FormatEditor.Open(_visibleGames, SelectedGame);
 
@@ -1855,12 +1933,6 @@ public partial class MainWindow : Window
         if (empty.Count == 0)
             return;
 
-        if (string.IsNullOrEmpty(_settings.SteamGridDbApiKey) && string.IsNullOrEmpty(_settings.TheGamesDbApiKey))
-        {
-            ShowToast("Para poner carátulas por defecto, guarda tus claves de SteamGridDB y TheGamesDB (Personalizar → Buscar)");
-            return;
-        }
-
         // Una a una, para no saturar las APIs; cada caja se actualiza en cuanto llega su imagen.
         var done = 0;
         var withArt = 0;
@@ -1868,7 +1940,7 @@ public partial class MainWindow : Window
         {
             ShowToast($"Buscando carátulas por defecto… {++done} de {empty.Count}");
             var changed = false;
-            foreach (var face in new[] { Face.Front, Face.Back })
+            foreach (var face in new[] { Face.Front, Face.Back, Face.Spine })
             {
                 var path = await AutoFetchAsync(game.Name, game.Platform, result.Format, face, CancellationToken.None);
                 // Mientras buscábamos ha podido quitarse el juego, cambiar de formato o recibir otra imagen.

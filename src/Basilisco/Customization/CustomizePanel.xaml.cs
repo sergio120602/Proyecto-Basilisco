@@ -568,7 +568,7 @@ public partial class CustomizePanel : UserControl
         UpdatePreview();
         _preview.ShowFront();
 
-        // Formato nuevo sin carátula: se intenta poner una por defecto (SteamGridDB delante y TheGamesDB detrás).
+        // Formato nuevo sin carátula: se intenta poner una por defecto (portada, contraportada y lomo, cada una de su servicio).
         if (CurrentPath(format, Face.Front) is null && CurrentPath(format, Face.Back) is null)
             _ = AutoFetchAsync(format);
     }
@@ -585,7 +585,7 @@ public partial class CustomizePanel : UserControl
 
         var name = NameBox.Text.Trim();
         var found = 0;
-        foreach (var face in new[] { Face.Front, Face.Back })
+        foreach (var face in new[] { Face.Front, Face.Back, Face.Spine })
         {
             var path = await AutoFetch(name, _platform, format, face, cancellation);
             // Si mientras tanto has cerrado, cambiado de juego o puesto una imagen tú, no se toca nada.

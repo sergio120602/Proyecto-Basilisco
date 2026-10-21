@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.4] - 2026-10-22
+
+- **Descarga automática de todo**: portada, contraportada, lomo, interior de la caja, disco y manual. Cada parte se busca en sus servicios por orden de prioridad:
+  - **Portada**: LaunchBox, luego SteamGridDB y por último Steam Game Covers. En **PC**, SteamGridDB va antes que LaunchBox.
+  - **Contraportada**: LaunchBox, luego SteamGridDB y por último Steam Game Covers. SteamGridDB no tiene contraportadas, así que en la práctica se salta.
+  - **Lomo**: LaunchBox, luego The Spine Archive y por último Steam Game Covers. En **PC**, The Spine Archive, luego Steam Game Covers y por último LaunchBox.
+  - **Interior de la caja**: SteamGridDB.
+  - **Disco y manual**: LaunchBox.
+- Los lomos de **The Spine Archive** son de cajas de Switch: en los juegos de otras consolas se les quita sola la franja de arriba con el **logotipo de Nintendo Switch**. Las partes de **Steam Game Covers** se ponen tal cual salen de la carátula, sin encuadrar.
+- Nuevo botón **Descarga Metadatos Actualización** (abajo a la derecha): busca para todos los juegos lo que les falte y lo pone solo, sin tocar lo que ya tienen. Antes dice a cuántos juegos les falta algo y pide confirmación. Mientras descarga, el mismo botón la cancela.
+- Al cambiar de formato, las imágenes por defecto también incluyen el lomo.
+
 ## [0.6.3] - 2026-10-21
 
 - **Animación del carrusel más fluida**:
