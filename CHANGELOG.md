@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.10] - 2026-10-22
+
+- Los controles del carrusel suben: la **alineación** y la **altura** quedan arriba a la izquierda, debajo de «Atajos de teclado», y la **descarga de metadatos** y el **zoom**, arriba a la derecha, a los lados del título. Abajo solo queda la barra de logros.
+- Con la altura en **Auto**, las cajas tampoco pisan estos controles.
+
 ## [0.6.9] - 2026-10-22
 
 - Las **pistas de teclas** dejan la barra de abajo: ahora están en el botón **«Atajos de teclado»**, debajo de «Basilisco», que abre un menú con todas, en dos filas. Con el mando enseña sus botones.

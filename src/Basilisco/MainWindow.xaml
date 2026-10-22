@@ -235,6 +235,35 @@
             </ItemsControl>
         </StackPanel>
 
+        <!-- Debajo de la cabecera, a los lados del título: a la izquierda la alineación y la altura del carrusel; a la
+             derecha la descarga de metadatos y el zoom (se colocan en UpdateOverlayLayout) -->
+        <StackPanel x:Name="CarouselControlsLeft" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <!-- Alineación de las cajas: clásica (en curva) o moderna (todas las bases en línea recta) -->
+                <ToggleButton x:Name="AlignToggle" Style="{StaticResource FilterToggle}" Content="Alineación moderna" Margin="0,0,30,0"
+                              VerticalAlignment="Center" Click="OnAlignClick"
+                              ToolTip="Moderna: las bases de todas las cajas en línea recta. Clásica: las del fondo se ven más arriba, en curva"/>
+                <!-- Altura del carrusel: a mano o automática (las cajas bajan lo justo para no pisar el nombre del juego) -->
+                <TextBlock Style="{StaticResource HintText}" Text="Altura" Margin="0,0,10,0"/>
+                <Slider x:Name="ShiftSlider" Width="130" VerticalAlignment="Center" Focusable="False"
+                        Minimum="-0.4" Maximum="1.2" SmallChange="0.05" LargeChange="0.1" IsDirectionReversed="False"
+                        ValueChanged="OnShiftChanged" ToolTip="Sube o baja las cajas"/>
+                <ToggleButton x:Name="AutoShiftToggle" Style="{StaticResource FilterToggle}" Content="Auto" Margin="10,0,0,0"
+                              VerticalAlignment="Center" Click="OnAutoShiftClick"
+                              ToolTip="Automático: cuanto más zoom, más bajan las cajas, para que el nombre del juego nunca las pise"/>
+        </StackPanel>
+        <StackPanel x:Name="CarouselControlsRight" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                <!-- Descarga masiva: rellena lo que les falte a los juegos (portada, contraportada, lomo, interior, disco, manual) -->
+                <Button x:Name="MetadataButton" Style="{StaticResource PillButton}" Content="Descarga Metadatos Actualización" Margin="0,0,30,0"
+                        VerticalAlignment="Center" Focusable="False" Click="OnMetadataClick"
+                        ToolTip="Busca y pone sola la portada, contraportada, lomo, interior de la caja, disco y manual de los juegos a los que les falte"/>
+                <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
+                <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
+                <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
+                        Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
+                        ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
+                <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,0,0"/>
+        </StackPanel>
+
         <!-- Atajos de teclado: debajo de «Basilisco»; abre un menú con todas las teclas (antes iban en la barra de abajo) -->
         <ToggleButton x:Name="ShortcutsButton" Style="{StaticResource HeaderTab}" Content="Atajos de teclado  ▾" FontSize="14"
                       HorizontalAlignment="Left" VerticalAlignment="Top" Click="OnShortcutsClick"
@@ -311,31 +340,6 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <!-- Altura y zoom del carrusel, en su propia línea encima de la barra para que quepan las pistas -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
-                <!-- Alineación de las cajas: clásica (en curva) o moderna (todas las bases en línea recta) -->
-                <ToggleButton x:Name="AlignToggle" Style="{StaticResource FilterToggle}" Content="Alineación moderna" Margin="0,0,30,0"
-                              VerticalAlignment="Center" Click="OnAlignClick"
-                              ToolTip="Moderna: las bases de todas las cajas en línea recta. Clásica: las del fondo se ven más arriba, en curva"/>
-                <!-- Altura del carrusel: a mano o automática (las cajas bajan lo justo para no pisar el nombre del juego) -->
-                <TextBlock Style="{StaticResource HintText}" Text="Altura" Margin="0,0,10,0"/>
-                <Slider x:Name="ShiftSlider" Width="130" VerticalAlignment="Center" Focusable="False"
-                        Minimum="-0.4" Maximum="1.2" SmallChange="0.05" LargeChange="0.1" IsDirectionReversed="False"
-                        ValueChanged="OnShiftChanged" ToolTip="Sube o baja las cajas"/>
-                <ToggleButton x:Name="AutoShiftToggle" Style="{StaticResource FilterToggle}" Content="Auto" Margin="10,0,30,0"
-                              VerticalAlignment="Center" Click="OnAutoShiftClick"
-                              ToolTip="Automático: cuanto más zoom, más bajan las cajas, para que el nombre del juego nunca las pise"/>
-                <!-- Descarga masiva: rellena lo que les falte a los juegos (portada, contraportada, lomo, interior, disco, manual) -->
-                <Button x:Name="MetadataButton" Style="{StaticResource PillButton}" Content="Descarga Metadatos Actualización" Margin="0,0,30,0"
-                        VerticalAlignment="Center" Focusable="False" Click="OnMetadataClick"
-                        ToolTip="Busca y pone sola la portada, contraportada, lomo, interior de la caja, disco y manual de los juegos a los que les falte"/>
-                <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
-                <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
-                <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
-                        Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
-                        ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
-                <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,0,0"/>
-            </StackPanel>
             <Border Grid.Row="1" Height="1" Background="#99FFFFFF" Margin="0,0,0,16"/>
             <!-- Pistas de la estantería (orden personalizado) -->
             <StackPanel x:Name="ShelfHints" Grid.Row="2" Orientation="Horizontal" Visibility="Collapsed">

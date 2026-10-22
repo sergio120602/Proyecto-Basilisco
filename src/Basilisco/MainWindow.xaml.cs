@@ -194,7 +194,7 @@ public partial class MainWindow : Window
         _uiScale.Freeze();
         FrameworkElement[] scaled =
         [
-            HeaderBar, FooterBar, TitlePanel, ShortcutsButton, Toast,
+            HeaderBar, FooterBar, TitlePanel, ShortcutsButton, CarouselControlsLeft, CarouselControlsRight, Toast,
             FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
         ];
         foreach (var element in scaled)
@@ -1669,7 +1669,12 @@ public partial class MainWindow : Window
         var scale = _uiScale.ScaleX;
         TitlePanel.Margin = new Thickness(0, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 14 * scale, 0, 0);
         if (_settings.CarouselAutoShift)
-            FitBelowTitle(TitlePanel.Margin.Top + TitlePanel.ActualHeight * scale + 22 * scale);
+        {
+            // Ni el título ni los controles de los lados (alineación, altura, zoom) pisan las cajas.
+            var controlsBottom = HeaderBar.Margin.Top + (HeaderBar.ActualHeight + 8 + ShortcutsButton.ActualHeight +
+                                                         Math.Max(CarouselControlsLeft.ActualHeight, CarouselControlsRight.ActualHeight) + 16) * scale;
+            FitBelowTitle(Math.Max(TitlePanel.Margin.Top + TitlePanel.ActualHeight * scale + 22 * scale, controlsBottom));
+        }
 
         // El suelo empieza por detrás de las cajas laterales para que todas apoyen sobre él.
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));
@@ -1677,6 +1682,11 @@ public partial class MainWindow : Window
 
         // «Atajos de teclado», justo debajo de «Basilisco».
         ShortcutsButton.Margin = new Thickness(HeaderBar.Margin.Left - 14 * scale, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 2 * scale, 0, 0);
+
+        // Los controles del carrusel, debajo: la alineación y la altura a la izquierda, la descarga y el zoom a la derecha.
+        var controlsTop = ShortcutsButton.Margin.Top + ShortcutsButton.ActualHeight * scale + 6 * scale;
+        CarouselControlsLeft.Margin = new Thickness(HeaderBar.Margin.Left, controlsTop, 0, 0);
+        CarouselControlsRight.Margin = new Thickness(0, controlsTop, HeaderBar.Margin.Right, 0);
     }
 
     void Activate(int index)
