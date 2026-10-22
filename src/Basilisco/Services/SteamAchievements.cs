@@ -34,8 +34,14 @@ public sealed record AchievementInfo(string ApiName, string Name, string Descrip
     };
 }
 
+/// <summary>Por qué no se pueden leer los logros: su perfil no los enseña, o Steam ha frenado las peticiones por ir muy seguidas.</summary>
+public enum AchievementsProblem { Other, NotPublic, Throttled }
+
 /// <summary>Por qué no se pueden leer los logros, en una frase para enseñar.</summary>
-public sealed class AchievementsException(string message) : Exception(message);
+public sealed class AchievementsException(string message, AchievementsProblem problem = AchievementsProblem.Other) : Exception(message)
+{
+    public AchievementsProblem Problem { get; } = problem;
+}
 
 /// <summary>
 /// Logros de Steam de tu cuenta, con la clave de la Web API (ISteamUserStats/GetPlayerAchievements). Lo último que se
@@ -122,12 +128,34 @@ public static class SteamAchievements
     /// <summary>True si hay que volver a preguntar a Steam (no se sabe o tiene más de 30 minutos).</summary>
     public static bool IsStale(int appId, string? steamId = null) => Cached(appId, steamId) is not { } known || DateTime.Now - known.Read > MaxAge;
 
+    /// <summary>
+    /// Tu token de sesión de Steam, si lo has pegado en la ventana de Steam (solo en memoria, nunca en disco). Con la clave
+    /// de la Web API, Steam pide los logros de los demás como si fueras un desconocido: si los tienen en «solo amigos», no
+    /// los da. Con el token se piden como tú (que eres de su familia), y así sí.
+    /// </summary>
+    public static string? SessionToken { get; set; }
+
     /// <summary>Pide a Steam los logros del juego y los guarda.</summary>
     /// <exception cref="AchievementsException">Si Steam no los da (perfil privado, sin conexión…).</exception>
     public static async Task<AchievementProgress> FetchAsync(int appId, string steamId, string apiKey, CancellationToken cancellation)
     {
-        var url = $"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?appid={appId}&steamid={steamId}" +
-                  $"&key={Uri.EscapeDataString(apiKey)}&l=spanish";
+        try
+        {
+            return await FetchOnceAsync(appId, steamId, $"key={Uri.EscapeDataString(apiKey)}", cancellation);
+        }
+        catch (AchievementsException ex) when (ex.Problem == AchievementsProblem.NotPublic && !IsMine(steamId) && SessionToken is { } token)
+        {
+            return await FetchOnceAsync(appId, steamId, $"access_token={Uri.EscapeDataString(token)}", cancellation);
+        }
+    }
+
+    /// <summary>¿Es el cortafuegos de Steam frenando las peticiones? Responde con una página «Access Denied» en lugar de JSON.</summary>
+    static bool IsThrottled(HttpResponseMessage response, string body) =>
+        response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests && body.TrimStart().StartsWith('<');
+
+    static async Task<AchievementProgress> FetchOnceAsync(int appId, string steamId, string auth, CancellationToken cancellation)
+    {
+        var url = $"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?appid={appId}&steamid={steamId}&{auth}&l=spanish";
         HttpResponseMessage response;
         try
         {
@@ -141,6 +169,8 @@ public static class SteamAchievements
         using (response)
         {
             var body = await response.Content.ReadAsStringAsync(cancellation);
+            if (IsThrottled(response, body))
+                throw new AchievementsException("Steam ha frenado las consultas por ir muy seguidas. Vuelve a abrirlo en un par de minutos.", AchievementsProblem.Throttled);
             string? error = null;
             var unlocked = 0;
             var total = 0;
@@ -175,7 +205,12 @@ public static class SteamAchievements
                 if (error.Contains("no stats", StringComparison.OrdinalIgnoreCase))
                     total = unlocked = 0;
                 else if (error.Contains("not public", StringComparison.OrdinalIgnoreCase) || response.StatusCode == HttpStatusCode.Forbidden)
-                    throw new AchievementsException("Tu perfil de Steam no deja ver los logros: pon «Detalles de juegos» como públicos.");
+                    throw new AchievementsException(IsMine(steamId)
+                        ? "Tu perfil de Steam no deja ver los logros: pon «Detalles de juegos» como públicos."
+                        : SessionToken is null || auth.StartsWith("key=", StringComparison.Ordinal) && SessionToken is null
+                            ? "Steam no enseña sus logros con la clave de la Web API (los tiene en «solo amigos»). Pega tu token de sesión en Steam (botón Steam) y vuelve a abrirlo: así se piden como tú, que eres de su familia."
+                            : "Steam no enseña sus logros ni siquiera a su familia: tiene que poner «Detalles de juegos» como públicos en su privacidad de Steam.",
+                        AchievementsProblem.NotPublic);
                 else
                     throw new AchievementsException($"Steam no ha dado los logros ({error}).");
             }
@@ -209,7 +244,19 @@ public static class SteamAchievements
         var globalTask = GetJsonAsync($"https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid={appId}", cancellation);
 
         using var schema = await schemaTask ?? throw new AchievementsException("Steam no ha dado la lista de logros de este juego. Prueba más tarde.");
-        using var player = await playerTask;
+        // Sin respuesta que se entienda (casi siempre, el cortafuegos de Steam frenando): mejor decirlo que enseñarlos todos sin conseguir.
+        var player = await playerTask ?? throw new AchievementsException(
+            "Steam no ha dado los logros ahora mismo (puede que haya frenado las consultas por ir muy seguidas). Prueba en un par de minutos.",
+            AchievementsProblem.Throttled);
+        // Los de otro miembro que los tiene en «solo amigos»: se piden otra vez como tú, con tu token de sesión.
+        if (!IsMine(steamId) && SessionToken is { } token && player?.RootElement.TryGetProperty("playerstats", out var first) == true &&
+            first.TryGetProperty("error", out var firstError) && firstError.GetString()?.Contains("not public", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            player.Dispose();
+            player = await GetJsonAsync($"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?access_token={Uri.EscapeDataString(token)}" +
+                                        $"&appid={appId}&steamid={steamId}&l=spanish", cancellation);
+        }
+        using var playerDocument = player;
         using var global = await globalTask;
 
         // Tus logros: cuáles tienes y cuándo los conseguiste.
@@ -217,9 +264,16 @@ public static class SteamAchievements
         if (player?.RootElement.TryGetProperty("playerstats", out var stats) == true)
         {
             if (stats.TryGetProperty("error", out var error) && error.GetString() is { } message && !message.Contains("no stats", StringComparison.OrdinalIgnoreCase))
-                throw new AchievementsException(message.Contains("not public", StringComparison.OrdinalIgnoreCase)
+            {
+                if (!message.Contains("not public", StringComparison.OrdinalIgnoreCase))
+                    throw new AchievementsException($"Steam no ha dado los logros ({message}).");
+                throw new AchievementsException(IsMine(steamId)
                     ? "Tu perfil de Steam no deja ver los logros: pon «Detalles de juegos» como públicos."
-                    : $"Steam no ha dado tus logros ({message}).");
+                    : SessionToken is null
+                        ? "Steam no enseña sus logros con la clave de la Web API (los tiene en «solo amigos»). Pega tu token de sesión en Steam (botón Steam) y vuelve a abrirlo: así se piden como tú, que eres de su familia."
+                        : "Steam no enseña sus logros ni siquiera a su familia: tiene que poner «Detalles de juegos» como públicos en su privacidad de Steam.",
+                    AchievementsProblem.NotPublic);
+            }
             if (stats.TryGetProperty("achievements", out var list) && list.ValueKind == JsonValueKind.Array)
             {
                 foreach (var achievement in list.EnumerateArray())

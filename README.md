@@ -147,6 +147,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.11** — Página de logros con trofeos de bronce, plata, oro y platino
 - [x] **v0.6.12** — Perfil de trofeos: crearlos a mano (también en bloque), RetroAchievements, RPCS3, PlayStation y traducción al español
 - [x] **v0.6.13** — «Ver sus logros» de cada miembro de Steam familiar, comparando los juegos que tenéis varios
+- [x] **v0.6.14** — Logros de los miembros con el token de sesión (perfiles en «solo amigos») y sin falsos «perfil privado»
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
