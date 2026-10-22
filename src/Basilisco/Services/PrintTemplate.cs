@@ -30,6 +30,53 @@ public static class PrintTemplate
 
     // Jewel case: la trasera mide 151 × 118 mm, con un lomo de 6,5 mm a cada lado de los 138 mm del centro.
     const double JewelBackCenter = 138.0 / 118.0;
+    const double JewelBack = 151.0 / 118.0;
+
+    // Proporción de la carátula completa (contraportada, lomo y portada): DVD de 130 + 14 + 130 mm por 184 de alto; la de
+    // Blu-ray, la de las plantillas de la web.
+    const double DvdWrap = (130.0 * 2 + 14) / 184.0;
+    const double BluRayWrap = 1.79;
+
+    /// <summary>
+    /// Corrige la zona del dibujo si no tiene la proporción que debe. Si se ha quedado corta en una medida (el alto o el
+    /// ancho), se alarga hasta la proporción buena; si casi no se ha encontrado nada (un dibujo blanco sobre el papel
+    /// blanco), se toma el tamaño normal de las plantillas. En las plantillas de la web el dibujo va siempre centrado en la
+    /// hoja, así que la zona corregida se centra.
+    /// </summary>
+    static Int32Rect FitTemplate(Int32Rect art, int pageWidth, int pageHeight, double aspect)
+    {
+        if (art.Width <= 0 || art.Height <= 0)
+            art = new Int32Rect(0, 0, pageWidth, pageHeight);
+        var ratio = (double)art.Width / art.Height;
+        if (Math.Abs(ratio - aspect) <= aspect * 0.04)
+            return art;
+
+        double width = art.Width, height = art.Height;
+        if (art.Width < pageWidth * 0.5 && art.Height < pageHeight * 0.5)
+        {
+            // Casi nada: el dibujo ocupa la hoja de lado a lado, con el margen de las plantillas (un 1,2 % a cada lado).
+            width = pageWidth * 0.976;
+            height = width / aspect;
+            if (height > pageHeight * 0.86)
+            {
+                height = pageHeight * 0.86;
+                width = height * aspect;
+            }
+        }
+        else if (ratio > aspect)
+        {
+            height = width / aspect; // Se ha quedado corto el alto.
+        }
+        else
+        {
+            width = height * aspect; // Se ha quedado corto el ancho.
+        }
+
+        width = Math.Min(width, pageWidth);
+        height = Math.Min(height, pageHeight);
+        return new Int32Rect((int)Math.Round((pageWidth - width) / 2), (int)Math.Round((pageHeight - height) / 2),
+            (int)Math.Round(width), (int)Math.Round(height));
+    }
 
     /// <param name="caseType">Tipo de caja según la web: «DVD», «Blu-ray», «Jewel»…</param>
     /// <param name="isBack">True si la imagen es solo la parte de atrás.</param>
@@ -59,8 +106,14 @@ public static class PrintTemplate
         }
 
         var art = ArtArea(image, 0.5);
-        double w = art.Width, h = art.Height;
         var jewel = caseType?.Contains("jewel", StringComparison.OrdinalIgnoreCase) == true;
+        var bluRay = caseType?.Contains("blu", StringComparison.OrdinalIgnoreCase) == true;
+
+        // Lo que se detecta por los píxeles falla con dibujos claros (se confunden con el papel) o con zonas blancas dentro
+        // del dibujo: se corrige con la proporción que tiene que tener la carátula.
+        var expected = isBack ? (jewel ? JewelBack : DvdFront) : jewel ? 1.0 : bluRay ? BluRayWrap : DvdWrap;
+        art = FitTemplate(art, image.PixelWidth, image.PixelHeight, expected);
+        double w = art.Width, h = art.Height;
 
         if (isBack && jewel && w / h > 1.1)
         {

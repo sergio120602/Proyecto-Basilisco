@@ -3,6 +3,14 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.8] - 2026-10-22
+
+- **Buscador de juegos** en la barra de arriba (también con `Ctrl+F`). Al escribir aparece un menú con los juegos cuyo nombre más se parece a lo escrito. Da igual que no lleve tildes o mayúsculas, que tenga alguna letra mal («holow knigt») o que solo escribas el principio de cada palabra («zelda oca»). Los números romanos y en cifras valen igual.
+  - Con un clic, o con las flechas y `Enter`, el carrusel va **directo** a ese juego.
+  - Si no está en lo que estás viendo (otra consola, otro filtro…), pasa a «Todos los juegos».
+  - `Esc` cierra el buscador.
+- Arreglado el **lomo de Steam Game Covers**, que en algunas carátulas salía mal recortado o con media portada dentro. Pasaba con los dibujos claros, que se confundían con el papel, y con los que tienen zonas blancas. Ahora la zona del dibujo se corrige con la proporción que debe tener la carátula y se centra en la hoja, como van en las plantillas de la web. También en la trasera de los jewel case.
+
 ## [0.6.7] - 2026-10-22
 
 - Nuevo menú **Steam familiar** en la barra de arriba, junto a Consolas y Filtros, con la misma franja negra.
