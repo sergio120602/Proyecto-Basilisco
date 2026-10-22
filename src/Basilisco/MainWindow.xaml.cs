@@ -194,7 +194,7 @@ public partial class MainWindow : Window
         _uiScale.Freeze();
         FrameworkElement[] scaled =
         [
-            HeaderBar, FooterBar, TitlePanel, PlayTimeText, Toast,
+            HeaderBar, FooterBar, TitlePanel, ShortcutsButton, Toast,
             FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
         ];
         foreach (var element in scaled)
@@ -1054,7 +1054,8 @@ public partial class MainWindow : Window
     {
         var shelf = _flow.ShelfMode;
         ShelfHints.Visibility = shelf ? Visibility.Visible : Visibility.Collapsed;
-        MainHints.Visibility = shelf ? Visibility.Collapsed : Visibility.Visible;
+        // En la estantería, sus teclas ocupan el sitio de la barra de logros.
+        ShowAchievements(shelf || _flow.SelectedIndex < 0 || IsAddCard(_flow.SelectedIndex) ? null : _visibleGames[_flow.SelectedIndex]);
         ShelfMoveHint.Text = _flow.Holding ? "Mover" : "Recorrer";
         ShelfDoneKey.Text = _padMode ? GamepadService.Label(PadAction.Back, _gamepad.Style) : "Esc";
     }
@@ -1127,8 +1128,7 @@ public partial class MainWindow : Window
         var selectedGame = IsAddCard(index) ? null : _visibleGames[index];
         // (con la tarjeta de importar se ven la apariencia general)
         ApplyLook(selectedGame);
-        PlayTimeText.Text = selectedGame is null ? "" : PlayTimeLabel(selectedGame.PlayMinutes);
-        PlayTimeText.Visibility = selectedGame is null || _flow.ShelfMode ? Visibility.Collapsed : Visibility.Visible;
+        ShowAchievements(selectedGame);
 
         UpdateOverlayLayout();
         TitlePanel.BeginAnimation(OpacityProperty, new DoubleAnimation(0.3, 1, TimeSpan.FromMilliseconds(220))
@@ -1139,11 +1139,169 @@ public partial class MainWindow : Window
 
     static string PlayTimeLabel(int minutes) => minutes switch
     {
-        <= 0 => "⏱  Aún sin tiempo de juego",
         < 60 => $"⏱  {minutes} min jugados",
         _ when minutes % 60 == 0 => $"⏱  {minutes / 60} h jugadas",
         _ => $"⏱  {minutes / 60} h {minutes % 60} min jugadas",
     };
+
+    // ---- Logros de Steam ----
+
+    readonly System.Windows.Threading.DispatcherTimer _achievementsDelay = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    CancellationTokenSource? _achievementsFetch;
+    Game? _achievementsGame;
+
+    /// <summary>
+    /// Barra de logros de Steam del juego seleccionado (abajo, en el centro). Se enseña al momento lo último que se supo y,
+    /// si es viejo, se pregunta a Steam cuando dejas el juego seleccionado un momento (así no se pregunta por cada caja al
+    /// deslizar). Solo para los juegos de Steam; con la estantería abierta se ven sus teclas en su lugar.
+    /// </summary>
+    void ShowAchievements(Game? game)
+    {
+        _achievementsDelay.Stop();
+        _achievementsFetch?.Cancel();
+        _achievementsGame = game;
+        if (game?.SteamAppId is not { } appId || _flow.ShelfMode)
+        {
+            AchievementsPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        AchievementsPanel.Visibility = Visibility.Visible;
+        if (SteamAchievements.Cached(appId) is { } known)
+            SetAchievements(known);
+        else
+            SetAchievementsMessage("Logros de Steam · cargando…");
+        if (!SteamAchievements.IsStale(appId))
+            return;
+
+        if (_settings.SteamApiKey is not { Length: > 0 })
+        {
+            if (SteamAchievements.Cached(appId) is null)
+                SetAchievementsMessage("Para ver los logros, guarda tu clave de la Web API de Steam (botón Steam)");
+            return;
+        }
+        if (_achievementsDelay.Tag is null)
+        {
+            _achievementsDelay.Tag = true;
+            _achievementsDelay.Tick += (_, _) =>
+            {
+                _achievementsDelay.Stop();
+                _ = FetchAchievementsAsync();
+            };
+        }
+        _achievementsDelay.Start();
+    }
+
+    async Task FetchAchievementsAsync()
+    {
+        if (_achievementsGame is not { SteamAppId: { } appId } game || _settings.SteamApiKey is not { Length: > 0 } key)
+            return;
+        // Tu cuenta: la de la familia leída de Steam o, si no, la última con la que se entró en Steam en este PC.
+        var steamId = _library.Family.FirstOrDefault(member => member.IsMe && member.IsKnownAccount)?.SteamId
+                      ?? SteamLocal.Accounts().FirstOrDefault()?.SteamId;
+        if (steamId is null)
+        {
+            SetAchievementsMessage("Inicia sesión en Steam en este PC para ver tus logros");
+            return;
+        }
+
+        var cancellation = _achievementsFetch = new CancellationTokenSource();
+        try
+        {
+            var progress = await SteamAchievements.FetchAsync(appId, steamId, key, cancellation.Token);
+            if (_achievementsGame == game)
+                SetAchievements(progress);
+        }
+        catch (AchievementsException ex)
+        {
+            if (_achievementsGame == game && SteamAchievements.Cached(appId) is null)
+                SetAchievementsMessage(ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            // Se suelta al acabar (si mientras tanto se ha elegido otro juego, ya hay otra petición en su lugar).
+            if (_achievementsFetch == cancellation)
+                _achievementsFetch = null;
+            cancellation.Dispose();
+        }
+    }
+
+    void SetAchievementsMessage(string message)
+    {
+        AchievementsText.Text = message;
+        AchievementsPercent.Text = "";
+        SetAchievementsFill(0, complete: false);
+    }
+
+    void SetAchievements(AchievementProgress progress)
+    {
+        if (progress.Total == 0)
+        {
+            SetAchievementsMessage("Logros de Steam · este juego no tiene logros (o aún no lo has abierto)");
+            return;
+        }
+        AchievementsText.Text = progress.Complete
+            ? $"Logros de Steam · ¡todos! {progress.Total} de {progress.Total}"
+            : $"Logros de Steam · {progress.Unlocked} de {progress.Total}";
+        var percent = progress.Fraction * 100;
+        AchievementsPercent.Text = progress.Complete ? "100 %" : $"{(percent < 1 && progress.Unlocked > 0 ? 1 : Math.Floor(percent)):0} %";
+        SetAchievementsFill(progress.Fraction, progress.Complete);
+    }
+
+    static readonly LinearGradientBrush SteamBlue = Frozen(new LinearGradientBrush(
+        [new GradientStop(Color.FromRgb(0x1A, 0x44, 0xC2), 0), new GradientStop(Color.FromRgb(0x47, 0xBF, 0xFF), 1)], 0));
+
+    static readonly LinearGradientBrush Gold = Frozen(new LinearGradientBrush(
+        [new GradientStop(Color.FromRgb(0xB8, 0x86, 0x0B), 0), new GradientStop(Color.FromRgb(0xFF, 0xD8, 0x6B), 0.55),
+         new GradientStop(Color.FromRgb(0xF5, 0xB3, 0x00), 1)], 0));
+
+    static T Frozen<T>(T brush) where T : Freezable
+    {
+        brush.Freeze();
+        return brush;
+    }
+
+    static readonly ImageSource TrophyColor = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Basilisco;component/Assets/trophy.png"));
+    static readonly ImageSource TrophyGray = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Basilisco;component/Assets/trophy-gray.png"));
+
+    /// <summary>Llena la barra; completa, se pone dorada y el trofeo brilla (y late despacio). Si no, el trofeo va en gris.</summary>
+    void SetAchievementsFill(double fraction, bool complete)
+    {
+        fraction = Math.Clamp(fraction, 0, 1);
+        AchievementsFill.Width = new GridLength(fraction, GridUnitType.Star);
+        AchievementsRest.Width = new GridLength(1 - fraction, GridUnitType.Star);
+        AchievementsBar.Background = complete ? Gold : SteamBlue;
+        AchievementsPercent.Foreground = complete ? new SolidColorBrush(Color.FromRgb(0xFF, 0xD8, 0x6B)) : (Brush)FindResource("UiText");
+
+        TrophyImage.Source = complete ? TrophyColor : TrophyGray;
+        TrophyImage.Opacity = complete ? 1 : 0.75;
+        TrophyImage.Effect = complete
+            ? new System.Windows.Media.Effects.DropShadowEffect { Color = Color.FromRgb(0xFF, 0xD8, 0x6B), BlurRadius = 26, ShadowDepth = 0, Opacity = 1 }
+            : null;
+        AchievementsBar.Effect = complete
+            ? new System.Windows.Media.Effects.DropShadowEffect { Color = Color.FromRgb(0xFF, 0xD0, 0x50), BlurRadius = 14, ShadowDepth = 0, Opacity = 0.9 }
+            : null;
+
+        var pulse = complete
+            ? new DoubleAnimation(1, 1.08, TimeSpan.FromSeconds(1.1)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() }
+            : null;
+        TrophyScale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
+        TrophyScale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
+    }
+
+    // ---- Atajos de teclado ----
+
+    void OnShortcutsClick(object sender, RoutedEventArgs e)
+    {
+        // El menú va escalado como el resto de la interfaz (un Popup no hereda la escala de la ventana).
+        ShortcutsCard.LayoutTransform = _uiScale;
+        ShortcutsPopup.IsOpen = ShortcutsButton.IsChecked == true;
+    }
+
+    void OnShortcutsClosed(object? sender, EventArgs e) => ShortcutsButton.IsChecked = false;
 
     string? _lookBackground;
 
@@ -1161,7 +1319,6 @@ public partial class MainWindow : Window
         var glow = light ? Colors.Black : Colors.White;
         if (TitleText.Effect is System.Windows.Media.Effects.DropShadowEffect titleGlow)
             titleGlow.Color = glow;
-        PlayTimeGlow.Color = glow;
 
         // El fondo propio del juego manda; si no tiene, el general.
         var own = game is null ? null : ImageStore.GetBackgroundPath(game);
@@ -1457,7 +1614,8 @@ public partial class MainWindow : Window
                 ".bat" or ".cmd" => "Script",
                 _ => "Archivo",
             },
-            game.PlayCount switch
+            // El tiempo de juego (también el de Steam); sin tiempo, cuántas veces se ha abierto.
+            game.PlayMinutes > 0 ? PlayTimeLabel(game.PlayMinutes) : game.PlayCount switch
             {
                 0 => "Nunca jugado",
                 1 => "Jugado 1 vez",
@@ -1517,9 +1675,8 @@ public partial class MainWindow : Window
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));
         Floor.Margin = new Thickness(0, Math.Max(0, horizon.Y - 40), 0, 0);
 
-        // El tiempo de juego, justo debajo de la caja seleccionada.
-        var coverBottom = _flow.Project(new Point3D(0, 0, 0.1));
-        PlayTimeText.Margin = new Thickness(0, coverBottom.Y + 14, 0, 0);
+        // «Atajos de teclado», justo debajo de «Basilisco».
+        ShortcutsButton.Margin = new Thickness(HeaderBar.Margin.Left - 14 * scale, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 2 * scale, 0, 0);
     }
 
     void Activate(int index)
@@ -2431,7 +2588,7 @@ public partial class MainWindow : Window
         FormatKey.Text = pad ? GamepadService.Label(PadAction.Format, style) : "F";
         FilterKey.Text = pad ? GamepadService.Label(PadAction.NextFilter, style) : "Tab";
         FullScreenKey.Text = pad ? GamepadService.Label(PadAction.FullScreen, style) : "F11";
-        RemoveHint.Visibility = ImportHints.Visibility = pad ? Visibility.Collapsed : Visibility.Visible;
+        RemoveHint.Visibility = ImportHints.Visibility = KeyboardHints.Visibility = pad ? Visibility.Collapsed : Visibility.Visible;
         UpdateShelfHints();
     }
 

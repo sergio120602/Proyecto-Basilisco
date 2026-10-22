@@ -41,7 +41,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Pill" CornerRadius="5" Padding="18,7" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
+                        <Border x:Name="Pill" CornerRadius="5" Padding="14,7" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -120,13 +120,13 @@
             </StackPanel>
 
             <!-- Buscador de juegos: al escribir salen los nombres que más se parecen; al elegir uno, el carrusel va a él -->
-            <Grid Grid.Column="1" HorizontalAlignment="Right" MinWidth="150" MaxWidth="320" Margin="14,0,0,0" VerticalAlignment="Center">
+            <Grid Grid.Column="1" HorizontalAlignment="Right" MinWidth="150" MaxWidth="320" Margin="10,0,0,0" ToolTip="Buscar un juego por su nombre (Ctrl+F)" VerticalAlignment="Center">
                 <Border x:Name="SearchField" CornerRadius="5" Background="#40000000" BorderBrush="#66FFFFFF" BorderThickness="1" Padding="10,0,8,0" Height="36">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Left" Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
                                    Foreground="{DynamicResource UiText}" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.85"/>
                         <Grid>
-                            <TextBlock x:Name="SearchHint" Text="Buscar juego…  (Ctrl+F)" FontSize="15" Foreground="{DynamicResource UiText}" Opacity="0.6"
+                            <TextBlock x:Name="SearchHint" Text="Buscar juego…" FontSize="15" Foreground="{DynamicResource UiText}" Opacity="0.6"
                                        VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
                             <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" FontSize="15" Foreground="{DynamicResource UiText}"
                                      CaretBrush="{DynamicResource UiText}" VerticalAlignment="Center" Padding="0"
@@ -211,14 +211,6 @@
             </StackPanel>
         </Grid>
 
-        <!-- Tiempo de juego, debajo de la caja seleccionada -->
-        <TextBlock x:Name="PlayTimeText" VerticalAlignment="Top" HorizontalAlignment="Center" IsHitTestVisible="False"
-                   FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource UiText}">
-            <TextBlock.Effect>
-                <DropShadowEffect x:Name="PlayTimeGlow" Color="White" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
-            </TextBlock.Effect>
-        </TextBlock>
-
         <!-- Título y etiquetas del juego seleccionado -->
         <StackPanel x:Name="TitlePanel" VerticalAlignment="Top" HorizontalAlignment="Center" IsHitTestVisible="False">
             <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}"
@@ -242,6 +234,69 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </StackPanel>
+
+        <!-- Atajos de teclado: debajo de «Basilisco»; abre un menú con todas las teclas (antes iban en la barra de abajo) -->
+        <ToggleButton x:Name="ShortcutsButton" Style="{StaticResource HeaderTab}" Content="Atajos de teclado  ▾" FontSize="14"
+                      HorizontalAlignment="Left" VerticalAlignment="Top" Click="OnShortcutsClick"
+                      ToolTip="Ver las teclas (y los botones del mando) de Basilisco"/>
+        <Popup x:Name="ShortcutsPopup" PlacementTarget="{Binding ElementName=ShortcutsButton}" Placement="Bottom" VerticalOffset="8"
+               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" Closed="OnShortcutsClosed">
+            <Border x:Name="ShortcutsCard" Background="#F2101318" CornerRadius="10" Padding="20,14,20,4" BorderBrush="#40FFFFFF" BorderThickness="1">
+                <Border.Resources>
+                    <!-- Sobre el fondo oscuro del menú, las letras siempre en blanco -->
+                    <SolidColorBrush x:Key="UiText" Color="White"/>
+                </Border.Resources>
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.4"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="ATAJOS DE TECLADO" FontSize="12" FontWeight="Bold" Foreground="#99FFFFFF" Margin="0,0,0,10"/>
+                    <StackPanel x:Name="MainHints" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="NavKey" Text="← →"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="ConfirmKey" Text="Enter"/></Border>
+                        <TextBlock x:Name="ActivateHint" Style="{StaticResource HintText}" Text="Jugar"/>
+                        <StackPanel x:Name="GameHints" Orientation="Horizontal">
+                            <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="RotateKey" Text="R"/></Border>
+                            <TextBlock Style="{StaticResource HintText}" Text="Girar"/>
+                            <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="CustomizeKey" Text="E"/></Border>
+                            <TextBlock Style="{StaticResource HintText}" Text="Personalizar"/>
+                            <StackPanel x:Name="RemoveHint" Orientation="Horizontal">
+                                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>
+                                <TextBlock Style="{StaticResource HintText}" Text="Quitar"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <!-- Importar se hace con teclado y ratón (abre el explorador de archivos): se oculta al usar el mando -->
+                        <StackPanel x:Name="ImportHints" Orientation="Horizontal">
+                            <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="I"/></Border>
+                            <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
+                            <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="C"/></Border>
+                            <TextBlock Style="{StaticResource HintText}" Text="Carpeta"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <!-- Segunda fila: el menú entero en una sola sería más ancho que la ventana -->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FormatKey" Text="F"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Formato"/>
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FilterKey" Text="Tab"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
+                        <!-- Solo de teclado: con el mando se ocultan -->
+                        <StackPanel x:Name="KeyboardHints" Orientation="Horizontal">
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Ctrl+F"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Buscar"/>
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="S"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Steam"/>
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="A"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Apariencia"/>
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="N"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Modo nocturno"/>
+                        </StackPanel>
+                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
+                        <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
 
         <!-- Avisos breves -->
         <Border x:Name="Toast" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100"
@@ -270,6 +325,10 @@
                 <ToggleButton x:Name="AutoShiftToggle" Style="{StaticResource FilterToggle}" Content="Auto" Margin="10,0,30,0"
                               VerticalAlignment="Center" Click="OnAutoShiftClick"
                               ToolTip="Automático: cuanto más zoom, más bajan las cajas, para que el nombre del juego nunca las pise"/>
+                <!-- Descarga masiva: rellena lo que les falte a los juegos (portada, contraportada, lomo, interior, disco, manual) -->
+                <Button x:Name="MetadataButton" Style="{StaticResource PillButton}" Content="Descarga Metadatos Actualización" Margin="0,0,30,0"
+                        VerticalAlignment="Center" Focusable="False" Click="OnMetadataClick"
+                        ToolTip="Busca y pone sola la portada, contraportada, lomo, interior de la caja, disco y manual de los juegos a los que les falte"/>
                 <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
                 <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
                 <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
@@ -290,42 +349,41 @@
                 <Border Style="{StaticResource KeyBadge}"><TextBlock x:Name="ShelfDoneKey" Style="{StaticResource KeyBadgeText}" Text="Esc"/></Border>
                 <TextBlock Style="{StaticResource HintText}" Text="Terminar"/>
             </StackPanel>
-            <StackPanel x:Name="MainHints" Grid.Row="2" Orientation="Horizontal">
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="NavKey" Text="← →"/></Border>
-                <TextBlock Style="{StaticResource HintText}" Text="Navegar"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="ConfirmKey" Text="Enter"/></Border>
-                <TextBlock x:Name="ActivateHint" Style="{StaticResource HintText}" Text="Jugar"/>
-                <StackPanel x:Name="GameHints" Orientation="Horizontal">
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="RotateKey" Text="R"/></Border>
-                    <TextBlock Style="{StaticResource HintText}" Text="Girar"/>
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="CustomizeKey" Text="E"/></Border>
-                    <TextBlock Style="{StaticResource HintText}" Text="Personalizar"/>
-                    <StackPanel x:Name="RemoveHint" Orientation="Horizontal">
-                        <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Supr"/></Border>
-                        <TextBlock Style="{StaticResource HintText}" Text="Quitar"/>
-                    </StackPanel>
+            <!-- Logros de Steam del juego seleccionado: la barra se llena con los que tienes (dorada y con el trofeo brillando al 100 %) -->
+            <Grid x:Name="AchievementsPanel" Grid.Row="2" HorizontalAlignment="Center" Width="820" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Image x:Name="TrophyImage" Height="64" Margin="0,0,16,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"
+                       Source="pack://application:,,,/Basilisco;component/Assets/trophy-gray.png" RenderTransformOrigin="0.5,0.6">
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="TrophyScale"/>
+                    </Image.RenderTransform>
+                </Image>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <DockPanel Margin="2,0,2,6">
+                        <TextBlock x:Name="AchievementsPercent" DockPanel.Dock="Right" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource UiText}"/>
+                        <TextBlock x:Name="AchievementsText" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource UiText}" TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
+                    <Border CornerRadius="7" Height="14" Background="#55000000" BorderBrush="#40FFFFFF" BorderThickness="1" ClipToBounds="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="AchievementsFill" Width="0*"/>
+                                <ColumnDefinition x:Name="AchievementsRest" Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="AchievementsBar" CornerRadius="6">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#1A44C2" Offset="0"/>
+                                        <GradientStop Color="#47BFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Grid>
+                    </Border>
                 </StackPanel>
-                <!-- Importar se hace con teclado y ratón (abre el explorador de archivos): se oculta al usar el mando -->
-                <StackPanel x:Name="ImportHints" Orientation="Horizontal">
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="I"/></Border>
-                    <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
-                    <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="C"/></Border>
-                    <TextBlock Style="{StaticResource HintText}" Text="Carpeta"/>
-                </StackPanel>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FormatKey" Text="F"/></Border>
-                <TextBlock Style="{StaticResource HintText}" Text="Formato"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FilterKey" Text="Tab"/></Border>
-                <TextBlock Style="{StaticResource HintText}" Text="Filtro"/>
-
-            </StackPanel>
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                <!-- Descarga masiva: rellena lo que les falte a los juegos (portada, contraportada, lomo, interior, disco, manual) -->
-                <Button x:Name="MetadataButton" Style="{StaticResource PillButton}" Content="Descarga Metadatos Actualización" Margin="0,0,30,0"
-                        VerticalAlignment="Center" Focusable="False" Click="OnMetadataClick"
-                        ToolTip="Busca y pone sola la portada, contraportada, lomo, interior de la caja, disco y manual de los juegos a los que les falte"/>
-                <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" x:Name="FullScreenKey" Text="F11"/></Border>
-                <TextBlock Style="{StaticResource HintText}" Text="Pantalla completa" Margin="0"/>
-            </StackPanel>
+            </Grid>
         </Grid>
 
         <!-- La caja abierta, al darle a un juego: manual, disco y «Jugar» -->

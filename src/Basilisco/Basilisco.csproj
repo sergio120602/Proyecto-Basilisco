@@ -16,7 +16,7 @@
     <!-- Logo: icono del .exe, de la ventana y de la barra de tareas. -->
     <ApplicationIcon>Assets\basilisco.ico</ApplicationIcon>
 
-    <Version>0.6.8</Version>
+    <Version>0.6.9</Version>
     <Product>Proyecto Basilisco</Product>
     <Description>Launcher de videojuegos portable</Description>
 
@@ -39,6 +39,9 @@
 
   <ItemGroup>
     <Resource Include="Assets\basilisco.ico" />
+    <!-- Trofeo de la barra de logros de Steam: en color (todos los logros) y en gris -->
+    <Resource Include="Assets\trophy.png" />
+    <Resource Include="Assets\trophy-gray.png" />
   </ItemGroup>
 
 </Project>
