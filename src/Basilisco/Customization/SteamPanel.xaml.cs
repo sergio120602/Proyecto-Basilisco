@@ -195,6 +195,9 @@ public partial class SteamPanel : UserControl
             _settings.Save();
         }
         _sessionToken = token?.Item1;
+        // También para ver los logros de tu familia (los que solo enseñan a sus amigos). Solo en memoria.
+        if (_sessionToken is not null)
+            SteamAchievements.SessionToken = _sessionToken;
 
         _work?.Cancel();
         var cancellation = (_work = new CancellationTokenSource()).Token;

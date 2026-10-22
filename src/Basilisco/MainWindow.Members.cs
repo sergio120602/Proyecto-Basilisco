@@ -100,38 +100,56 @@ public partial class MainWindow
     async Task FetchMemberProgressAsync(List<(Game Game, Action<AchievementProgress?, string?> Update)> rows, string steamId, string key, Action summary,
                                         CancellationToken cancellation)
     {
-        using var gate = new SemaphoreSlim(4);
+        // De dos en dos y con una pausa: si se pide demasiado seguido, el cortafuegos de Steam corta («Access Denied»).
+        using var gate = new SemaphoreSlim(2);
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        string? blocked = null;
         var tasks = rows.Select(async row =>
         {
-            await gate.WaitAsync(cancellation);
             try
             {
-                var progress = await SteamAchievements.FetchAsync(row.Game.SteamAppId!.Value, steamId, key, cancellation);
+                await gate.WaitAsync(stop.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            try
+            {
+                var progress = await SteamAchievements.FetchAsync(row.Game.SteamAppId!.Value, steamId, key, stop.Token);
                 if (!cancellation.IsCancellationRequested)
                     row.Update(progress, null);
+                await Task.Delay(150, stop.Token);
             }
-            catch (AchievementsException ex)
+            catch (AchievementsException ex) when (ex.Problem is AchievementsProblem.NotPublic or AchievementsProblem.Throttled)
+            {
+                // Si su perfil no los enseña (o Steam frena), no sirve seguir preguntando juego por juego.
+                blocked ??= ex.Message;
+                stop.Cancel();
+            }
+            catch (AchievementsException)
             {
                 if (!cancellation.IsCancellationRequested)
-                    row.Update(null, steamId == SteamAchievements.MySteamId || !ex.Message.Contains("perfil", StringComparison.OrdinalIgnoreCase)
-                        ? "Steam no da los logros de este juego"
-                        : "Perfil privado: Steam no deja ver sus logros");
+                    row.Update(null, "Steam no da los logros de este juego");
+            }
+            catch (OperationCanceledException)
+            {
             }
             finally
             {
                 gate.Release();
             }
         });
-        try
-        {
-            await Task.WhenAll(tasks);
-        }
-        catch (OperationCanceledException)
-        {
+        await Task.WhenAll(tasks);
+        if (cancellation.IsCancellationRequested)
             return;
+        summary();
+        if (blocked is not null)
+        {
+            foreach (var row in rows.Where(r => SteamAchievements.Cached(r.Game.SteamAppId!.Value, steamId) is null))
+                row.Update(null, blocked.Contains("frenado") ? "Pendiente: Steam ha frenado las consultas" : "Steam no enseña sus logros");
+            AchievementsPageSummary.Text += "\n" + blocked;
         }
-        if (!cancellation.IsCancellationRequested)
-            summary();
     }
 
     /// <summary>Una fila: la portada, el nombre, la plataforma y la barra de logros. Devuelve también cómo actualizar su barra.</summary>

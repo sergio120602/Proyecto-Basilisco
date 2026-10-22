@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.14] - 2026-10-23
+
+- Arreglado **«Ver sus logros»**, que decía «perfil privado» a miembros con el perfil público. Pasaban dos cosas:
+  - Con la clave de la Web API, Steam pide los logros de los demás como si fueras un desconocido. Si un miembro tiene los «Detalles de juegos» en **«solo amigos»**, no los da, aunque su perfil sea público. Ahora, si has pegado tu **token de sesión** en la ventana de Steam (solo se guarda en memoria), se vuelven a pedir **como tú**, que eres de su familia. Si sigue sin dejar, se explica que tiene que poner sus «Detalles de juegos» como públicos.
+  - Al pedir los logros de muchos juegos muy seguidos, el cortafuegos de Steam corta las consultas («Access Denied»), y eso se tomaba por «perfil privado». Ahora se pregunta de dos en dos y con pausas. Si Steam frena o el perfil no los enseña, se deja de preguntar en ese momento y se dice el motivo.
+- Si Steam no da tus logros en la página de un juego, ahora lo dice, en lugar de enseñarlos todos como «sin conseguir».
+
 ## [0.6.13] - 2026-10-23
 
 - **Logros de cada miembro de Steam familiar**: en su menú de personalizar (clic derecho en el miembro) hay un botón nuevo, **«Ver sus logros»** («Ver mis logros» en tu caso).
