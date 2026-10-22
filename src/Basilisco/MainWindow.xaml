@@ -354,7 +354,9 @@
                 <TextBlock Style="{StaticResource HintText}" Text="Terminar"/>
             </StackPanel>
             <!-- Logros de Steam del juego seleccionado: la barra se llena con los que tienes (dorada y con el trofeo brillando al 100 %) -->
-            <Grid x:Name="AchievementsPanel" Grid.Row="2" HorizontalAlignment="Center" Width="820" Visibility="Collapsed">
+            <Grid x:Name="AchievementsPanel" Grid.Row="2" HorizontalAlignment="Center" Width="820" Visibility="Collapsed"
+                  Background="Transparent" Cursor="Hand" MouseLeftButtonUp="OnAchievementsPanelClick"
+                  ToolTip="Ver todos los logros del juego">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -392,6 +394,27 @@
 
         <!-- La caja abierta, al darle a un juego: manual, disco y «Jugar» -->
         <!-- Menú de filtros: franja negra con los logotipos, bajo la barra de arriba -->
+        <!-- Página de logros: entra desde abajo (la escena sube) al pulsar el trofeo -->
+        <Grid x:Name="AchievementsPage" Visibility="Collapsed" Background="#F20A0D12">
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="AchievementsPageShift"/>
+            </Grid.RenderTransform>
+            <DockPanel x:Name="AchievementsPageContent" Margin="60,36,60,24">
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="↑  Volver (Esc)" VerticalAlignment="Top"
+                            Focusable="False" Click="OnAchievementsBackClick"/>
+                    <StackPanel>
+                        <TextBlock Text="LOGROS DE STEAM" FontSize="13" FontWeight="Bold" Foreground="#8FA3BF"/>
+                        <TextBlock x:Name="AchievementsPageTitle" FontSize="34" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="AchievementsPageSummary" FontSize="16" Foreground="#C9D3E0"/>
+                    </StackPanel>
+                </DockPanel>
+                <ScrollViewer x:Name="AchievementsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                    <StackPanel x:Name="AchievementsList"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+
         <customization:FilterStripPanel x:Name="FilterStrip"/>
         <customization:OpenCasePanel x:Name="CaseView"/>
         <customization:CustomizePanel x:Name="Customizer"/>
