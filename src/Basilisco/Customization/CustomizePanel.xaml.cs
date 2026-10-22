@@ -559,7 +559,7 @@ public partial class CustomizePanel : UserControl
             pending.SetFrame(face, frame);
             UpdatePreview();
             ShowFace(face);
-        });
+        }, adaptable: face == Face.Back);
     }
 
     void SelectFormat(CoverFormat format)

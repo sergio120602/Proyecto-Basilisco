@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.6] - 2026-10-22
+
+- Las **contraportadas** se **adaptan** por defecto al tamaño de la portada: se estiran justo a la medida de la cara (600 × 900 en las cajas de PC), sin bandas negras.
+- En **Personalizar → Ajustar contraportada** hay un interruptor **«Adaptada»**, encendido por defecto. Al apagarlo, la contraportada vuelve a su proporción original, con el zoom y la posición que tuviera. La imagen guardada no se toca nunca, así que se puede encender y apagar cuando quieras.
+
 ## [0.6.5] - 2026-10-22
 
 - **Cajas de Steam**: los juegos de PC que vienen de **Steam** y están en formato **rectangular** llevan arriba, en la portada y en el lomo, la **franja negra de Steam**, como las cajas de PC reales.

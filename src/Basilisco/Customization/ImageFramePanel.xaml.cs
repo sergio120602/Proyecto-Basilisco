@@ -35,9 +35,12 @@ public partial class ImageFramePanel : UserControl
 
     /// <param name="render">Pinta la cara con un encuadre dado.</param>
     /// <param name="fillZoom">Zoom con el que la imagen llena la cara entera (botón «Llenar»).</param>
-    public void Open(string title, ImageFrame frame, double fillZoom, Func<ImageFrame, BitmapSource> render, Action<ImageFrame> onAccept)
+    /// <param name="adaptable">True para la contraportada: enseña el interruptor «Adaptada».</param>
+    public void Open(string title, ImageFrame frame, double fillZoom, Func<ImageFrame, BitmapSource> render, Action<ImageFrame> onAccept,
+                     bool adaptable = false)
     {
         TitleText.Text = title;
+        AdaptedToggle.Visibility = adaptable ? Visibility.Visible : Visibility.Collapsed;
         _render = render;
         _onAccept = onAccept;
         _fillZoom = fillZoom;
@@ -50,6 +53,7 @@ public partial class ImageFramePanel : UserControl
     {
         _frame = frame with { Zoom = Math.Clamp(frame.Zoom, ImageFrame.MinZoom, ImageFrame.MaxZoom) };
         ZoomText.Text = $"{_frame.Zoom * 100:0} %";
+        AdaptedToggle.IsChecked = _frame.Adapted;
 
         _syncingSlider = true;
         ZoomSlider.Value = ZoomToSlider(_frame.Zoom);
@@ -133,9 +137,12 @@ public partial class ImageFramePanel : UserControl
             SetFrame(_frame with { Zoom = SliderToZoom(e.NewValue) });
     }
 
-    void OnFitClick(object sender, RoutedEventArgs e) => SetFrame(ImageFrame.Default);
+    // «Entera» y «Llenar» no cambian si está adaptada; adaptada ya llena la cara justa, sin recortar.
+    void OnFitClick(object sender, RoutedEventArgs e) => SetFrame(ImageFrame.Default with { Adapted = _frame.Adapted });
 
-    void OnFillClick(object sender, RoutedEventArgs e) => SetFrame(new ImageFrame(_fillZoom));
+    void OnFillClick(object sender, RoutedEventArgs e) => SetFrame(new ImageFrame(_frame.Adapted ? 1 : _fillZoom, Adapted: _frame.Adapted));
+
+    void OnAdaptedClick(object sender, RoutedEventArgs e) => SetFrame(_frame with { Adapted = AdaptedToggle.IsChecked == true });
 
     void OnAcceptClick(object sender, RoutedEventArgs e) => Accept();
 

@@ -123,12 +123,14 @@ public static class CoverArt
     /// se ve entera (sin deformar ni recortar); con zoom se amplía alrededor del centro y se mueve, y lo que
     /// sale de la cara se recorta. Las imágenes horizontales del lomo se giran para leerse de arriba abajo.
     /// </summary>
-    internal static void DrawFramed(DrawingContext dc, BitmapSource image, Rect area, ImageFrame frame, bool rotateWide = false)
+    /// <param name="stretch">True para estirar la imagen a la medida de la cara (la contraportada «Adaptada»); el zoom y el
+    /// desplazamiento se aplican igual encima.</param>
+    internal static void DrawFramed(DrawingContext dc, BitmapSource image, Rect area, ImageFrame frame, bool rotateWide = false, bool stretch = false)
     {
         var rotate = rotateWide && image.Width > image.Height;
         double width = rotate ? image.Height : image.Width, height = rotate ? image.Width : image.Height;
 
-        var fit = FitInside(width, height, area);
+        var fit = stretch ? area : FitInside(width, height, area);
         var w = fit.Width * frame.Zoom;
         var h = fit.Height * frame.Zoom;
         var center = new Point(area.X + area.Width / 2 + frame.X * area.Width, area.Y + area.Height / 2 + frame.Y * area.Height);
@@ -295,10 +297,11 @@ public static class CoverArt
 
         if (image is not null)
         {
-            // Con el encuadre que haya elegido el usuario (por defecto, entera y con negro en el hueco que sobre).
+            // Por defecto, adaptada: estirada a la medida de la cara, como la portada. Sin adaptar, con su proporción
+            // original y el encuadre que haya elegido el usuario (entera y con negro en el hueco que sobre).
             var area = new Rect(Frame, Frame, Width - Frame * 2, Height - Frame * 2);
             dc.DrawRectangle(Brushes.Black, null, area);
-            DrawFramed(dc, image, area, frame);
+            DrawFramed(dc, image, area, frame, stretch: frame.Adapted);
         }
         else
         {
