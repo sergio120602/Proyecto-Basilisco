@@ -16,6 +16,12 @@ public sealed class Game
     /// <summary>Si es de Steam Familiar, quién lo comparte.</summary>
     public string? SteamOwner { get; set; }
 
+    /// <summary>
+    /// SteamID de todos los miembros de la familia que tienen el juego (tú incluido), para el menú «Steam familiar».
+    /// Vacía en bibliotecas antiguas, hasta que se vuelve a leer la familia de Steam.
+    /// </summary>
+    public List<string> SteamOwnerIds { get; set; } = [];
+
     /// <summary>Formato con el que se ve la caja.</summary>
     public CoverFormat Format { get; set; } = CoverFormat.Square;
 

@@ -42,9 +42,11 @@ public partial class MainWindow : Window
     // Lo seleccionado arriba: una consola, un filtro o ninguno de los dos («Todos los juegos»).
     string? _activePlatform;
     GameFilter? _activeFilter;
+    // …o un miembro de la familia de Steam (sus juegos, en el menú «Steam familiar»).
+    FamilyMember? _activeMember;
 
     /// <summary>Nombre de lo que se está viendo, para los textos («PS2», «RPG»…), o null en «Todos los juegos».</summary>
-    string? ActiveViewName => _activeFilter?.Name ?? Platforms.Find(_activePlatform)?.Name;
+    string? ActiveViewName => _activeFilter?.Name ?? Platforms.Find(_activePlatform)?.Name ?? _activeMember?.Name;
 
     /// <summary>Juegos que se ven en el carrusel con el filtro actual, en el mismo orden.</summary>
     List<Game> _visibleGames = [];
@@ -79,6 +81,7 @@ public partial class MainWindow : Window
         VersionText.Text = $"v{AppInfo.Version}";
 
         _library = _store.Load();
+        RemoveOldFamilyFilter();
         _flow = new CoverFlow(Viewport);
         _flow.SelectedIndexChanged += ShowDetails;
         RefreshFilterTabs();
@@ -95,6 +98,8 @@ public partial class MainWindow : Window
         FilterEditor.LogoSearchRequested += name => ArtSearch.Open(_steamGridDbLogos, _settings, name, FilterEditor.SetImage);
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
+        SteamImporter.FamilyLoaded += ApplyFamily;
+        ConsoleEditor.Changed += RefreshFilterTabs;
         ThemeEditor.Saved += ApplyTheme;
         ThemeEditor.ModeChanged += SetTheme;
         ThemeEditor.PerformanceChanged += ApplyPerformance;
@@ -582,7 +587,8 @@ public partial class MainWindow : Window
 
     bool BelongsToActiveFilter(Game game) =>
         (_activePlatform is null || game.Platform == _activePlatform) &&
-        (_activeFilter is null || game.FilterIds.Contains(_activeFilter.Id));
+        (_activeFilter is null || game.FilterIds.Contains(_activeFilter.Id)) &&
+        (_activeMember is null || _activeMember.Owns(game));
 
     int CountGames(GameFilter filter) => Games.Count(game => game.FilterIds.Contains(filter.Id));
 
@@ -612,7 +618,7 @@ public partial class MainWindow : Window
     void RefreshFilterTabs()
     {
         AllTab.Content = $"Todos los juegos ({Games.Count})";
-        AllTab.IsChecked = _activeFilter is null && _activePlatform is null;
+        AllTab.IsChecked = _activeFilter is null && _activePlatform is null && _activeMember is null;
 
         ConsolesTab.Content = Platforms.Find(_activePlatform) is { } platform ? $"{platform.Name} ({CountGames(platform)})  ▾" : "Consolas  ▾";
         ConsolesTab.IsChecked = _activePlatform is not null;
@@ -642,6 +648,12 @@ public partial class MainWindow : Window
         }
         FiltersTab.IsChecked = _activeFilter is not null;
 
+        FamilyTab.Content = _activeMember is { } member ? $"{member.Name} ({CountGames(member)})  ▾" : "Steam familiar  ▾";
+        FamilyTab.ToolTip = _activeMember is { } shown
+            ? $"Los juegos de {shown.Name} · clic derecho para personalizarlo"
+            : "Ver los juegos de cada miembro de tu familia de Steam";
+        FamilyTab.IsChecked = _activeMember is not null;
+
         SortTab.Content = $"Orden: {SortModes.Short(_settings.SortMode)}  ▾";
         SortTab.IsChecked = false;
     }
@@ -667,7 +679,7 @@ public partial class MainWindow : Window
 
     void OnAllTabClick(object sender, RoutedEventArgs e)
     {
-        if (_activeFilter is not null || _activePlatform is not null)
+        if (_activeFilter is not null || _activePlatform is not null || _activeMember is not null)
             SelectView(null, null);
         else
             RefreshFilterTabs();
@@ -738,6 +750,160 @@ public partial class MainWindow : Window
         var scale = _uiScale.ScaleX;
         var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
         FilterStrip.Open(tiles, top, _padMode);
+    }
+
+    // ---- Steam familiar ----
+
+    int CountGames(FamilyMember member) => Games.Count(member.Owns);
+
+    /// <summary>
+    /// Los miembros de la familia de Steam, tú el primero. Si aún no se ha leído la familia de Steam (bibliotecas de antes
+    /// de la 0.6.7), se sacan de los juegos: tú con los tuyos y cada uno con los que comparte.
+    /// </summary>
+    List<FamilyMember> FamilyMembers()
+    {
+        if (_library.Family.Count > 0)
+            return _library.Family.OrderByDescending(member => member.IsMe).ToList();
+
+        var members = new List<FamilyMember>();
+        if (Games.Any(game => game.SteamAppId is not null && game.SteamOwner is null))
+            members.Add(FamilyMember.FromName("Tú", isMe: true));
+        members.AddRange(Games.Select(game => game.SteamOwner).OfType<string>().Distinct(StringComparer.CurrentCultureIgnoreCase)
+            .Order(StringComparer.CurrentCultureIgnoreCase).Select(name => FamilyMember.FromName(name)));
+        return members;
+    }
+
+    static string? MemberImage(FamilyMember member) => ImageStore.GetMenuImagePath(AppInfo.FamilyImagesDirectory, member.Key);
+
+    void OnFamilyTabClick(object sender, RoutedEventArgs e)
+    {
+        RefreshFilterTabs();
+        OpenFamilyStrip();
+    }
+
+    /// <summary>
+    /// Grupo «Steam familiar»: la misma franja negra que la de consolas y filtros, con cada miembro de la familia (tú
+    /// incluido) con su imagen (su foto de perfil o la que le pongas) o su nombre. Al elegir uno se ven todos sus
+    /// juegos: los que tienen varios están en la ficha de cada uno.
+    /// </summary>
+    void OpenFamilyStrip()
+    {
+        static string Games(int count) => count == 1 ? "1 juego" : $"{count} juegos";
+
+        var members = FamilyMembers();
+        var tiles = new List<FilterTile>
+        {
+            new("Todos los juegos", null, Games(this.Games.Count), _activeMember is null, () => SelectView(null, null)),
+        };
+        foreach (var member in members)
+        {
+            var chosen = member;
+            var who = member.IsMe ? $"{member.Name} (tú)" : member.Name;
+            tiles.Add(new FilterTile(member.Name, MemberImage(member), $"{who} · {Games(CountGames(member))}",
+                member.SteamId == _activeMember?.SteamId, () => SelectView(null, null, chosen), Edit: () => OpenMemberEditor(chosen)));
+        }
+        if (members.Count > 0)
+            tiles.Add(new FilterTile("Personalizar miembro", null, "Ponerle una imagen (su foto de Steam o una tuya)", false,
+                () => FilterStrip.StartEditing(), IsAction: true, KeepOpen: true));
+        if (_library.Family.Count == 0)
+            tiles.Add(new FilterTile("Leer mi familia de Steam", null, "Con el token de sesión: todos los miembros y de quién es cada juego", false,
+                OpenSteamImport, IsAction: true));
+
+        var scale = _uiScale.ScaleX;
+        var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
+        FilterStrip.Open(tiles, top, _padMode, "STEAM FAMILIAR", "ELIGE EL MIEMBRO QUE QUIERES PERSONALIZAR");
+    }
+
+    // Clic derecho con un miembro elegido: personalizarlo directamente.
+    void OnFamilyTabRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_activeMember is { } member)
+            OpenMemberEditor(member);
+        e.Handled = true;
+    }
+
+    void OpenMemberEditor(FamilyMember member) =>
+        ConsoleEditor.OpenMember(member, member.AvatarUrl is { } url ? () => DownloadAvatarAsync(url) : null);
+
+    static async Task<string?> DownloadAvatarAsync(string url)
+    {
+        try
+        {
+            return await ArtProvider.DownloadAsync(new ArtImage(url, url, 0, 0), CancellationToken.None);
+        }
+        catch (ArtProviderException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Se ha leído Steam: se guardan los miembros de la familia y quién tiene cada juego (también los que ya estaban en la
+    /// biblioteca). A los miembros sin imagen se les pone su foto de perfil.
+    /// </summary>
+    void ApplyFamily(SteamFamilyInfo info)
+    {
+        _lastOwners = info.Owners;
+        var familyRead = info.Members.Count > 0;
+        if (familyRead)
+            _library.Family = info.Members;
+        ApplyOwners(replace: familyRead);
+        Save();
+        if (_activeMember is { } member)
+            _activeMember = FamilyMembers().FirstOrDefault(m => m.SteamId == member.SteamId);
+        RefreshFilterTabs();
+        if (_activeMember is not null)
+            RefreshKeeping(SelectedGame);
+        _ = DownloadMissingAvatarsAsync();
+    }
+
+    // Quién tiene cada juego, de la última vez que se leyó Steam (para los que se importen después).
+    Dictionary<int, List<string>> _lastOwners = [];
+
+    /// <param name="replace">True si se ha leído la familia entera (los dueños son todos); si no, solo se añaden.</param>
+    void ApplyOwners(bool replace)
+    {
+        foreach (var game in Games)
+        {
+            if (game.SteamAppId is { } appId && _lastOwners.TryGetValue(appId, out var owners))
+                game.SteamOwnerIds = replace ? [.. owners] : game.SteamOwnerIds.Union(owners).ToList();
+        }
+    }
+
+    async Task DownloadMissingAvatarsAsync()
+    {
+        var changed = false;
+        foreach (var member in _library.Family.Where(member => member.AvatarUrl is not null && MemberImage(member) is null).ToList())
+        {
+            if (await DownloadAvatarAsync(member.AvatarUrl!) is not { } path)
+                continue;
+            try
+            {
+                ImageStore.SetMenuImage(AppInfo.FamilyImagesDirectory, member.Key, path);
+                changed = true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+        if (changed)
+            RefreshFilterTabs();
+    }
+
+    /// <summary>
+    /// Hasta la 0.6.6 los juegos de la familia se metían en un filtro «Steam Familiar». Ahora tienen su propio menú, así
+    /// que ese filtro se quita (los juegos siguen en la biblioteca).
+    /// </summary>
+    void RemoveOldFamilyFilter()
+    {
+        var old = Filters.FirstOrDefault(filter => string.Equals(filter.Name, "Steam Familiar", StringComparison.CurrentCultureIgnoreCase));
+        if (old is null)
+            return;
+        foreach (var game in Games)
+            game.FilterIds.Remove(old.Id);
+        ImageStore.RemoveFilterImage(old);
+        Filters.Remove(old);
+        Save();
     }
 
     // Clic derecho en el grupo de filtros con uno activo: editarlo directamente.
@@ -913,10 +1079,11 @@ public partial class MainWindow : Window
 
     void SelectFilter(GameFilter? filter) => SelectView(null, filter);
 
-    void SelectView(string? platform, GameFilter? filter)
+    void SelectView(string? platform, GameFilter? filter, FamilyMember? member = null)
     {
         _activePlatform = platform;
         _activeFilter = filter;
+        _activeMember = member;
         RefreshFilterTabs();
         RefreshCarousel(0, jump: true);
 
@@ -1317,7 +1484,11 @@ public partial class MainWindow : Window
             chips.AddRange(Filters.Where(filter => game.FilterIds.Contains(filter.Id)).Select(filter => filter.Name));
         }
 
-        if (game.SteamOwner is { } owner)
+        // Steam familiar: quién lo tiene (si son varios, todos).
+        var owners = _library.Family.Count > 0 ? _library.Family.Where(member => member.Owns(game)).ToList() : [];
+        if (owners.Count > 1 || owners.Count == 1 && !owners[0].IsMe)
+            chips.Add("Steam Familiar · de " + string.Join(", ", owners.Select(member => member.IsMe ? "ti" : member.Name)));
+        else if (owners.Count == 0 && game.SteamOwner is { } owner)
             chips.Add($"Steam Familiar · de {owner}");
 
         var folder = GameLauncher.IsLink(game.Path) ? null : Path.GetFileName(Path.GetDirectoryName(game.Path));
@@ -1501,9 +1672,6 @@ public partial class MainWindow : Window
 
     void ApplySteamImport(SteamImportResult result)
     {
-        var familyFilter = result.FamilyFilter && result.Apps.Any(app => app.Source == SteamSource.Family)
-            ? FilterNamed("Steam Familiar")
-            : null;
         var byLink = result.Apps.ToDictionary(app => app.LaunchUri, StringComparer.OrdinalIgnoreCase);
 
         AddGames(result.Apps.Select(app => (app.LaunchUri, (string?)app.Name)), configure: game =>
@@ -1514,8 +1682,8 @@ public partial class MainWindow : Window
             game.SteamOwner = app.Source == SteamSource.Family ? app.Owner ?? "otro miembro" : null;
             game.PlayMinutes = Math.Max(game.PlayMinutes, app.PlaytimeMinutes);
             game.Platform ??= "pc";
-            if (familyFilter is not null && app.Source == SteamSource.Family && !game.FilterIds.Contains(familyFilter.Id))
-                game.FilterIds.Add(familyFilter.Id);
+            if (app.OwnerIds is { Count: > 0 } owners)
+                game.SteamOwnerIds = [.. owners];
         }, askPlatform: false);
 
         // Los instalados y los de la familia no traen las horas: se leen del Steam de este PC.

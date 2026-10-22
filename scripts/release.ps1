@@ -38,6 +38,20 @@ if ($LASTEXITCODE) { throw 'Falló la compilación.' }
 $asset = Join-Path $dist "Basilisco-$tag-win-x64.exe"
 Move-Item (Join-Path $dist 'Basilisco.exe') $asset
 
+# Paquete para descargar a mano: al extraerlo sale una carpeta con el .exe y su carpeta de datos (vacía, con un LEEME;
+# un .zip no guarda carpetas vacías). El .exe suelto se sigue publicando: es el que busca «Actualizar».
+$package = Join-Path $dist "Basilisco-$tag"
+$data = Join-Path $package 'basilisco-data'
+New-Item -ItemType Directory -Force $data | Out-Null
+Copy-Item $asset (Join-Path $package 'Basilisco.exe')
+Set-Content -Path (Join-Path $data 'LEEME.txt') -Encoding utf8 -Value @'
+Aquí guarda Basilisco todos sus datos: la biblioteca, las carátulas, los fondos, los manuales y los ajustes.
+
+Mantén esta carpeta junto a Basilisco.exe. Para llevarte Basilisco a otro PC o a un USB, copia la carpeta entera.
+'@
+$zip = Join-Path $dist "Basilisco-$tag-win-x64.zip"
+Compress-Archive -Path $package -DestinationPath $zip -Force
+
 Write-Host 'Subiendo código y etiqueta...' -ForegroundColor Cyan
 git -C $root tag -a $tag -m "Basilisco $tag"
 git -C $root push origin HEAD
@@ -62,6 +76,9 @@ $release = Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$re
 $assetName = Split-Path $asset -Leaf
 Invoke-RestMethod -Method Post -Uri "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets?name=$assetName" `
     -Headers $headers -InFile $asset -ContentType 'application/octet-stream' | Out-Null
+$zipName = Split-Path $zip -Leaf
+Invoke-RestMethod -Method Post -Uri "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets?name=$zipName" `
+    -Headers $headers -InFile $zip -ContentType 'application/zip' | Out-Null
 
 Write-Host "Publicado: $($release.html_url)" -ForegroundColor Green
 

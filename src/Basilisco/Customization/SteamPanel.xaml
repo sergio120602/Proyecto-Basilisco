@@ -45,8 +45,8 @@
                             <TextBlock x:Name="TokenStatus" FontSize="12" Margin="2,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
 
-                        <CheckBox x:Name="FamilyFilterBox" IsChecked="True" Margin="2,18,0,0" Focusable="False" FontSize="14" Foreground="{DynamicResource TextBrush}"
-                                  Content="Agrupar los de la familia en un filtro «Steam Familiar»"/>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,18,0,0" TextWrapping="Wrap"
+                                   Text="Con Steam Familiar, en el menú «Steam familiar» de arriba verás a cada miembro de tu familia con sus juegos."/>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
                             <Button Style="{StaticResource PillButton}" Content="Cancelar" Click="OnCancelClick"/>

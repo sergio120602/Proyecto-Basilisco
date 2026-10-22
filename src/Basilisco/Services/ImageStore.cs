@@ -115,24 +115,34 @@ public static class ImageStore
     }
 
     /// <summary>Imagen de la consola para el menú de consolas, o null si no tiene.</summary>
-    public static string? GetPlatformImagePath(string platformId) =>
-        Directory.Exists(AppInfo.PlatformImagesDirectory)
-            ? Directory.EnumerateFiles(AppInfo.PlatformImagesDirectory, platformId + "-*").Where(IsImage).OrderDescending().FirstOrDefault()
-            : null;
+    public static string? GetPlatformImagePath(string platformId) => GetMenuImagePath(AppInfo.PlatformImagesDirectory, platformId);
 
     /// <summary>Copia la imagen como la de esa consola y borra la anterior.</summary>
-    public static void SetPlatformImage(string platformId, string sourcePath)
+    public static void SetPlatformImage(string platformId, string sourcePath) => SetMenuImage(AppInfo.PlatformImagesDirectory, platformId, sourcePath);
+
+    public static void RemovePlatformImage(string platformId) => RemoveMenuImage(AppInfo.PlatformImagesDirectory, platformId);
+
+    /// <summary>
+    /// Imagen de una casilla de los menús en franja (una consola, un miembro de la familia): el archivo más reciente de
+    /// la carpeta que empieza por su nombre, o null si no tiene.
+    /// </summary>
+    public static string? GetMenuImagePath(string directory, string id) =>
+        Directory.Exists(directory)
+            ? Directory.EnumerateFiles(directory, id + "-*").Where(IsImage).OrderDescending().FirstOrDefault()
+            : null;
+
+    public static void SetMenuImage(string directory, string id, string sourcePath)
     {
-        var old = GetPlatformImagePath(platformId);
-        Import(sourcePath, AppInfo.PlatformImagesDirectory, platformId);
+        var old = GetMenuImagePath(directory, id);
+        Import(sourcePath, directory, id);
         if (old is not null)
-            Delete(AppInfo.PlatformImagesDirectory, Path.GetFileName(old));
+            Delete(directory, Path.GetFileName(old));
     }
 
-    public static void RemovePlatformImage(string platformId)
+    public static void RemoveMenuImage(string directory, string id)
     {
-        if (GetPlatformImagePath(platformId) is { } path)
-            Delete(AppInfo.PlatformImagesDirectory, Path.GetFileName(path));
+        if (GetMenuImagePath(directory, id) is { } path)
+            Delete(directory, Path.GetFileName(path));
     }
 
     public static string? GetManualPdfPath(Game game) => Resolve(AppInfo.ManualsDirectory, game.ManualPdf);

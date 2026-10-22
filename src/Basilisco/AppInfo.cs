@@ -24,6 +24,9 @@ public static class AppInfo
     /// <summary>Imágenes de las consolas para el menú de consolas (&lt;consola&gt;.png, .jpg…).</summary>
     public static string PlatformImagesDirectory { get; } = Path.Combine(DataDirectory, "platforms");
 
+    /// <summary>Imágenes de los miembros de la familia de Steam para el menú «Steam familiar».</summary>
+    public static string FamilyImagesDirectory { get; } = Path.Combine(DataDirectory, "family");
+
     /// <summary>Manuales de los juegos en PDF (creados por Basilisco o elegidos por el usuario).</summary>
     public static string ManualsDirectory { get; } = Path.Combine(DataDirectory, "manuals");
 }

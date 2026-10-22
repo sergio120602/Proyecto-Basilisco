@@ -13,7 +13,8 @@ public enum MetadataSource { LaunchBox, SteamGridDb, SpineArchive, SteamGameCove
 /// Descarga automática de las imágenes de un juego, sin preguntar: para cada parte se prueban los servicios en su orden
 /// de prioridad y se queda con la primera imagen que se encuentre.
 /// <list type="bullet">
-/// <item>Portada: LaunchBox, SteamGridDB y Steam Game Covers (en PC, SteamGridDB antes que LaunchBox).</item>
+/// <item>Portada: en las cajas rectangulares, LaunchBox, SteamGridDB y Steam Game Covers (en PC, SteamGridDB antes que
+/// LaunchBox); en las cuadradas, siempre SteamGridDB primero (sus carátulas de 1024 × 1024 son las que encajan).</item>
 /// <item>Contraportada: LaunchBox, SteamGridDB y Steam Game Covers.</item>
 /// <item>Lomo: LaunchBox, The Spine Archive y Steam Game Covers (en PC, The Spine Archive, Steam Game Covers y LaunchBox).
 /// Los lomos de The Spine Archive son de Switch: en las demás consolas se les quita la franja con el logotipo de Nintendo.</item>
@@ -41,9 +42,9 @@ public sealed class MetadataFetcher(AppSettings settings)
     public static bool IsPc(string? platform) => platform is null or "pc";
 
     /// <summary>De dónde se saca cada parte, por orden.</summary>
-    public static MetadataSource[] Priority(MetadataPart part, string? platform) => part switch
+    public static MetadataSource[] Priority(MetadataPart part, string? platform, CoverFormat format) => part switch
     {
-        MetadataPart.Front => IsPc(platform)
+        MetadataPart.Front => IsPc(platform) || format == CoverFormat.Square
             ? [MetadataSource.SteamGridDb, MetadataSource.LaunchBox, MetadataSource.SteamGameCovers]
             : [MetadataSource.LaunchBox, MetadataSource.SteamGridDb, MetadataSource.SteamGameCovers],
         MetadataPart.Back => [MetadataSource.LaunchBox, MetadataSource.SteamGridDb, MetadataSource.SteamGameCovers],
@@ -118,7 +119,7 @@ public sealed class MetadataFetcher(AppSettings settings)
         if (string.IsNullOrWhiteSpace(name))
             return null;
         LastSource = null;
-        foreach (var source in Priority(part, platform))
+        foreach (var source in Priority(part, platform, format))
         {
             cancellation.ThrowIfCancellationRequested();
             if (await FromAsync(source, name, platform, format, part, cancellation) is { } path)

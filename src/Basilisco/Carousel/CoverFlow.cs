@@ -74,6 +74,24 @@ public sealed class CoverFlow
     PerspectiveCamera _camera = null!;
     const double FieldOfView = 55;
 
+    // Pantallas panorámicas (21:9, 32:9…): WPF fija el ángulo de visión horizontal, así que en una pantalla más ancha
+    // que 16:9 se vería menos por arriba y por abajo (las cajas, más grandes y cortadas). Se abre el ángulo lo justo para
+    // ver lo mismo en vertical que en 16:9, y el carrusel llega más lejos a los lados para llenar el ancho de más.
+    const double DesignAspect = 16.0 / 9.0;
+    double _fieldOfView = FieldOfView;
+    double _wide = 1;
+
+    void UpdateAspect()
+    {
+        double width = _viewport.ActualWidth, height = _viewport.ActualHeight;
+        if (width <= 0 || height <= 0)
+            return;
+        _wide = Math.Max(1, width / height / DesignAspect);
+        _fieldOfView = 2 * Math.Atan(Math.Tan(FieldOfView * Math.PI / 360) * _wide) * 180 / Math.PI;
+        _camera.FieldOfView = _fieldOfView;
+        ApplyLayout();
+    }
+
     // Disposición de las cajas laterales.
     const double NeighborOffsetX = 1.14;
     const double StackSpacingX = 0.25;
@@ -211,6 +229,7 @@ public sealed class CoverFlow
         };
         _viewport.Children.Add(new ModelVisual3D { Content = BoxModel.CreateLighting() });
         _viewport.Children.Add(new ModelVisual3D { Content = _scene });
+        _viewport.SizeChanged += (_, _) => UpdateAspect();
     }
 
     /// <param name="jump">True para colocarse directamente en la selección sin deslizar (al cambiar de filtro).</param>
@@ -310,7 +329,7 @@ public sealed class CoverFlow
 
         var v = point - CameraPosition;
         var depth = Vector3D.DotProduct(v, forward);
-        var halfWidth = depth * Math.Tan(FieldOfView * Math.PI / 360);
+        var halfWidth = depth * Math.Tan(_fieldOfView * Math.PI / 360);
 
         double width = _viewport.ActualWidth, height = _viewport.ActualHeight;
         var x = Vector3D.DotProduct(v, right) / halfWidth;
@@ -427,14 +446,15 @@ public sealed class CoverFlow
             var distance = Math.Abs(offset);
 
             // Posición en el carrusel.
-            var carouselVisible = distance <= MaxVisibleDistance;
+            var carouselVisible = distance <= MaxVisibleDistance * _wide;
             var side = Math.Sign(offset);
             var near = Math.Min(distance, 1);
             var stacked = Math.Max(0, distance - 1);
             var cx = side * (near * neighborOffset + stacked * StackSpacingX);
             var cz = -(near * NeighborDepth + stacked * StackSpacingDepth);
             var cAngle = side * near * SideAngle;
-            var cOpacity = distance <= FadeStart ? 1 : Math.Max(0, (MaxVisibleDistance - distance) / (MaxVisibleDistance - FadeStart));
+            double fadeStart = FadeStart * _wide, maxVisible = MaxVisibleDistance * _wide;
+            var cOpacity = distance <= fadeStart ? 1 : Math.Max(0, (maxVisible - distance) / (maxVisible - fadeStart));
             if (rowCenters is not null)
             {
                 // De frente y a la misma profundidad que la del centro: la fila queda recta en pantalla.
@@ -442,8 +462,9 @@ public sealed class CoverFlow
                 cz = 0;
                 cAngle = 0;
                 var reach = Math.Abs(cx);
-                carouselVisible = reach < RowVisible;
-                cOpacity = reach <= RowFadeStart ? 1 : Math.Max(0, (RowVisible - reach) / (RowVisible - RowFadeStart));
+                double rowFade = RowFadeStart * _wide, rowVisible = RowVisible * _wide;
+                carouselVisible = reach < rowVisible;
+                cOpacity = reach <= rowFade ? 1 : Math.Max(0, (rowVisible - reach) / (rowVisible - rowFade));
             }
 
             // Posición en la estantería: girada 90° (el lomo mira a la cámara) y con los lomos alineados.
@@ -454,8 +475,9 @@ public sealed class CoverFlow
                 sx = Interpolate(centers, slot.Shown) - focus;
                 sz = ShelfSpineZ - BoxModel.WidthOf(slot.Item) / 2 + slot.Lift * ShelfLift * 0.6;
                 var reach = Math.Abs(sx);
-                shelfVisible = reach < ShelfVisible;
-                sOpacity = reach <= ShelfFadeStart ? 1 : Math.Max(0, (ShelfVisible - reach) / (ShelfVisible - ShelfFadeStart));
+                double shelfFade = ShelfFadeStart * _wide, shelfMax = ShelfVisible * _wide;
+                shelfVisible = reach < shelfMax;
+                sOpacity = reach <= shelfFade ? 1 : Math.Max(0, (shelfMax - reach) / (shelfMax - shelfFade));
             }
 
             if (!(blend < 1 && carouselVisible) && !(blend > 0 && shelfVisible))

@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
-    <!-- La imagen de una consola en el menú de consolas -->
+    <!-- La imagen de una consola en el menú de consolas, o la de un miembro en el de Steam familiar -->
     <Grid Background="#A60E1218" MouseLeftButtonDown="OnBackdropMouseDown">
         <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="34" Width="640" HorizontalAlignment="Center" VerticalAlignment="Center"
                 MouseLeftButtonDown="OnCardMouseDown">
@@ -11,8 +11,7 @@
             </Border.Effect>
             <StackPanel>
                 <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
-                <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"
-                           Text="La imagen que se ve en el menú de consolas. Sin imagen, se escribe su nombre."/>
+                <TextBlock x:Name="HelpText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"/>
 
                 <!-- Vista previa: como se verá en la franja negra del menú -->
                 <Border Background="#0B0C0F" CornerRadius="14" BorderBrush="#E8B923" BorderThickness="3" Height="200" Margin="0,20,0,0">
@@ -24,8 +23,7 @@
                 </Border>
 
                 <WrapPanel Margin="0,18,0,0">
-                    <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxClick" Margin="0,0,10,10"
-                            ToolTip="La foto de la consola en la base de datos de LaunchBox"/>
+                    <Button x:Name="SourceButton" Style="{StaticResource PillButton}" Click="OnSourceClick" Margin="0,0,10,10"/>
                     <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseClick" Margin="0,0,10,10"/>
                     <Button x:Name="RemoveButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Click="OnRemoveClick" Margin="0,0,10,10"/>
                 </WrapPanel>
