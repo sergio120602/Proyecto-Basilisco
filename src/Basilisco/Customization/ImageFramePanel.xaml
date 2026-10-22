@@ -34,6 +34,10 @@
                                 ToolTip="La imagen entera dentro de la cara, sin recortar"/>
                         <Button Style="{StaticResource PillButton}" Content="Llenar" Margin="10,0,0,0" Click="OnFillClick"
                                 ToolTip="La imagen llena toda la cara, recortando lo que sobre"/>
+                        <!-- Solo en la contraportada: estirada al tamaño de la cara (como la portada) o con su proporción original -->
+                        <ToggleButton x:Name="AdaptedToggle" Style="{StaticResource FilterToggle}" Content="Adaptada" Margin="20,0,0,0"
+                                      VerticalAlignment="Center" Click="OnAdaptedClick" Visibility="Collapsed"
+                                      ToolTip="Encendida: la contraportada se estira justo al tamaño de la cara, el mismo que la portada. Apagada: vuelve a su proporción original"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Style="{StaticResource PillButton}" Content="Cancelar" Click="OnCancelClick"/>
