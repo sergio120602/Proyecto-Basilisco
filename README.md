@@ -138,6 +138,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.2** — Arranque más rápido, menos memoria y opciones de rendimiento
 - [x] **v0.6.3** — Carrusel más fluido: cajas pintadas en bloques de 50 y sin reflejos
 - [x] **v0.6.4** — Descarga automática de todas las partes con prioridades y botón «Descarga Metadatos Actualización»
+- [x] **v0.6.5** — Cajas de Steam: franja de Steam en la portada y el lomo, con la carátula en 2:3
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

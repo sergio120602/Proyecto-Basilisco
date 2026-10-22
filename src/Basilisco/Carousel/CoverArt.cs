@@ -27,33 +27,43 @@ public static class CoverArt
 
 
     /// <summary>Medidas en píxeles de la portada y la contraportada de una caja.</summary>
-    public static Size FaceSize(CoverFormat format, string? platform)
+    public static Size FaceSize(CoverFormat format, string? platform, bool steam = false)
     {
         if (format == CoverFormat.Square)
             return new Size(Width, Height);
-        var shape = BoxShape.Of(format, platform);
+        var shape = BoxShape.Of(format, platform, steam);
         return new Size(Math.Round(shape.Width * PortraitPixelsPerUnit), Math.Round(shape.Height * PortraitPixelsPerUnit));
     }
 
     static Size FaceSize(CarouselItem item) =>
-        item.IsAddCard ? new Size(Width, Height) : FaceSize(item.Format, item.Platform);
+        item.IsAddCard ? new Size(Width, Height) : FaceSize(item.Format, item.Platform, item.Steam);
+
+    /// <summary>
+    /// Alto de la franja de Steam (arriba de la portada y del lomo): lo que queda encima de la carátula, que va en 2:3
+    /// y de lado a lado de la portada.
+    /// </summary>
+    static double SteamBandHeight(Size face) => face.Height - Frame - SteamArtHeight(face);
+
+    static double SteamArtHeight(Size face) => (face.Width - Frame * 2) * 1.5;
 
 
     /// <summary>Medidas de la zona de la carátula en la portada, para calcular el zoom de «Llenar».</summary>
-    public static Size FrontArtSize(CoverFormat format, string? platform)
+    public static Size FrontArtSize(CoverFormat format, string? platform, bool steam = false)
     {
         if (format == CoverFormat.Square)
             return new Size(Height - Frame, Height - Frame * 2);
-        var face = FaceSize(format, platform);
+        var face = FaceSize(format, platform, steam);
+        if (BoxShape.IsSteamCase(format, platform, steam))
+            return new Size(face.Width - Frame * 2, SteamArtHeight(face));
         return new Size(face.Width - Frame * 2, face.Height - Frame * 2);
     }
 
     /// <summary>Medidas del lomo: tan alto como la caja y tan ancho como su grosor.</summary>
-    public static Size SpineSize(CoverFormat format, string? platform)
+    public static Size SpineSize(CoverFormat format, string? platform, bool steam = false)
     {
         if (format == CoverFormat.Square)
             return new Size(SpineWidth, Height);
-        var shape = BoxShape.Of(format, platform);
+        var shape = BoxShape.Of(format, platform, steam);
         return new Size(Math.Max(8, Math.Round(shape.Depth * PortraitPixelsPerUnit)), Math.Round(shape.Height * PortraitPixelsPerUnit));
     }
 
@@ -74,7 +84,8 @@ public static class CoverArt
         if (item.Format == CoverFormat.Portrait)
         {
             var size = FaceSize(item);
-            return Rasterize((int)size.Width, (int)size.Height, dc => DrawPortraitCase(dc, size, item.Title, image, item.Platform, frame));
+            var steamBand = BoxShape.IsSteamCase(item.Format, item.Platform, item.Steam) ? SteamBandHeight(size) : 0;
+            return Rasterize((int)size.Width, (int)size.Height, dc => DrawPortraitCase(dc, size, item.Title, image, item.Platform, frame, steamBand));
         }
         return Rasterize(Width, Height, dc => DrawCase(dc, item.Title, image, item.Platform, frame));
     }
@@ -95,11 +106,13 @@ public static class CoverArt
     {
         var image = item.SpineImagePath is null || item.IsAddCard ? null : LoadImage(item.SpineImagePath, SpineDecodeWidth);
         var scale = image is null ? 1 : 2;
-        var size = item.IsAddCard ? SpineSize(CoverFormat.Square, null) : SpineSize(item.Format, item.Platform);
+        var size = item.IsAddCard ? SpineSize(CoverFormat.Square, null) : SpineSize(item.Format, item.Platform, item.Steam);
+        // En las cajas de Steam, el lomo lleva arriba la franja de Steam a la misma altura que la de la portada.
+        var steamBand = !item.IsAddCard && BoxShape.IsSteamCase(item.Format, item.Platform, item.Steam) ? SteamBandHeight(FaceSize(item)) : 0;
         return Rasterize((int)size.Width * scale, (int)size.Height * scale, dc =>
         {
             dc.PushTransform(new ScaleTransform(scale, scale));
-            DrawSpine(dc, size, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default);
+            DrawSpine(dc, size, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default, steamBand);
             dc.Pop();
         });
     }
@@ -241,18 +254,24 @@ public static class CoverArt
     /// Caja rectangular: la carátula ocupa toda la portada, sin franja de consola. Está pensada para portadas
     /// de caja reales (como las de LaunchBox), que ya traen impresa la franja oficial de su consola.
     /// </summary>
-    static void DrawPortraitCase(DrawingContext dc, Size size, string title, BitmapSource? image, string? platform, ImageFrame frame)
+    /// <param name="steamBand">Alto de la franja de Steam de arriba (0 si no es una caja de Steam): la carátula va debajo.</param>
+    static void DrawPortraitCase(DrawingContext dc, Size size, string title, BitmapSource? image, string? platform, ImageFrame frame,
+                                 double steamBand = 0)
     {
         double PortraitWidth = size.Width, PortraitHeight = size.Height;
         var bounds = new Rect(0, 0, PortraitWidth, PortraitHeight);
         dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x17, 0x18, 0x1C), Color.FromRgb(0x05, 0x05, 0x07), 45), null, bounds);
 
-        var area = new Rect(Frame, Frame, PortraitWidth - Frame * 2, PortraitHeight - Frame * 2);
+        var area = steamBand > 0
+            ? new Rect(Frame, steamBand, PortraitWidth - Frame * 2, PortraitHeight - Frame - steamBand)
+            : new Rect(Frame, Frame, PortraitWidth - Frame * 2, PortraitHeight - Frame * 2);
         if (image is not null)
         {
             dc.DrawRectangle(Brushes.Black, null, area);
             DrawFramed(dc, image, area, frame);
         }
+        if (steamBand > 0)
+            PlatformArt.DrawSteamBand(dc, new Rect(0, 0, PortraitWidth, steamBand), spine: false);
 
         var gloss = new LinearGradientBrush(Color.FromArgb(30, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0.6, 0.6));
         dc.DrawRectangle(gloss, null, bounds);
@@ -294,29 +313,33 @@ public static class CoverArt
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), Frame), new Rect(Frame / 2.0, Frame / 2.0, Width - Frame, Height - Frame));
     }
 
-    static void DrawSpine(DrawingContext dc, Size size, string title, string? platform, BitmapSource? image, ImageFrame frame)
+    /// <param name="steamBand">Alto de la franja de Steam de arriba (0 si no es una caja de Steam): la imagen y el nombre van debajo.</param>
+    static void DrawSpine(DrawingContext dc, Size size, string title, string? platform, BitmapSource? image, ImageFrame frame, double steamBand = 0)
     {
         double SpineWidth = size.Width, Height = size.Height;
         // El lomo es del plástico de la consola (verde en Xbox 360, blanco en Wii…).
         var plastic = PlatformArt.Plastic(platform);
         var bounds = new Rect(0, 0, SpineWidth, Height);
         dc.DrawRectangle(new LinearGradientBrush(Shade(plastic, 1.25), Shade(plastic, 0.8), 0), null, bounds);
+        var content = new Rect(0, steamBand, SpineWidth, Height - steamBand);
 
         if (image is not null)
         {
             // Imagen propia del lomo, encuadrada como haya elegido el usuario; sustituye al nombre.
-            dc.DrawRectangle(Brushes.Black, null, bounds);
-            DrawFramed(dc, image, bounds, frame, rotateWide: true);
+            dc.DrawRectangle(Brushes.Black, null, content);
+            DrawFramed(dc, image, content, frame, rotateWide: true);
         }
+        if (steamBand > 0)
+            PlatformArt.DrawSteamBand(dc, new Rect(0, 0, SpineWidth, steamBand), spine: true);
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), 3), new Rect(1.5, 1.5, SpineWidth - 3, Height - 3));
 
         if (title.Length == 0 || image is not null)
             return;
 
         // Texto girado 90° para leerse de arriba abajo, como en el lomo de las cajas reales.
-        var text = CreateText(title, SpineWidth * 0.5, PlatformArt.TextOnPlastic(platform), Height - 48, TextAlignment.Left);
+        var text = CreateText(title, SpineWidth * 0.5, PlatformArt.TextOnPlastic(platform), content.Height - 48, TextAlignment.Left);
         text.MaxLineCount = 1;
-        dc.PushTransform(new MatrixTransform(0, 1, -1, 0, SpineWidth / 2.0 + text.Height / 2, 24));
+        dc.PushTransform(new MatrixTransform(0, 1, -1, 0, SpineWidth / 2.0 + text.Height / 2, steamBand + 24));
         dc.DrawText(text, new Point(0, 0));
         dc.Pop();
     }
