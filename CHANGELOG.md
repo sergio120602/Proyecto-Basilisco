@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.5] - 2026-10-22
+
+- **Cajas de Steam**: los juegos de PC que vienen de **Steam** y están en formato **rectangular** llevan arriba, en la portada y en el lomo, la **franja negra de Steam**, como las cajas de PC reales.
+  - En la portada va la marca en un círculo blanco y «STEAM» en letras gruesas; en el lomo, solo la marca.
+  - Debajo de la franja, la carátula ocupa una zona exactamente **2:3**: las portadas de SteamGridDB (600 × 900) caben justas, sin bordes negros ni recortes. La caja mide 19 cm de alto y se estrecha lo justo para que salga esa proporción.
+  - Si quieres usar tu propia franja, guárdala en `basilisco-data/borders` como `steam.png` (portada) y `steam-lomo.png` (lomo).
+
 ## [0.6.4] - 2026-10-22
 
 - **Descarga automática de todo**: portada, contraportada, lomo, interior de la caja, disco y manual. Cada parte se busca en sus servicios por orden de prioridad:

@@ -603,7 +603,7 @@ public partial class MainWindow : Window
         new(game.Name, IsAddCard: false,
             ImageStore.GetPath(game, game.Format, Face.Front), ImageStore.GetPath(game, game.Format, Face.Back), game.Platform,
             ImageStore.GetPath(game, game.Format, Face.Spine), game.CurrentFaces.BackFrame, game.CurrentFaces.SpineFrame,
-            game.Format, game.CurrentFaces.FrontFrame);
+            game.Format, game.CurrentFaces.FrontFrame, Steam: game.SteamAppId is not null);
 
     /// <summary>
     /// Barra de arriba: «Todos los juegos», el grupo de consolas, el de filtros y el orden. Cada botón dice lo que

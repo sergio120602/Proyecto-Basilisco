@@ -14,7 +14,8 @@ namespace Basilisco.Carousel;
 /// <param name="FrontFrame">Encuadre de la portada; null para verla entera.</param>
 public sealed record CarouselItem(string Title, bool IsAddCard, string? ImagePath = null, string? BackImagePath = null, string? Platform = null,
                                   string? SpineImagePath = null, Models.ImageFrame? BackFrame = null, Models.ImageFrame? SpineFrame = null,
-                                  Models.CoverFormat Format = Models.CoverFormat.Square, Models.ImageFrame? FrontFrame = null);
+                                  Models.CoverFormat Format = Models.CoverFormat.Square, Models.ImageFrame? FrontFrame = null,
+                                  bool Steam = false);
 
 /// <summary>
 /// Carrusel 3D de cajas: la seleccionada de frente y el resto girado y apilado a los lados,

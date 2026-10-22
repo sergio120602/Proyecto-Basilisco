@@ -17,10 +17,20 @@ public sealed record BoxShape(double Width, double Height, double Depth)
     static readonly BoxShape Dvd = Cm(19.0, 13.5, 1.4);
 
     public static BoxShape Of(CarouselItem item) =>
-        item.IsAddCard ? Square : Of(item.Format, item.Platform);
+        item.IsAddCard ? Square : Of(item.Format, item.Platform, item.Steam);
 
-    public static BoxShape Of(CoverFormat format, string? platform) =>
-        format == CoverFormat.Square ? Square : platform switch
+    /// <summary>
+    /// Caja de juego de PC de Steam (rectangular): arriba, en la portada y en el lomo, la franja negra de Steam; debajo,
+    /// la carátula en 2:3, para que las de SteamGridDB (600 × 900) quepan justas, sin recortar ni dejar huecos.
+    /// </summary>
+    public static bool IsSteamCase(CoverFormat format, string? platform, bool steam) =>
+        steam && format == CoverFormat.Portrait && platform == "pc";
+
+    // 19 cm de alto, como las demás de PC; el ancho, el justo para que bajo la franja (un 11 % del alto) quede 2:3.
+    static readonly BoxShape SteamCase = Cm(19.0, 11.4, 1.4);
+
+    public static BoxShape Of(CoverFormat format, string? platform, bool steam = false) =>
+        format == CoverFormat.Square ? Square : IsSteamCase(format, platform, steam) ? SteamCase : platform switch
         {
             "ps1" => Cm(12.5, 14.2, 1.0),   // Jewel case de CD (EE. UU.)
             "ps2" => Dvd,                   // Caja de DVD

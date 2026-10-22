@@ -83,6 +83,9 @@ public partial class CustomizePanel : UserControl
     CoverFormat _format;
     string? _newPath;
     string? _platform;
+
+    // Juego de Steam: en PC y rectangular, su caja lleva la franja de Steam arriba (ver BoxShape.IsSteamCase).
+    bool _steam;
     CancellationTokenSource? _autoFetch;
     ImageChange _background = ImageChange.None;
     ImageChange _disc = ImageChange.None;
@@ -170,6 +173,7 @@ public partial class CustomizePanel : UserControl
         SyncFormatToggles();
 
         _platform = game.Platform;
+        _steam = game.SteamAppId is not null;
         PlatformToggles.Children.Clear();
         foreach (var option in PlatformOption.All)
         {
@@ -247,7 +251,7 @@ public partial class CustomizePanel : UserControl
     {
         if (_game is null)
             return;
-        var shape = BoxShape.Of(_format, _platform);
+        var shape = BoxShape.Of(_format, _platform, _steam);
         var aspect = shape.Width / shape.Height;
         var plastic = PlatformArt.Plastic(_platform);
         var manualPath = CurrentExtra(GameExtra.Manual);
@@ -454,7 +458,7 @@ public partial class CustomizePanel : UserControl
         Pending.SetChange(face, new ImageChange(path, false));
         // Una imagen nueva empieza entera; un banner girado queda muy estrecho entero, así que en el lomo se llena.
         Pending.SetFrame(face, face == Face.Spine && CoverArt.LoadImage(path) is { } image
-            ? new ImageFrame(CoverArt.FillZoom(new Size(image.Width, image.Height), CoverArt.SpineSize(_format, _platform), rotateWide: true))
+            ? new ImageFrame(CoverArt.FillZoom(new Size(image.Width, image.Height), CoverArt.SpineSize(_format, _platform, _steam), rotateWide: true))
             : ImageFrame.Default);
         UpdatePreview();
         if (show)
@@ -515,7 +519,7 @@ public partial class CustomizePanel : UserControl
         _platform,
         CurrentPath(_format, Face.Spine),
         Pending.Frame(Face.Back), Pending.Frame(Face.Spine),
-        _format, Pending.Frame(Face.Front));
+        _format, Pending.Frame(Face.Front), Steam: _steam);
 
     /// <summary>Abre el editor de encuadre para una cara.</summary>
     void OpenFrameEditor(Face face)
@@ -535,17 +539,17 @@ public partial class CustomizePanel : UserControl
         {
             case Face.Front:
                 title = "Ajustar portada";
-                fill = CoverArt.FillZoom(size, CoverArt.FrontArtSize(_format, _platform), rotateWide: false);
+                fill = CoverArt.FillZoom(size, CoverArt.FrontArtSize(_format, _platform, _steam), rotateWide: false);
                 render = frame => CoverArt.RenderCover(item with { FrontFrame = frame });
                 break;
             case Face.Back:
                 title = "Ajustar contraportada";
-                fill = CoverArt.FillZoom(size, CoverArt.FaceSize(_format, _platform), rotateWide: false);
+                fill = CoverArt.FillZoom(size, CoverArt.FaceSize(_format, _platform, _steam), rotateWide: false);
                 render = frame => CoverArt.RenderBack(item with { BackFrame = frame });
                 break;
             default:
                 title = "Ajustar lomo";
-                fill = CoverArt.FillZoom(size, CoverArt.SpineSize(_format, _platform), rotateWide: true);
+                fill = CoverArt.FillZoom(size, CoverArt.SpineSize(_format, _platform, _steam), rotateWide: true);
                 render = frame => CoverArt.RenderSpine(item with { SpineFrame = frame });
                 break;
         }

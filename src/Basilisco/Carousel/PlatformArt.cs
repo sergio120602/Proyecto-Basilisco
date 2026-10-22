@@ -319,6 +319,81 @@ public static class PlatformArt
         Separator(dc, band, Color.FromRgb(0x33, 0x33, 0x37));
     }
 
+    /// <summary>
+    /// Franja de Steam de arriba de las cajas de PC de Steam: negra, con la marca en un círculo y, en la portada,
+    /// «STEAM» al lado. Si el usuario tiene la suya en basilisco-data/borders (steam.png para la portada y
+    /// steam-lomo.png para el lomo), se usa esa.
+    /// </summary>
+    public static void DrawSteamBand(DrawingContext dc, Rect band, bool spine)
+    {
+        if (BandImage(spine ? "steam-lomo" : "steam") is { } image)
+        {
+            dc.DrawImage(image, band);
+            return;
+        }
+
+        Fill(dc, band, Color.FromRgb(0x05, 0x05, 0x06));
+        if (spine)
+        {
+            var radius = Math.Min(band.Width * 0.4, band.Height * 0.36);
+            DrawSteamMark(dc, new Point(band.X + band.Width / 2, band.Y + band.Height / 2), radius, shaded: true);
+        }
+        else
+        {
+            var radius = band.Height * 0.39;
+            var center = new Point(band.X + band.Height * 0.3 + radius, band.Y + band.Height / 2);
+            DrawSteamMark(dc, center, radius, shaded: false);
+            var label = Text("STEAM", band.Height * 0.46, White, Face("Segoe UI", FontWeights.Black));
+            label.MaxTextWidth = Math.Max(1, band.Right - center.X - radius * 1.45);
+            label.MaxLineCount = 1;
+            dc.DrawText(label, new Point(center.X + radius * 1.35, band.Y + (band.Height - label.Height) / 2));
+        }
+
+        // Filo fino bajo la franja, como el borde del papel de la carátula.
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2A, 0x2B, 0x30)), null, new Rect(band.X, band.Bottom - 2, band.Width, 2));
+    }
+
+    /// <summary>
+    /// Marca de inspiración Steam: un círculo con el «pistón» en negro (la rueda grande arriba a la derecha, la pequeña
+    /// abajo a la izquierda y el brazo que las une).
+    /// </summary>
+    static void DrawSteamMark(DrawingContext dc, Point center, double radius, bool shaded)
+    {
+        Brush disk = shaded
+            ? new RadialGradientBrush(Color.FromRgb(0xF2, 0xF2, 0xF2), Color.FromRgb(0x9C, 0x9E, 0xA3)) { GradientOrigin = new Point(0.35, 0.3) }
+            : White;
+        var ink = new SolidColorBrush(Color.FromRgb(0x0B, 0x0B, 0x0D));
+        dc.DrawEllipse(disk, null, center, radius, radius);
+
+        Point At(double x, double y) => new(center.X + x * radius, center.Y + y * radius);
+        var big = At(0.30, -0.18);
+        var small = At(-0.34, 0.30);
+
+        // Lo de abajo a la izquierda del círculo es negro: de ahí sale el brazo hacia la rueda grande.
+        dc.PushClip(new EllipseGeometry(center, radius, radius));
+        var tail = new StreamGeometry();
+        using (var g = tail.Open())
+        {
+            g.BeginFigure(At(-1.1, 0.02), true, true);
+            g.LineTo(At(-0.34, 0.24), true, false);
+            g.LineTo(At(-0.56, 1.1), true, false);
+            g.LineTo(At(-1.1, 1.1), true, false);
+        }
+        tail.Freeze();
+        dc.DrawGeometry(ink, null, tail);
+        dc.Pop();
+
+        var arm = new Pen(ink, radius * 0.26) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+        dc.DrawLine(arm, small, big);
+
+        dc.DrawEllipse(ink, null, big, radius * 0.42, radius * 0.42);
+        dc.DrawEllipse(disk, null, big, radius * 0.32, radius * 0.32);
+        dc.DrawEllipse(ink, null, big, radius * 0.22, radius * 0.22);
+
+        dc.DrawEllipse(ink, null, small, radius * 0.22, radius * 0.22);
+        dc.DrawEllipse(disk, null, small, radius * 0.12, radius * 0.12);
+    }
+
     /// <summary>Marca de inspiración PlayStation: «PS» con las letras de colores.</summary>
     static void DrawPsMark(DrawingContext dc, Rect area, bool colorful)
     {
