@@ -22,6 +22,9 @@ public sealed class Game
     /// </summary>
     public List<string> SteamOwnerIds { get; set; } = [];
 
+    /// <summary>Perfil de trofeos (juegos sin logros de Steam): creados a mano o de RetroAchievements, RPCS3 o PlayStation.</summary>
+    public TrophyProfile? Trophies { get; set; }
+
     /// <summary>Formato con el que se ve la caja.</summary>
     public CoverFormat Format { get; set; } = CoverFormat.Square;
 

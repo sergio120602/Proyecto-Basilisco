@@ -404,11 +404,31 @@
                     <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="↑  Volver (Esc)" VerticalAlignment="Top"
                             Focusable="False" Click="OnAchievementsBackClick"/>
                     <StackPanel>
-                        <TextBlock Text="LOGROS DE STEAM" FontSize="13" FontWeight="Bold" Foreground="#8FA3BF"/>
+                        <TextBlock x:Name="AchievementsPageKind" Text="LOGROS DE STEAM" FontSize="13" FontWeight="Bold" Foreground="#8FA3BF"/>
                         <TextBlock x:Name="AchievementsPageTitle" FontSize="34" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,4"/>
-                        <TextBlock x:Name="AchievementsPageSummary" FontSize="16" Foreground="#C9D3E0"/>
+                        <TextBlock x:Name="AchievementsPageSummary" FontSize="16" Foreground="#C9D3E0" TextWrapping="Wrap"/>
+                        <!-- Perfil de trofeos (juegos sin logros de Steam): crear trofeos y conectar servicios -->
+                        <WrapPanel x:Name="TrophyTools" Margin="0,14,0,0" Visibility="Collapsed">
+                            <Button Style="{StaticResource PrimaryButton}" Content="+  Crear trofeo" Margin="0,0,10,8" Focusable="False" Click="OnCreateTrophyClick"/>
+                            <Button Style="{StaticResource PillButton}" Content="+  Crear varios" Margin="0,0,24,8" Focusable="False" Click="OnCreateTrophiesClick"
+                                    ToolTip="Varios a la vez, numerados: «1. Trofeo primero, 2. Trofeo segundo…»"/>
+                            <Button Style="{StaticResource PillButton}" Content="RetroAchievements" Margin="0,0,10,8" Focusable="False" Click="OnRetroAchievementsClick"
+                                    ToolTip="Los logros del juego en RetroAchievements, con tu cuenta"/>
+                            <Button Style="{StaticResource PillButton}" Content="RPCS3" Margin="0,0,10,8" Focusable="False" Click="OnRpcs3Click"
+                                    ToolTip="Los trofeos de PS3 que guarda el emulador RPCS3"/>
+                            <Button Style="{StaticResource PillButton}" Content="PlayStation · PSN Profiles" Margin="0,0,24,8" Focusable="False" Click="OnPlayStationClick"
+                                    ToolTip="Tus trofeos de PlayStation Network (los mismos que enseña PSN Profiles)"/>
+                            <Button x:Name="TrophySyncButton" Style="{StaticResource PillButton}" Content="Actualizar" Margin="0,0,10,8" Focusable="False" Click="OnTrophySyncClick"/>
+                            <Button x:Name="TrophyUnlinkButton" Style="{StaticResource PillButton}" Content="Desvincular" Margin="0,0,24,8" Focusable="False" Click="OnTrophyUnlinkClick"/>
+                            <ToggleButton x:Name="ManualActivationToggle" Style="{StaticResource FilterToggle}" Content="Activación manual" Margin="0,0,0,8"
+                                          VerticalAlignment="Center" Click="OnManualActivationClick"
+                                          ToolTip="Encendida: un clic en un trofeo lo da por conseguido (otro clic lo quita)"/>
+                        </WrapPanel>
                     </StackPanel>
                 </DockPanel>
+                <!-- Formularios del perfil de trofeos (crear, conectar…); se rellenan desde el código -->
+                <Border x:Name="TrophyEditor" DockPanel.Dock="Top" Visibility="Collapsed" Background="#1F2A3646" CornerRadius="12"
+                        BorderBrush="#40FFFFFF" BorderThickness="1" Padding="20,16" Margin="0,0,0,12"/>
                 <ScrollViewer x:Name="AchievementsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                     <StackPanel x:Name="AchievementsList"/>
                 </ScrollViewer>

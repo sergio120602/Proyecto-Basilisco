@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.12] - 2026-10-23
+
+- **Perfil de trofeos** para los juegos que no tienen logros de Steam. Va en el sitio de la barra de logros y abre la misma página, con la misma animación.
+  - **Crear trofeo**: con título, descripción opcional y dificultad (bronce, plata, oro o platino).
+  - **Crear varios**: a la vez y numerados, en líneas o seguidos («1. Trofeo primero, 2. Trofeo segundo…»). Uno con otra dificultad la lleva entre paréntesis al final («4. Jefe final (oro)»), y «Título: descripción» separa la descripción. Los números tienen que ir seguidos, así un «nivel 10» no parte el trofeo.
+  - Con **clic derecho** en un trofeo tuyo se cambia su dificultad o se elimina.
+  - **Activación manual** (botón para encenderla o apagarla): encendida, un clic en un trofeo lo da por conseguido y otro clic lo quita.
+- **RetroAchievements**: inicias sesión con tu usuario y la clave de la Web API de tu cuenta, eliges el juego y se traen sus logros con tu progreso. Se reparten en bronce, plata y oro según cuántos jugadores los tienen.
+- **RPCS3**: eliges la carpeta del emulador y Basilisco lee los trofeos que guarda de cada juego de PS3, con su tipo, cuáles tienes y sus iconos.
+- **PlayStation · PSN Profiles**: PSN Profiles no deja que los programas lean su web, así que los trofeos se leen de **PlayStation Network**, que es de donde los saca PSN Profiles. Entras con el código de tu sesión (npsso), que solo se guarda en memoria. El botón «Abrir en PSN Profiles» lleva al juego en su web.
+- **Traducción al español**: los trofeos que vienen en inglés se traducen con MyMemory, tanto los de estos servicios como los logros de Steam que no tienen español. Cada texto se traduce una vez y se guarda en `basilisco-data/translations.json`.
+
 ## [0.6.11] - 2026-10-22
 
 - **Página de logros**: al pulsar el trofeo (o la barra de logros), la escena sube y desde abajo entra la página con **todos los logros** del juego.

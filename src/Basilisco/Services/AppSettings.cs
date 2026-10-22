@@ -20,6 +20,13 @@ public sealed class AppSettings
     /// <summary>Clave de la Web API de Steam, para importar la biblioteca completa. El token de sesión no se guarda nunca.</summary>
     public string? SteamApiKey { get; set; }
 
+    /// <summary>Cuenta de RetroAchievements: tu usuario y la clave de la Web API (retroachievements.org → Ajustes).</summary>
+    public string? RetroAchievementsUser { get; set; }
+    public string? RetroAchievementsApiKey { get; set; }
+
+    /// <summary>Carpeta de RPCS3 (o directamente la de sus trofeos), para leer los trofeos de los juegos de PS3.</summary>
+    public string? Rpcs3Folder { get; set; }
+
     /// <summary>Orden de los juegos en el carrusel.</summary>
     public Models.SortMode SortMode { get; set; } = Models.SortMode.Custom;
 
