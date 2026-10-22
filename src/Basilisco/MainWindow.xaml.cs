@@ -194,7 +194,7 @@ public partial class MainWindow : Window
         _uiScale.Freeze();
         FrameworkElement[] scaled =
         [
-            HeaderBar, FooterBar, TitlePanel, ShortcutsButton, CarouselControlsLeft, CarouselControlsRight, Toast,
+            HeaderBar, FooterBar, TitlePanel, ShortcutsButton, CarouselControlsLeft, CarouselControlsRight, Toast, AchievementsPageContent,
             FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
         ];
         foreach (var element in scaled)
@@ -580,7 +580,7 @@ public partial class MainWindow : Window
     List<Game> Games => _library.Games;
     List<GameFilter> Filters => _library.Filters;
 
-    bool IsPanelOpen => ConsoleEditor.IsOpen || FilterStrip.IsOpen || ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
+    bool IsPanelOpen => AchievementsPage.IsVisible || ConsoleEditor.IsOpen || FilterStrip.IsOpen || ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
                         FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
@@ -1290,6 +1290,286 @@ public partial class MainWindow : Window
             : null;
         TrophyScale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
         TrophyScale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
+    }
+
+    // ---- Página de logros ----
+
+    void OnAchievementsPanelClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_achievementsGame is { } game)
+            _ = OpenAchievementsPageAsync(game);
+    }
+
+    void OnAchievementsBackClick(object sender, RoutedEventArgs e) => CloseAchievementsPage();
+
+    /// <summary>Tu cuenta de Steam: la de la familia leída de Steam o, si no, la última con la que se entró en Steam en este PC.</summary>
+    string? MySteamId() =>
+        _library.Family.FirstOrDefault(member => member.IsMe && member.IsKnownAccount)?.SteamId ?? SteamLocal.Accounts().FirstOrDefault()?.SteamId;
+
+    readonly TranslateTransform _sceneShift = new();
+    CancellationTokenSource? _achievementsPageLoad;
+
+    /// <summary>Lo que se mueve hacia arriba al bajar a la página de logros: todo lo de la pantalla principal.</summary>
+    IEnumerable<UIElement> SceneElements() =>
+        Root.Children.OfType<UIElement>().TakeWhile(element => element != AchievementsPage);
+
+    /// <summary>
+    /// Baja a la página de logros: la escena sube y desaparece por arriba y la página entra desde abajo. Ahí están todos
+    /// los logros del juego como trofeos: bronce los fáciles, plata los de dificultad media, oro los difíciles (según
+    /// cuántos jugadores los tienen) y el platino, el de conseguirlos todos. Los tuyos brillan; los que faltan, en gris.
+    /// </summary>
+    async Task OpenAchievementsPageAsync(Game game)
+    {
+        if (game.SteamAppId is not { } appId || AchievementsPage.IsVisible)
+            return;
+
+        AchievementsPageTitle.Text = game.Name;
+        AchievementsPageSummary.Text = "Cargando los logros…";
+        AchievementsList.Children.Clear();
+        AchievementsScroll.ScrollToTop();
+        AnimatePage(open: true);
+
+        if (_settings.SteamApiKey is not { Length: > 0 } key || MySteamId() is not { } steamId)
+        {
+            AchievementsPageSummary.Text = _settings.SteamApiKey is { Length: > 0 }
+                ? "Inicia sesión en Steam en este PC para ver tus logros."
+                : "Para ver los logros, guarda tu clave de la Web API de Steam (botón Steam).";
+            return;
+        }
+
+        _achievementsPageLoad?.Cancel();
+        var cancellation = _achievementsPageLoad = new CancellationTokenSource();
+        try
+        {
+            var list = await SteamAchievements.DetailsAsync(appId, steamId, key, cancellation.Token);
+            if (cancellation.IsCancellationRequested || !AchievementsPage.IsVisible)
+                return;
+            FillAchievementsPage(game, list);
+            if (_achievementsGame == game && SteamAchievements.Cached(appId) is { } progress)
+                SetAchievements(progress);
+        }
+        catch (AchievementsException ex)
+        {
+            AchievementsPageSummary.Text = ex.Message;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    void CloseAchievementsPage()
+    {
+        if (!AchievementsPage.IsVisible)
+            return;
+        _achievementsPageLoad?.Cancel();
+        AnimatePage(open: false);
+    }
+
+    void AnimatePage(bool open)
+    {
+        var height = Math.Max(1, Root.ActualHeight);
+        foreach (var element in SceneElements())
+            element.RenderTransform = _sceneShift;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var duration = TimeSpan.FromMilliseconds(520);
+
+        AchievementsPage.Visibility = Visibility.Visible;
+        var page = new DoubleAnimation(open ? height : 0, open ? 0 : height, duration) { EasingFunction = ease };
+        if (!open)
+        {
+            page.Completed += (_, _) =>
+            {
+                AchievementsPage.Visibility = Visibility.Collapsed;
+                foreach (var element in SceneElements())
+                    element.ClearValue(RenderTransformProperty);
+                AchievementsList.Children.Clear();
+                Focus();
+            };
+        }
+        AchievementsPageShift.BeginAnimation(TranslateTransform.YProperty, page);
+        _sceneShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(open ? 0 : -height, open ? -height : 0, duration) { EasingFunction = ease });
+        if (open)
+            Focus();
+    }
+
+    // Colores de cada trofeo (de oscuro a claro, para el degradado).
+    static (Color Dark, Color Light) TierColors(TrophyTier tier) => tier switch
+    {
+        TrophyTier.Platinum => (Color.FromRgb(0x5D, 0x8F, 0xB8), Color.FromRgb(0xE4, 0xF3, 0xFF)),
+        TrophyTier.Gold => (Color.FromRgb(0xB8, 0x86, 0x0B), Color.FromRgb(0xFF, 0xD8, 0x6B)),
+        TrophyTier.Silver => (Color.FromRgb(0x8A, 0x92, 0x9C), Color.FromRgb(0xEE, 0xF1, 0xF4)),
+        _ => (Color.FromRgb(0x8C, 0x4F, 0x22), Color.FromRgb(0xE3, 0xA0, 0x6A)),
+    };
+
+    static string TierName(TrophyTier tier) => tier switch
+    {
+        TrophyTier.Platinum => "Platino",
+        TrophyTier.Gold => "Oro",
+        TrophyTier.Silver => "Plata",
+        _ => "Bronce",
+    };
+
+    /// <summary>El trofeo del color de su nivel (el dibujo en gris, teñido); el platino es el de Steam, en color.</summary>
+    static FrameworkElement TierTrophy(TrophyTier tier, double height, bool lit)
+    {
+        if (tier == TrophyTier.Platinum && lit)
+            return new Image { Source = TrophyColor, Height = height, Stretch = Stretch.Uniform };
+        var (dark, light) = TierColors(tier);
+        var aspect = TrophyGray.Width / TrophyGray.Height;
+        var paint = new Grid { Width = height * aspect, Height = height };
+        // El dibujo en gris da el relieve; encima, el color del metal con la forma del trofeo.
+        paint.Children.Add(new Image { Source = TrophyGray, Stretch = Stretch.Fill });
+        paint.Children.Add(new Border
+        {
+            Background = new LinearGradientBrush(light, dark, 70) { Opacity = lit ? 0.85 : 0.35 },
+            OpacityMask = new ImageBrush(TrophyGray) { Stretch = Stretch.Fill },
+        });
+        if (!lit)
+            paint.Opacity = 0.6;
+        return paint;
+    }
+
+    void FillAchievementsPage(Game game, List<AchievementInfo> list)
+    {
+        AchievementsList.Children.Clear();
+        if (list.Count == 0)
+        {
+            AchievementsPageSummary.Text = "Este juego no tiene logros en Steam.";
+            return;
+        }
+
+        var unlocked = list.Count(a => a.Unlocked);
+        var percent = (int)Math.Floor(100.0 * unlocked / list.Count);
+        AchievementsPageSummary.Text = $"{unlocked} de {list.Count} logros · {(unlocked == list.Count ? 100 : percent)} %   ·   " +
+            string.Join("   ", new[] { TrophyTier.Gold, TrophyTier.Silver, TrophyTier.Bronze }
+                .Select(tier => $"{TierName(tier)} {list.Count(a => a.Tier == tier && a.Unlocked)}/{list.Count(a => a.Tier == tier)}"));
+
+        // El platino: el de tenerlos todos.
+        var platinum = new AchievementInfo("", "Platino", $"Consigue todos los logros de {game.Name}.", false, null, null,
+            unlocked == list.Count, list.Where(a => a.Unlocked).Max(a => a.UnlockedAt), null);
+        AchievementsList.Children.Add(Section("PLATINO", null));
+        AchievementsList.Children.Add(Card(platinum, TrophyTier.Platinum, wide: true));
+
+        foreach (var tier in new[] { TrophyTier.Gold, TrophyTier.Silver, TrophyTier.Bronze })
+        {
+            var group = list.Where(a => a.Tier == tier)
+                .OrderByDescending(a => a.Unlocked).ThenBy(a => a.GlobalPercent ?? 100).ToList();
+            if (group.Count == 0)
+                continue;
+            var range = tier switch
+            {
+                TrophyTier.Gold => "difíciles · menos del 15 % de los jugadores",
+                TrophyTier.Silver => "dificultad media · del 15 al 50 %",
+                _ => "fáciles · la mitad de los jugadores o más",
+            };
+            AchievementsList.Children.Add(Section($"{TierName(tier).ToUpperInvariant()}  ·  {group.Count(a => a.Unlocked)} de {group.Count}", range));
+            var cards = new WrapPanel();
+            foreach (var achievement in group)
+                cards.Children.Add(Card(achievement, tier, wide: false));
+            AchievementsList.Children.Add(cards);
+        }
+    }
+
+    static FrameworkElement Section(string title, string? detail)
+    {
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 22, 0, 8) };
+        header.Children.Add(new TextBlock { Text = title, FontSize = 17, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
+        if (detail is not null)
+            header.Children.Add(new TextBlock { Text = "   " + detail, FontSize = 14, Foreground = new SolidColorBrush(Color.FromRgb(0x8F, 0xA3, 0xBF)), VerticalAlignment = VerticalAlignment.Bottom });
+        return header;
+    }
+
+    /// <summary>Un logro: su icono, nombre, descripción y trofeo. Conseguido, brilla del color de su trofeo; si no, en gris.</summary>
+    static FrameworkElement Card(AchievementInfo achievement, TrophyTier tier, bool wide)
+    {
+        var (dark, light) = TierColors(tier);
+        var lit = achievement.Unlocked;
+        var card = new Border
+        {
+            Width = wide ? 872 : 430,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(6),
+            Padding = new Thickness(14, 12, 14, 12),
+            CornerRadius = new CornerRadius(10),
+            BorderThickness = new Thickness(2),
+            BorderBrush = lit ? new LinearGradientBrush(light, dark, 45) : new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)),
+            Background = lit
+                ? new LinearGradientBrush(Color.FromArgb(0x55, dark.R, dark.G, dark.B), Color.FromArgb(0x18, light.R, light.G, light.B), 0)
+                : new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)),
+            Effect = lit ? new System.Windows.Media.Effects.DropShadowEffect { Color = light, BlurRadius = 18, ShadowDepth = 0, Opacity = 0.55 } : null,
+        };
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // Icono del logro (el de Steam, en color o en gris); el platino lleva el trofeo grande.
+        FrameworkElement icon;
+        var url = lit ? achievement.Icon : achievement.IconGray ?? achievement.Icon;
+        if (url is not null)
+        {
+            var image = new System.Windows.Media.Imaging.BitmapImage();
+            image.BeginInit();
+            image.UriSource = new Uri(url);
+            image.DecodePixelWidth = 128;
+            image.EndInit();
+            icon = new Border
+            {
+                Width = 64, Height = 64, CornerRadius = new CornerRadius(6), ClipToBounds = true,
+                Background = new ImageBrush(image) { Stretch = Stretch.UniformToFill },
+                Opacity = lit ? 1 : 0.55,
+            };
+        }
+        else
+        {
+            icon = TierTrophy(tier, 64, lit);
+        }
+        icon.Margin = new Thickness(0, 0, 14, 0);
+        icon.VerticalAlignment = VerticalAlignment.Top;
+        grid.Children.Add(icon);
+
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(text, 1);
+        text.Children.Add(new TextBlock
+        {
+            Text = achievement.Name, FontSize = 16, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis,
+            Foreground = lit ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xA8, 0xB0, 0xBA)),
+        });
+        var description = achievement.Description.Length > 0 ? achievement.Description : achievement.Hidden ? "Logro oculto" : "";
+        if (description.Length > 0)
+        {
+            text.Children.Add(new TextBlock
+            {
+                Text = description, FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0), MaxHeight = 36,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = new SolidColorBrush(lit ? Color.FromRgb(0xE6, 0xEE, 0xF5) : Color.FromRgb(0x9A, 0xA6, 0xB4)),
+            });
+        }
+        var details = new List<string> { TierName(tier) };
+        if (achievement.GlobalPercent is { } global)
+            details.Add($"{global.ToString(global < 1 ? "0.0" : "0", System.Globalization.CultureInfo.CurrentCulture)} % de los jugadores");
+        if (achievement.UnlockedAt is { } when && lit)
+            details.Add($"conseguido el {when:dd/MM/yyyy}");
+        else if (!lit)
+            details.Add("sin conseguir");
+        text.Children.Add(new TextBlock
+        {
+            Text = string.Join("  ·  ", details), FontSize = 12, Margin = new Thickness(0, 5, 0, 0), TextWrapping = TextWrapping.Wrap,
+            Foreground = lit ? new SolidColorBrush(light) : new SolidColorBrush(Color.FromRgb(0x7D, 0x87, 0x93)),
+        });
+        grid.Children.Add(text);
+
+        var badge = TierTrophy(tier, 40, lit);
+        badge.Margin = new Thickness(12, 0, 0, 0);
+        badge.VerticalAlignment = VerticalAlignment.Center;
+        if (lit)
+            badge.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = light, BlurRadius = 16, ShadowDepth = 0, Opacity = 0.9 };
+        Grid.SetColumn(badge, 2);
+        grid.Children.Add(badge);
+
+        card.Child = grid;
+        return card;
     }
 
     // ---- Atajos de teclado ----
@@ -2451,6 +2731,12 @@ public partial class MainWindow : Window
         if (KeyFor(action) is { } key && PadIsDuplicate(key))
             return;
         SetPadMode(true);
+        if (AchievementsPage.IsVisible)
+        {
+            if (action == PadAction.Back)
+                CloseAchievementsPage();
+            return;
+        }
         if (_flow.ShelfMode && !IsPanelOpen)
         {
             // En la estantería: aceptar coge o suelta, volver suelta o termina.
@@ -2544,6 +2830,11 @@ public partial class MainWindow : Window
         if (PadIsDuplicate(KeyForDirection(direction, vertical: true)))
             return;
         SetPadMode(true);
+        if (AchievementsPage.IsVisible)
+        {
+            AchievementsScroll.ScrollToVerticalOffset(AchievementsScroll.VerticalOffset + direction * 160);
+            return;
+        }
         if (IsPanelOpen || !_flow.ShelfMode)
             return;
         if (direction < 0)
@@ -2793,6 +3084,22 @@ public partial class MainWindow : Window
         // Al volver al teclado, la barra de abajo vuelve a enseñar las teclas.
         if (!_injectingKey)
             SetPadMode(false);
+
+        // En la página de logros: Esc (o volver) la cierra; arriba, abajo y la rueda la recorren.
+        if (AchievementsPage.IsVisible)
+        {
+            switch (e.Key)
+            {
+                case Key.Escape or Key.Back or Key.Up when e.Key != Key.Up || AchievementsScroll.VerticalOffset <= 0: CloseAchievementsPage(); break;
+                case Key.Up: AchievementsScroll.ScrollToVerticalOffset(AchievementsScroll.VerticalOffset - 160); break;
+                case Key.Down: AchievementsScroll.ScrollToVerticalOffset(AchievementsScroll.VerticalOffset + 160); break;
+                case Key.PageUp: AchievementsScroll.PageUp(); break;
+                case Key.PageDown: AchievementsScroll.PageDown(); break;
+                default: return;
+            }
+            e.Handled = true;
+            return;
+        }
 
         // Con un menú abierto las teclas son para él (escribir el nombre, Enter, Esc); en el buscador, para escribir.
         if (IsPanelOpen || SearchBox.IsKeyboardFocused)

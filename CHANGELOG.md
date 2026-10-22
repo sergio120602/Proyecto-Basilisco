@@ -3,6 +3,23 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.11] - 2026-10-22
+
+- **Página de logros**: al pulsar el trofeo (o la barra de logros), la escena sube y desde abajo entra la página con **todos los logros** del juego.
+  - Cada logro sale con su icono, nombre, descripción, fecha en que lo conseguiste y cuántos jugadores lo tienen.
+  - Los conseguidos **brillan** del color de su trofeo; los que faltan van **en gris**. Los ocultos dicen «Logro oculto» hasta que los consigues.
+  - Se separan por trofeos según el porcentaje mundial de jugadores que los tienen:
+
+    | Trofeo | Jugadores que lo tienen | Dificultad |
+    |---|---|---|
+    | Bronce | la mitad o más | fáciles |
+    | Plata | del 15 al 50 % | dificultad media |
+    | Oro | menos del 15 % | difíciles |
+    | Platino | — | se consigue al tener todos los logros |
+
+  - Arriba se ve el resumen: cuántos tienes de cada trofeo.
+  - Para volver: «↑ Volver», `Esc`, la flecha arriba (desde el principio de la página) o B en el mando. Se recorre con la rueda, las flechas o el mando.
+
 ## [0.6.10] - 2026-10-22
 
 - Los controles del carrusel suben: la **alineación** y la **altura** quedan arriba a la izquierda, debajo de «Atajos de teclado», y la **descarga de metadatos** y el **zoom**, arriba a la derecha, a los lados del título. Abajo solo queda la barra de logros.

@@ -13,6 +13,27 @@ public sealed record AchievementProgress(int Unlocked, int Total, DateTime Read)
     public bool Complete => Total > 0 && Unlocked >= Total;
 }
 
+/// <summary>Trofeo de un logro según lo difícil que es: cuántos jugadores lo tienen. El platino es el de tenerlos todos.</summary>
+public enum TrophyTier { Bronze, Silver, Gold, Platinum }
+
+/// <summary>Un logro del juego, para la página de logros.</summary>
+/// <param name="Hidden">Logro oculto: Steam no da su descripción hasta que se consigue.</param>
+/// <param name="GlobalPercent">Tanto por ciento de los jugadores que lo tienen (null si Steam no lo da).</param>
+public sealed record AchievementInfo(string ApiName, string Name, string Description, bool Hidden, string? Icon, string? IconGray,
+                                     bool Unlocked, DateTime? UnlockedAt, double? GlobalPercent)
+{
+    /// <summary>
+    /// Bronce los fáciles (los tiene la mitad o más de los jugadores), plata los de dificultad media (del 15 al 50 %) y oro
+    /// los difíciles (menos del 15 %). Sin el dato, bronce.
+    /// </summary>
+    public TrophyTier Tier => GlobalPercent switch
+    {
+        null or >= 50 => TrophyTier.Bronze,
+        >= 15 => TrophyTier.Silver,
+        _ => TrophyTier.Gold,
+    };
+}
+
 /// <summary>Por qué no se pueden leer los logros, en una frase para enseñar.</summary>
 public sealed class AchievementsException(string message) : Exception(message);
 
@@ -129,6 +150,102 @@ public static class SteamAchievements
             Cache[appId] = progress;
             Save();
             return progress;
+        }
+    }
+
+    static readonly Dictionary<int, (DateTime Read, List<AchievementInfo> List)> Details = [];
+
+    /// <summary>
+    /// Todos los logros del juego para la página de logros: nombre, descripción e iconos (GetSchemaForGame), si los tienes
+    /// (GetPlayerAchievements) y cuántos jugadores los tienen (GetGlobalAchievementPercentagesForApp). Se recuerdan 30 minutos.
+    /// </summary>
+    public static async Task<List<AchievementInfo>> DetailsAsync(int appId, string steamId, string apiKey, CancellationToken cancellation)
+    {
+        if (Details.TryGetValue(appId, out var known) && DateTime.Now - known.Read < MaxAge)
+            return known.List;
+
+        var auth = $"key={Uri.EscapeDataString(apiKey)}";
+        var schemaTask = GetJsonAsync($"https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?{auth}&appid={appId}&l=spanish", cancellation);
+        var playerTask = GetJsonAsync($"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?{auth}&appid={appId}&steamid={steamId}&l=spanish", cancellation);
+        var globalTask = GetJsonAsync($"https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid={appId}", cancellation);
+
+        using var schema = await schemaTask ?? throw new AchievementsException("Steam no ha dado la lista de logros de este juego. Prueba más tarde.");
+        using var player = await playerTask;
+        using var global = await globalTask;
+
+        // Tus logros: cuáles tienes y cuándo los conseguiste.
+        var mine = new Dictionary<string, DateTime?>();
+        if (player?.RootElement.TryGetProperty("playerstats", out var stats) == true)
+        {
+            if (stats.TryGetProperty("error", out var error) && error.GetString() is { } message && !message.Contains("no stats", StringComparison.OrdinalIgnoreCase))
+                throw new AchievementsException(message.Contains("not public", StringComparison.OrdinalIgnoreCase)
+                    ? "Tu perfil de Steam no deja ver los logros: pon «Detalles de juegos» como públicos."
+                    : $"Steam no ha dado tus logros ({message}).");
+            if (stats.TryGetProperty("achievements", out var list) && list.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var achievement in list.EnumerateArray())
+                {
+                    if (achievement.TryGetProperty("apiname", out var name) && name.GetString() is { } api &&
+                        achievement.TryGetProperty("achieved", out var achieved) && achieved.TryGetInt32(out var value) && value == 1)
+                    {
+                        mine[api] = achievement.TryGetProperty("unlocktime", out var time) && time.TryGetInt64(out var seconds) && seconds > 0
+                            ? DateTimeOffset.FromUnixTimeSeconds(seconds).LocalDateTime
+                            : null;
+                    }
+                }
+            }
+        }
+
+        // Cuántos jugadores tienen cada uno (en tanto por ciento; a veces llega como texto).
+        var percents = new Dictionary<string, double>();
+        if (global?.RootElement.TryGetProperty("achievementpercentages", out var percentages) == true &&
+            percentages.TryGetProperty("achievements", out var globalList) && globalList.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var achievement in globalList.EnumerateArray())
+            {
+                if (!achievement.TryGetProperty("name", out var name) || name.GetString() is not { } api || !achievement.TryGetProperty("percent", out var percent))
+                    continue;
+                if (percent.ValueKind == JsonValueKind.Number)
+                    percents[api] = percent.GetDouble();
+                else if (double.TryParse(percent.GetString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                    percents[api] = parsed;
+            }
+        }
+
+        var result = new List<AchievementInfo>();
+        if (schema.RootElement.TryGetProperty("game", out var game) && game.TryGetProperty("availableGameStats", out var available) &&
+            available.TryGetProperty("achievements", out var achievements) && achievements.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var achievement in achievements.EnumerateArray())
+            {
+                if (!achievement.TryGetProperty("name", out var name) || name.GetString() is not { } api)
+                    continue;
+                string? Text(string property) => achievement.TryGetProperty(property, out var value) ? value.GetString() : null;
+                var unlocked = mine.TryGetValue(api, out var when);
+                result.Add(new AchievementInfo(api, Text("displayName") ?? api, Text("description") ?? "",
+                    achievement.TryGetProperty("hidden", out var hidden) && hidden.TryGetInt32(out var h) && h == 1,
+                    Text("icon"), Text("icongray"), unlocked, when, percents.TryGetValue(api, out var p) ? p : null));
+            }
+        }
+
+        Details[appId] = (DateTime.Now, result);
+        Cache[appId] = new AchievementProgress(result.Count(a => a.Unlocked), result.Count, DateTime.Now);
+        Save();
+        return result;
+    }
+
+    /// <summary>Pide un JSON a Steam; null si no responde o responde con un error sin JSON.</summary>
+    static async Task<JsonDocument?> GetJsonAsync(string url, CancellationToken cancellation)
+    {
+        try
+        {
+            using var response = await Http.GetAsync(url, cancellation);
+            var body = await response.Content.ReadAsStringAsync(cancellation);
+            return JsonDocument.Parse(body);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException || ex is TaskCanceledException && !cancellation.IsCancellationRequested)
+        {
+            return null;
         }
     }
 
