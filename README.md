@@ -142,6 +142,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.6** — Contraportadas adaptadas al tamaño de la portada, con el interruptor «Adaptada»
 - [x] **v0.6.7** — Menú «Steam familiar» con cada miembro, portadas cuadradas de SteamGridDB, pantallas 21:9 y descarga en .zip
 - [x] **v0.6.8** — Buscador de juegos arriba y lomos de Steam Game Covers bien recortados
+- [x] **v0.6.9** — Atajos de teclado en un menú, tiempo de juego en las etiquetas y barra de logros de Steam
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

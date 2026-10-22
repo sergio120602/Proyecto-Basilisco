@@ -3,6 +3,16 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.9] - 2026-10-22
+
+- Las **pistas de teclas** dejan la barra de abajo: ahora están en el botón **«Atajos de teclado»**, debajo de «Basilisco», que abre un menú con todas, en dos filas. Con el mando enseña sus botones.
+- El **tiempo de juego** va con las etiquetas del juego, en lugar de «Nunca jugado» (que no cuadraba con las horas de Steam). Si un juego no tiene tiempo, sigue diciendo «Nunca jugado» o cuántas veces se ha abierto.
+- **Logros de Steam**: abajo, en el centro, una barra se llena con el porcentaje de logros del juego seleccionado.
+  - Mientras falten logros, la barra es **azul con degradado**, como en Steam, y el trofeo está en gris.
+  - Con todos, pone **100 %**, se vuelve **dorada** y el trofeo **brilla**.
+  - Se leen de tu cuenta con la clave de la Web API de Steam. Lo último que se supo se guarda en `basilisco-data/achievements.json` para que salga al momento, y se vuelve a preguntar a Steam cada 30 minutos.
+- La **descarga masiva de metadatos** pasa a la línea de la altura y el zoom.
+
 ## [0.6.8] - 2026-10-22
 
 - **Buscador de juegos** en la barra de arriba (también con `Ctrl+F`). Al escribir aparece un menú con los juegos cuyo nombre más se parece a lo escrito. Da igual que no lleve tildes o mayúsculas, que tenga alguna letra mal («holow knigt») o que solo escribas el principio de cada palabra («zelda oca»). Los números romanos y en cifras valen igual.
