@@ -12,7 +12,7 @@ Es **100 % portable**: un único `.exe`, sin instalación de ningún tipo. Lo co
 
 ## 📥 Descargar
 
-Descarga el último `Basilisco-vX.Y.Z-win-x64.exe` desde **[Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases)** y ábrelo. No necesita instalar nada (ni siquiera .NET).
+Descarga el último `Basilisco-vX.Y.Z-win-x64.zip` desde **[Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases)** y extráelo (con Windows, WinRAR o 7-Zip): sale una carpeta `Basilisco-vX.Y.Z` con `Basilisco.exe` y su carpeta de datos `basilisco-data`. Ábrelo y listo; no necesita instalar nada (ni siquiera .NET). También está el `.exe` suelto, por si lo prefieres.
 
 Cuando sale una versión nueva, Basilisco lo avisa con un botón **Actualizar** arriba a la derecha: se descarga y se pone sola, conservando tu biblioteca.
 
@@ -140,6 +140,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.4** — Descarga automática de todas las partes con prioridades y botón «Descarga Metadatos Actualización»
 - [x] **v0.6.5** — Cajas de Steam: franja de Steam en la portada y el lomo, con la carátula en 2:3
 - [x] **v0.6.6** — Contraportadas adaptadas al tamaño de la portada, con el interruptor «Adaptada»
+- [x] **v0.6.7** — Menú «Steam familiar» con cada miembro, portadas cuadradas de SteamGridDB, pantallas 21:9 y descarga en .zip
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

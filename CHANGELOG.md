@@ -3,6 +3,19 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.7] - 2026-10-22
+
+- Nuevo menú **Steam familiar** en la barra de arriba, junto a Consolas y Filtros, con la misma franja negra.
+  - Sale cada miembro de tu familia de Steam, **tú incluido**, con su imagen (su foto de perfil de Steam, que se pone sola) o su nombre.
+  - Al elegir un miembro se ven **todos sus juegos**. Un juego que tienen varios miembros (tú y otro, varios o toda la familia) sale en la ficha de **cada uno** de ellos.
+  - Con **clic derecho**, o con «Personalizar miembro», se le pone otra imagen: su foto de perfil de Steam, una tuya o ninguna.
+  - Para saber de quién es cada juego, Basilisco lee ahora la biblioteca completa de la familia, con todos los dueños de cada juego, también de los que ya tenías importados. Basta con volver a «Buscar juegos» en Steam con Steam Familiar marcado. Hasta entonces, el menú se arma con lo que ya se sabía: tus juegos y los que comparte cada miembro.
+  - El filtro **«Steam Familiar»** deja de existir: se quita de Filtros. Los juegos siguen en la biblioteca.
+  - La ficha de un juego dice todos los miembros que lo tienen.
+- **Descarga automática de portadas**: en el formato **cuadrado**, SteamGridDB va siempre primero. En el **rectangular** sigue como antes: LaunchBox primero, salvo en PC.
+- Soporte para **pantallas panorámicas 21:9** (y más anchas): las cajas se ven igual de grandes que en 16:9, sin cortarse por arriba ni por abajo, y el carrusel llega hasta los bordes de la pantalla.
+- En GitHub, cada versión trae un **.zip**: al extraerlo sale una carpeta con `Basilisco.exe` y su carpeta de datos `basilisco-data`. El `.exe` suelto se sigue publicando, porque es el que usa «Actualizar».
+
 ## [0.6.6] - 2026-10-22
 
 - Las **contraportadas** se **adaptan** por defecto al tamaño de la portada: se estiran justo a la medida de la cara (600 × 900 en las cajas de PC), sin bandas negras.

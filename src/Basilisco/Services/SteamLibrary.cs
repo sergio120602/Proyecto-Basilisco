@@ -17,7 +17,9 @@ public enum SteamSource { Own, Family }
 /// <summary>Un juego de la cuenta de Steam (propio o compartido por la familia).</summary>
 /// <param name="InstallDir">Carpeta del juego si está instalado en este PC.</param>
 /// <param name="Owner">Quién lo comparte, si es de la familia.</param>
-public sealed record SteamApp(int AppId, string Name, SteamSource Source, bool Installed, string? InstallDir, string? Owner, int PlaytimeMinutes)
+/// <param name="OwnerIds">SteamID de todos los que lo tienen en la familia (tú incluido), si se saben.</param>
+public sealed record SteamApp(int AppId, string Name, SteamSource Source, bool Installed, string? InstallDir, string? Owner, int PlaytimeMinutes,
+                              IReadOnlyList<string>? OwnerIds = null)
 {
     public string LaunchUri => $"steam://rungameid/{AppId}";
 }
@@ -101,7 +103,8 @@ public static partial class SteamLocal
                 var installDir = Text(state, "installdir") is { } dir ? Path.Combine(steamapps, "common", dir) : null;
                 var owner = Text(state, "LastOwner");
                 var family = mySteamId is not null && owner is not null && owner != "0" && owner != mySteamId;
-                apps[appId] = new SteamApp(appId, name, family ? SteamSource.Family : SteamSource.Own, true, installDir, family ? owner : null, 0);
+                var owners = family ? new[] { owner! } : mySteamId is not null ? new[] { mySteamId } : null;
+                apps[appId] = new SteamApp(appId, name, family ? SteamSource.Family : SteamSource.Own, true, installDir, family ? owner : null, 0, owners);
             }
         }
         return apps.Values.ToList();
@@ -338,13 +341,17 @@ public static partial class SteamWeb
                 continue;
             var name = game.TryGetProperty("name", out var n) ? n.GetString() ?? $"App {appId}" : $"App {appId}";
             var minutes = game.TryGetProperty("playtime_forever", out var p) && p.TryGetInt32(out var m) ? m : 0;
-            apps.Add(new SteamApp(appId, name, SteamSource.Own, false, null, null, minutes));
+            apps.Add(new SteamApp(appId, name, SteamSource.Own, false, null, null, minutes, [steamId]));
         }
         return apps;
     }
 
-    /// <summary>Juegos que comparte contigo tu familia de Steam (sin los tuyos ni los excluidos del préstamo).</summary>
-    public static async Task<(string? FamilyName, List<SteamApp> Apps)> FamilyGamesAsync(string steamId, string token, string? apiKey, CancellationToken cancellation)
+    /// <summary>
+    /// La biblioteca de tu familia de Steam: todos sus juegos (los tuyos también) con todos los que tienen cada uno, y los
+    /// miembros (tú incluido) con su nombre y su foto de perfil. Los juegos excluidos del préstamo no vienen.
+    /// </summary>
+    public static async Task<(string? FamilyName, List<SteamApp> Apps, List<Models.FamilyMember> Members)> FamilyGamesAsync(
+        string steamId, string token, string? apiKey, CancellationToken cancellation)
     {
         var auth = $"access_token={Uri.EscapeDataString(token)}";
         using var group = await GetAsync($"{Api}/IFamilyGroupsService/GetFamilyGroupForUser/v1/?{auth}&steamid={steamId}&include_family_group_response=true", cancellation);
@@ -353,12 +360,24 @@ public static partial class SteamWeb
             throw new ArtProviderException("Esta cuenta no pertenece a ninguna familia de Steam.");
 
         string? familyName = null;
-        if (response.TryGetProperty("family_group", out var family) && family.TryGetProperty("name", out var name))
-            familyName = name.GetString();
+        var memberIds = new List<string> { steamId };
+        if (response.TryGetProperty("family_group", out var family))
+        {
+            if (family.TryGetProperty("name", out var name))
+                familyName = name.GetString();
+            if (family.TryGetProperty("members", out var members) && members.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var member in members.EnumerateArray())
+                {
+                    if (member.TryGetProperty("steamid", out var id) && IdText(id) is { Length: > 0 } memberId && !memberIds.Contains(memberId))
+                        memberIds.Add(memberId);
+                }
+            }
+        }
 
         using var shared = await GetAsync($"{Api}/IFamilyGroupsService/GetSharedLibraryApps/v1/?{auth}&family_groupid={groupId.GetString() ?? groupId.ToString()}" +
-                                          $"&include_own=false&include_excluded=false&include_free=false&include_non_games=false&steamid={steamId}&language=spanish", cancellation);
-        var apps = new List<(int AppId, string Name, string? Owner)>();
+                                          $"&include_own=true&include_excluded=false&include_free=false&include_non_games=false&steamid={steamId}&language=spanish", cancellation);
+        var apps = new List<(int AppId, string Name, List<string> Owners)>();
         if (shared.RootElement.GetProperty("response").TryGetProperty("apps", out var list))
         {
             foreach (var app in list.EnumerateArray())
@@ -366,21 +385,54 @@ public static partial class SteamWeb
                 if (!app.TryGetProperty("appid", out var id) || !id.TryGetInt32(out var appId))
                     continue;
                 var appName = app.TryGetProperty("name", out var n) ? n.GetString() ?? $"App {appId}" : $"App {appId}";
-                var owner = app.TryGetProperty("owner_steamids", out var owners) && owners.GetArrayLength() > 0 ? owners[0].GetString() : null;
-                apps.Add((appId, appName, owner));
+                var owners = new List<string>();
+                if (app.TryGetProperty("owner_steamids", out var ids) && ids.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var ownerId in ids.EnumerateArray())
+                    {
+                        if (IdText(ownerId) is { Length: > 0 } owner)
+                            owners.Add(owner);
+                    }
+                }
+                apps.Add((appId, appName, owners));
             }
         }
 
-        // Nombre de cada dueño en lugar de su SteamID, si Steam lo da.
-        var names = await PersonaNamesAsync(apps.Select(app => app.Owner).OfType<string>().Distinct().ToList(), apiKey, token, cancellation);
-        return (familyName, apps.Select(app => new SteamApp(app.AppId, app.Name, SteamSource.Family, false, null,
-            app.Owner is null ? null : names.GetValueOrDefault(app.Owner, app.Owner), 0)).ToList());
+        // Nombre y foto de cada miembro en lugar de su SteamID, si Steam los da.
+        foreach (var owner in apps.SelectMany(app => app.Owners))
+        {
+            if (!memberIds.Contains(owner))
+                memberIds.Add(owner);
+        }
+        var profiles = await PlayerSummariesAsync(memberIds, apiKey, token, cancellation);
+        string NameOf(string id) => profiles.TryGetValue(id, out var profile) ? profile.Name : id;
+
+        var result = apps.Select(app =>
+        {
+            // Si lo tienes tú, es tuyo (aunque también lo tenga otro); si no, lo comparte el primero que lo tenga.
+            var mine = app.Owners.Contains(steamId);
+            var sharer = app.Owners.FirstOrDefault(owner => owner != steamId);
+            return new SteamApp(app.AppId, app.Name, mine ? SteamSource.Own : SteamSource.Family, false, null,
+                mine || sharer is null ? null : NameOf(sharer), 0, app.Owners);
+        }).ToList();
+        var familyMembers = memberIds
+            .Select(id => new Models.FamilyMember(id, NameOf(id), profiles.TryGetValue(id, out var profile) ? profile.Avatar : null, id == steamId))
+            .ToList();
+        return (familyName, result, familyMembers);
     }
 
+    /// <summary>Los SteamID llegan como texto o como número, según la llamada.</summary>
+    static string? IdText(JsonElement id) => id.ValueKind == JsonValueKind.String ? id.GetString() : id.ToString();
+
     /// <summary>Nombres de perfil de varias cuentas. Si Steam no responde, se devuelve vacío (se enseñará el SteamID).</summary>
-    public static async Task<Dictionary<string, string>> PersonaNamesAsync(List<string> steamIds, string? apiKey, string? token, CancellationToken cancellation)
+    public static async Task<Dictionary<string, string>> PersonaNamesAsync(List<string> steamIds, string? apiKey, string? token, CancellationToken cancellation) =>
+        (await PlayerSummariesAsync(steamIds, apiKey, token, cancellation)).ToDictionary(entry => entry.Key, entry => entry.Value.Name);
+
+    /// <summary>Nombre de perfil y foto (la grande) de varias cuentas. Si Steam no responde, se devuelve vacío.</summary>
+    public static async Task<Dictionary<string, (string Name, string? Avatar)>> PlayerSummariesAsync(List<string> steamIds, string? apiKey, string? token,
+                                                                                                    CancellationToken cancellation)
     {
-        var names = new Dictionary<string, string>();
+        var names = new Dictionary<string, (string Name, string? Avatar)>();
         if (steamIds.Count == 0)
             return names;
 
@@ -397,7 +449,7 @@ public static partial class SteamWeb
                 {
                     if (player.TryGetProperty("steamid", out var id) && player.TryGetProperty("personaname", out var persona) &&
                         id.GetString() is { } key && persona.GetString() is { } value)
-                        names[key] = value;
+                        names[key] = (value, player.TryGetProperty("avatarfull", out var avatar) ? avatar.GetString() : null);
                 }
             }
         }

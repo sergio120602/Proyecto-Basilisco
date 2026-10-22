@@ -51,8 +51,14 @@ public sealed class SteamRow(SteamApp app, bool alreadyInLibrary) : INotifyPrope
 }
 
 /// <summary>Lo decidido en la ventana de Steam.</summary>
-/// <param name="FamilyFilter">Meter los juegos de la familia en un filtro «Steam Familiar».</param>
-public sealed record SteamImportResult(List<SteamApp> Apps, bool FamilyFilter);
+public sealed record SteamImportResult(List<SteamApp> Apps);
+
+/// <summary>
+/// Lo que se sabe de la familia tras leer Steam: sus miembros (vacío si no se ha pedido Steam Familiar) y quién tiene cada
+/// juego. Sirve para el menú «Steam familiar», también con los juegos que ya estaban en la biblioteca.
+/// </summary>
+/// <param name="Owners">SteamID de los que tienen cada juego (por su AppID).</param>
+public sealed record SteamFamilyInfo(List<Basilisco.Models.FamilyMember> Members, Dictionary<int, List<string>> Owners);
 
 /// <summary>
 /// Importa la cuenta de Steam: los juegos instalados (leídos del PC), toda la biblioteca (Web API) y los de
@@ -69,6 +75,9 @@ public partial class SteamPanel : UserControl
     SteamAccount? _account;
     List<SteamRow> _rows = [];
     CancellationTokenSource? _work;
+
+    /// <summary>Se ha leído Steam: quién tiene cada juego y, con Steam Familiar, los miembros de la familia.</summary>
+    public event Action<SteamFamilyInfo>? FamilyLoaded;
 
     // El token de sesión solo vive en memoria mientras Basilisco está abierto: da acceso a la cuenta.
     static string? _sessionToken;
@@ -118,7 +127,6 @@ public partial class SteamPanel : UserControl
     {
         OwnedOptions.Visibility = OwnedBox.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         TokenOptions.Visibility = FamilyBox.IsChecked == true || OwnedBox.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-        FamilyFilterBox.Visibility = FamilyBox.IsChecked == true || InstalledBox.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
     }
 
     (string Token, string? SteamId, DateTime? Expires)? CurrentToken => SteamWeb.ParseToken(TokenBox.Text);
@@ -193,6 +201,9 @@ public partial class SteamPanel : UserControl
         LoadButton.IsEnabled = false;
         var apps = new Dictionary<int, SteamApp>();
         var notes = new List<string>();
+        var members = new List<Basilisco.Models.FamilyMember>();
+        // Los tuyos que vienen con la familia: sin «toda la biblioteca» no se ofrecen, pero se sabe que son tuyos.
+        var otherOwners = new Dictionary<int, IReadOnlyList<string>>();
         try
         {
             if (wantInstalled)
@@ -214,9 +225,15 @@ public partial class SteamPanel : UserControl
                 SetStatus("Pidiendo la biblioteca de tu familia a Steam…");
                 try
                 {
-                    var (familyName, family) = await SteamWeb.FamilyGamesAsync(steamId!, token!.Value.Item1, key.Length > 0 ? key : null, cancellation);
+                    var (familyName, family, familyMembers) = await SteamWeb.FamilyGamesAsync(steamId!, token!.Value.Item1, key.Length > 0 ? key : null, cancellation);
+                    members = familyMembers;
                     foreach (var app in family)
-                        Merge(apps, app);
+                    {
+                        if (app.Source == SteamSource.Own && !wantOwned && !apps.ContainsKey(app.AppId))
+                            otherOwners[app.AppId] = app.OwnerIds ?? [];
+                        else
+                            Merge(apps, app);
+                    }
                     if (familyName is { Length: > 0 })
                         notes.Add($"familia «{familyName}»");
                 }
@@ -241,6 +258,11 @@ public partial class SteamPanel : UserControl
             LoadButton.IsEnabled = true;
         }
 
+        var owners = apps.Values.Concat(otherOwners.Select(entry => new SteamApp(entry.Key, "", SteamSource.Own, false, null, null, 0, entry.Value)))
+            .Where(app => app.OwnerIds is { Count: > 0 })
+            .ToDictionary(app => app.AppId, app => app.OwnerIds!.Distinct().ToList());
+        FamilyLoaded?.Invoke(new SteamFamilyInfo(members, owners));
+
         ShowResults(apps.Values.OrderBy(app => app.Name, StringComparer.CurrentCultureIgnoreCase).ToList(), notes);
     }
 
@@ -259,6 +281,7 @@ public partial class SteamPanel : UserControl
         {
             Source = source,
             Owner = source == SteamSource.Family ? app.Owner ?? known.Owner : null,
+            OwnerIds = (known.OwnerIds ?? []).Concat(app.OwnerIds ?? []).Distinct().ToList() is { Count: > 0 } ids ? ids : null,
             PlaytimeMinutes = Math.Max(known.PlaytimeMinutes, app.PlaytimeMinutes),
             Name = known.Name.Length > 0 ? known.Name : app.Name,
         };
@@ -287,7 +310,7 @@ public partial class SteamPanel : UserControl
             return;
         }
 
-        var result = new SteamImportResult(selected, FamilyFilterBox.IsChecked == true);
+        var result = new SteamImportResult(selected);
         Close();
         ImportRequested?.Invoke(result);
     }

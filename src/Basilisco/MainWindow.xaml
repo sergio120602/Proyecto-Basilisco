@@ -108,6 +108,10 @@
                 <ToggleButton x:Name="FiltersTab" Style="{StaticResource HeaderTab}" Click="OnFiltersTabClick"
                               MouseRightButtonUp="OnFiltersTabRightClick"
                               ToolTip="Ver solo los juegos de un filtro, crear filtros nuevos o editarlos"/>
+                <!-- Steam familiar: los juegos de cada miembro de la familia de Steam (tú incluido) -->
+                <ToggleButton x:Name="FamilyTab" Style="{StaticResource HeaderTab}" Click="OnFamilyTabClick"
+                              MouseRightButtonUp="OnFamilyTabRightClick"
+                              ToolTip="Ver los juegos de cada miembro de tu familia de Steam"/>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">

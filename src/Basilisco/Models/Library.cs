@@ -12,4 +12,7 @@ public sealed class Library
     public const int CurrentVersion = 2;
     public List<Game> Games { get; set; } = [];
     public List<GameFilter> Filters { get; set; } = [];
+
+    /// <summary>Tu familia de Steam (tú incluido), tal como la dio Steam la última vez que se leyó.</summary>
+    public List<FamilyMember> Family { get; set; } = [];
 }
