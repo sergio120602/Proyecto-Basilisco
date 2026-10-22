@@ -1160,11 +1160,20 @@ public partial class MainWindow : Window
         _achievementsDelay.Stop();
         _achievementsFetch?.Cancel();
         _achievementsGame = game;
-        if (game?.SteamAppId is not { } appId || _flow.ShelfMode)
+        if (game is null || _flow.ShelfMode)
         {
             AchievementsPanel.Visibility = Visibility.Collapsed;
             return;
         }
+        // Sin logros de Steam: el perfil de trofeos del juego.
+        if (game.SteamAppId is not { } appId)
+        {
+            AchievementsPanel.Visibility = Visibility.Visible;
+            AchievementsPanel.ToolTip = "Ver y crear los trofeos del juego";
+            ShowOwnTrophiesBar(game);
+            return;
+        }
+        AchievementsPanel.ToolTip = "Ver todos los logros del juego";
 
         AchievementsPanel.Visibility = Visibility.Visible;
         if (SteamAchievements.Cached(appId) is { } known)
@@ -1236,16 +1245,16 @@ public partial class MainWindow : Window
         SetAchievementsFill(0, complete: false);
     }
 
-    void SetAchievements(AchievementProgress progress)
+    void SetAchievements(AchievementProgress progress, string label = "Logros de Steam")
     {
         if (progress.Total == 0)
         {
-            SetAchievementsMessage("Logros de Steam · este juego no tiene logros (o aún no lo has abierto)");
+            SetAchievementsMessage($"{label} · este juego no tiene logros (o aún no lo has abierto)");
             return;
         }
         AchievementsText.Text = progress.Complete
-            ? $"Logros de Steam · ¡todos! {progress.Total} de {progress.Total}"
-            : $"Logros de Steam · {progress.Unlocked} de {progress.Total}";
+            ? $"{label} · ¡todos! {progress.Total} de {progress.Total}"
+            : $"{label} · {progress.Unlocked} de {progress.Total}";
         var percent = progress.Fraction * 100;
         AchievementsPercent.Text = progress.Complete ? "100 %" : $"{(percent < 1 && progress.Unlocked > 0 ? 1 : Math.Floor(percent)):0} %";
         SetAchievementsFill(progress.Fraction, progress.Complete);
@@ -1296,7 +1305,11 @@ public partial class MainWindow : Window
 
     void OnAchievementsPanelClick(object sender, MouseButtonEventArgs e)
     {
-        if (_achievementsGame is { } game)
+        if (_achievementsGame is not { } game)
+            return;
+        if (game.SteamAppId is null)
+            _ = OpenTrophyProfileAsync(game);
+        else
             _ = OpenAchievementsPageAsync(game);
     }
 
@@ -1323,6 +1336,9 @@ public partial class MainWindow : Window
         if (game.SteamAppId is not { } appId || AchievementsPage.IsVisible)
             return;
 
+        AchievementsPageKind.Text = "LOGROS DE STEAM";
+        TrophyTools.Visibility = Visibility.Collapsed;
+        CloseTrophyEditor();
         AchievementsPageTitle.Text = game.Name;
         AchievementsPageSummary.Text = "Cargando los logros…";
         AchievementsList.Children.Clear();
@@ -1347,6 +1363,14 @@ public partial class MainWindow : Window
             FillAchievementsPage(game, list);
             if (_achievementsGame == game && SteamAchievements.Cached(appId) is { } progress)
                 SetAchievements(progress);
+            // Los que solo están en inglés, en español (en cuanto lleguen las traducciones).
+            var translated = await TranslateSteamAsync(list);
+            if (translated != list && AchievementsPage.IsVisible && !cancellation.IsCancellationRequested && !TrophyTools.IsVisible)
+            {
+                var offset = AchievementsScroll.VerticalOffset;
+                FillAchievementsPage(game, translated);
+                AchievementsScroll.ScrollToVerticalOffset(offset);
+            }
         }
         catch (AchievementsException ex)
         {
@@ -1380,6 +1404,9 @@ public partial class MainWindow : Window
             page.Completed += (_, _) =>
             {
                 AchievementsPage.Visibility = Visibility.Collapsed;
+                CloseTrophyEditor();
+                TrophyTools.Visibility = Visibility.Collapsed;
+                _trophyGame = null;
                 foreach (var element in SceneElements())
                     element.ClearValue(RenderTransformProperty);
                 AchievementsList.Children.Clear();
@@ -1431,43 +1458,13 @@ public partial class MainWindow : Window
 
     void FillAchievementsPage(Game game, List<AchievementInfo> list)
     {
-        AchievementsList.Children.Clear();
         if (list.Count == 0)
         {
+            AchievementsList.Children.Clear();
             AchievementsPageSummary.Text = "Este juego no tiene logros en Steam.";
             return;
         }
-
-        var unlocked = list.Count(a => a.Unlocked);
-        var percent = (int)Math.Floor(100.0 * unlocked / list.Count);
-        AchievementsPageSummary.Text = $"{unlocked} de {list.Count} logros · {(unlocked == list.Count ? 100 : percent)} %   ·   " +
-            string.Join("   ", new[] { TrophyTier.Gold, TrophyTier.Silver, TrophyTier.Bronze }
-                .Select(tier => $"{TierName(tier)} {list.Count(a => a.Tier == tier && a.Unlocked)}/{list.Count(a => a.Tier == tier)}"));
-
-        // El platino: el de tenerlos todos.
-        var platinum = new AchievementInfo("", "Platino", $"Consigue todos los logros de {game.Name}.", false, null, null,
-            unlocked == list.Count, list.Where(a => a.Unlocked).Max(a => a.UnlockedAt), null);
-        AchievementsList.Children.Add(Section("PLATINO", null));
-        AchievementsList.Children.Add(Card(platinum, TrophyTier.Platinum, wide: true));
-
-        foreach (var tier in new[] { TrophyTier.Gold, TrophyTier.Silver, TrophyTier.Bronze })
-        {
-            var group = list.Where(a => a.Tier == tier)
-                .OrderByDescending(a => a.Unlocked).ThenBy(a => a.GlobalPercent ?? 100).ToList();
-            if (group.Count == 0)
-                continue;
-            var range = tier switch
-            {
-                TrophyTier.Gold => "difíciles · menos del 15 % de los jugadores",
-                TrophyTier.Silver => "dificultad media · del 15 al 50 %",
-                _ => "fáciles · la mitad de los jugadores o más",
-            };
-            AchievementsList.Children.Add(Section($"{TierName(tier).ToUpperInvariant()}  ·  {group.Count(a => a.Unlocked)} de {group.Count}", range));
-            var cards = new WrapPanel();
-            foreach (var achievement in group)
-                cards.Children.Add(Card(achievement, tier, wide: false));
-            AchievementsList.Children.Add(cards);
-        }
+        FillTrophySections(game.Name, list.Select(a => (a, a.Tier, (OwnTrophy?)null)).ToList(), "logros", byPercent: true);
     }
 
     static FrameworkElement Section(string title, string? detail)
@@ -2734,7 +2731,12 @@ public partial class MainWindow : Window
         if (AchievementsPage.IsVisible)
         {
             if (action == PadAction.Back)
-                CloseAchievementsPage();
+            {
+                if (TrophyEditor.IsVisible)
+                    CloseTrophyEditor();
+                else
+                    CloseAchievementsPage();
+            }
             return;
         }
         if (_flow.ShelfMode && !IsPanelOpen)
@@ -3090,7 +3092,14 @@ public partial class MainWindow : Window
         {
             switch (e.Key)
             {
-                case Key.Escape or Key.Back or Key.Up when e.Key != Key.Up || AchievementsScroll.VerticalOffset <= 0: CloseAchievementsPage(); break;
+                // Escribiendo en un formulario, las teclas son para escribir; Esc cierra el formulario.
+                case var _ when Keyboard.FocusedElement is TextBox:
+                    if (e.Key != Key.Escape)
+                        return;
+                    CloseTrophyEditor();
+                    break;
+                case Key.Escape when TrophyEditor.IsVisible: CloseTrophyEditor(); break;
+                case Key.Escape or Key.Up when e.Key != Key.Up || AchievementsScroll.VerticalOffset <= 0: CloseAchievementsPage(); break;
                 case Key.Up: AchievementsScroll.ScrollToVerticalOffset(AchievementsScroll.VerticalOffset - 160); break;
                 case Key.Down: AchievementsScroll.ScrollToVerticalOffset(AchievementsScroll.VerticalOffset + 160); break;
                 case Key.PageUp: AchievementsScroll.PageUp(); break;

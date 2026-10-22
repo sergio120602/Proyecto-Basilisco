@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Basilisco.Models;
 
 namespace Basilisco.Services;
 
@@ -12,9 +13,6 @@ public sealed record AchievementProgress(int Unlocked, int Total, DateTime Read)
     public double Fraction => Total == 0 ? 0 : (double)Unlocked / Total;
     public bool Complete => Total > 0 && Unlocked >= Total;
 }
-
-/// <summary>Trofeo de un logro según lo difícil que es: cuántos jugadores lo tienen. El platino es el de tenerlos todos.</summary>
-public enum TrophyTier { Bronze, Silver, Gold, Platinum }
 
 /// <summary>Un logro del juego, para la página de logros.</summary>
 /// <param name="Hidden">Logro oculto: Steam no da su descripción hasta que se consigue.</param>
@@ -26,7 +24,9 @@ public sealed record AchievementInfo(string ApiName, string Name, string Descrip
     /// Bronce los fáciles (los tiene la mitad o más de los jugadores), plata los de dificultad media (del 15 al 50 %) y oro
     /// los difíciles (menos del 15 %). Sin el dato, bronce.
     /// </summary>
-    public TrophyTier Tier => GlobalPercent switch
+    public TrophyTier Tier => TierFor(GlobalPercent);
+
+    public static TrophyTier TierFor(double? percent) => percent switch
     {
         null or >= 50 => TrophyTier.Bronze,
         >= 15 => TrophyTier.Silver,
