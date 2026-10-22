@@ -26,6 +26,9 @@
                     <Button x:Name="SourceButton" Style="{StaticResource PillButton}" Click="OnSourceClick" Margin="0,0,10,10"/>
                     <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseClick" Margin="0,0,10,10"/>
                     <Button x:Name="RemoveButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Click="OnRemoveClick" Margin="0,0,10,10"/>
+                    <!-- Solo para los miembros de la familia: sus juegos con su barra de logros -->
+                    <Button x:Name="AchievementsButton" Style="{StaticResource PrimaryButton}" Content="Ver sus logros" Click="OnAchievementsClick" Margin="0,0,10,10"
+                            Visibility="Collapsed" ToolTip="Todos sus juegos con su progreso de logros (y comparar los que tenéis los dos)"/>
                 </WrapPanel>
                 <TextBlock x:Name="StatusText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,4,0,0" TextWrapping="Wrap"/>
 

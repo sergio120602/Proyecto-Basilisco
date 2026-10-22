@@ -81,6 +81,7 @@ public partial class MainWindow : Window
         VersionText.Text = $"v{AppInfo.Version}";
 
         _library = _store.Load();
+        SteamAchievements.MySteamId = MySteamId();
         RemoveOldFamilyFilter();
         _flow = new CoverFlow(Viewport);
         _flow.SelectedIndexChanged += ShowDetails;
@@ -800,7 +801,7 @@ public partial class MainWindow : Window
             var chosen = member;
             var who = member.IsMe ? $"{member.Name} (tú)" : member.Name;
             tiles.Add(new FilterTile(member.Name, MemberImage(member), $"{who} · {Games(CountGames(member))}",
-                member.SteamId == _activeMember?.SteamId, () => SelectView(null, null, chosen), Edit: () => OpenMemberEditor(chosen)));
+                member.SteamId == _activeMember?.SteamId, () => SelectView(null, null, chosen), Edit: () => OpenMemberEditor(chosen), FillImage: true));
         }
         if (members.Count > 0)
             tiles.Add(new FilterTile("Personalizar miembro", null, "Ponerle una imagen (su foto de Steam o una tuya)", false,
@@ -823,7 +824,8 @@ public partial class MainWindow : Window
     }
 
     void OpenMemberEditor(FamilyMember member) =>
-        ConsoleEditor.OpenMember(member, member.AvatarUrl is { } url ? () => DownloadAvatarAsync(url) : null);
+        ConsoleEditor.OpenMember(member, member.AvatarUrl is { } url ? () => DownloadAvatarAsync(url) : null,
+            () => _ = OpenMemberAchievementsAsync(member));
 
     static async Task<string?> DownloadAvatarAsync(string url)
     {
@@ -847,6 +849,7 @@ public partial class MainWindow : Window
         var familyRead = info.Members.Count > 0;
         if (familyRead)
             _library.Family = info.Members;
+        SteamAchievements.MySteamId = MySteamId();
         ApplyOwners(replace: familyRead);
         Save();
         if (_activeMember is { } member)
@@ -1385,6 +1388,12 @@ public partial class MainWindow : Window
     {
         if (!AchievementsPage.IsVisible)
             return;
+        // Dentro de un juego de los logros de un miembro, se vuelve primero a la lista de sus juegos.
+        if (_memberView is not null && _memberGameOpen)
+        {
+            ShowMemberGames();
+            return;
+        }
         _achievementsPageLoad?.Cancel();
         AnimatePage(open: false);
     }
@@ -1404,6 +1413,9 @@ public partial class MainWindow : Window
             page.Completed += (_, _) =>
             {
                 AchievementsPage.Visibility = Visibility.Collapsed;
+                _memberView = null;
+                _memberWork?.Cancel();
+                MemberGamesButton.Visibility = Visibility.Collapsed;
                 CloseTrophyEditor();
                 TrophyTools.Visibility = Visibility.Collapsed;
                 _trophyGame = null;
@@ -1477,7 +1489,8 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Un logro: su icono, nombre, descripción y trofeo. Conseguido, brilla del color de su trofeo; si no, en gris.</summary>
-    static FrameworkElement Card(AchievementInfo achievement, TrophyTier tier, bool wide)
+    /// <param name="compare">Quién de la familia lo tiene (al comparar un juego que tenéis varios), o null.</param>
+    static FrameworkElement Card(AchievementInfo achievement, TrophyTier tier, bool wide, string? compare = null)
     {
         var (dark, light) = TierColors(tier);
         var lit = achievement.Unlocked;
@@ -1555,6 +1568,14 @@ public partial class MainWindow : Window
             Text = string.Join("  ·  ", details), FontSize = 12, Margin = new Thickness(0, 5, 0, 0), TextWrapping = TextWrapping.Wrap,
             Foreground = lit ? new SolidColorBrush(light) : new SolidColorBrush(Color.FromRgb(0x7D, 0x87, 0x93)),
         });
+        if (compare is not null)
+        {
+            text.Children.Add(new TextBlock
+            {
+                Text = compare, FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x8F, 0xC8, 0xFF)),
+            });
+        }
         grid.Children.Add(text);
 
         var badge = TierTrophy(tier, 40, lit);

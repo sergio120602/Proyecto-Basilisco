@@ -99,8 +99,9 @@ public partial class MainWindow
     /// </summary>
     /// <param name="byPercent">True si los trofeos se han repartido por el porcentaje de jugadores (Steam, RetroAchievements).</param>
     /// <param name="onToggle">Con la activación manual: lo que pasa al pulsar un trofeo propio.</param>
+    /// <param name="compare">Al comparar un juego de varios miembros: quién tiene cada logro.</param>
     void FillTrophySections(string gameName, List<(AchievementInfo Info, TrophyTier Tier, OwnTrophy? Own)> entries, string noun, bool byPercent,
-                            Action<OwnTrophy>? onToggle = null)
+                            Action<OwnTrophy>? onToggle = null, Func<AchievementInfo, string?>? compare = null)
     {
         AchievementsList.Children.Clear();
         var regular = entries.Where(e => e.Tier != TrophyTier.Platinum).ToList();
@@ -112,7 +113,7 @@ public partial class MainWindow
 
         FrameworkElement Make((AchievementInfo Info, TrophyTier Tier, OwnTrophy? Own) entry, bool wide)
         {
-            var card = Card(entry.Info, entry.Tier, wide);
+            var card = Card(entry.Info, entry.Tier, wide, compare?.Invoke(entry.Info));
             if (entry.Own is { } own)
                 Interactive(card, own, onToggle);
             return card;

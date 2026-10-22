@@ -16,8 +16,9 @@ namespace Basilisco.Customization;
 /// <param name="Edit">Lo que pasa al elegirla para editar (null: no se edita, como «Todos los filtros»).</param>
 /// <param name="IsAction">Una acción («Nuevo filtro», «Editar filtro») en lugar de un filtro.</param>
 /// <param name="KeepOpen">Al elegirla, el menú sigue abierto (como «Editar filtro», que pasa a elegir qué filtro editar).</param>
+/// <param name="FillImage">La imagen ocupa toda la casilla, recortando lo que sobre (las fotos de perfil); si no, entera.</param>
 public sealed record FilterTile(string Title, string? ImagePath, string? Caption, bool Selected, Action Choose, Action? Edit = null,
-                                bool IsAction = false, bool KeepOpen = false);
+                                bool IsAction = false, bool KeepOpen = false, bool FillImage = false);
 
 /// <summary>
 /// Menú de filtros en una franja negra horizontal bajo la barra de arriba: cada filtro con su logotipo en grande (o su
@@ -85,7 +86,12 @@ public partial class FilterStripPanel : UserControl
     {
         // El logotipo, lo más grande que quepa; sin logotipo, el nombre en blanco.
         UIElement content;
-        if (tile.ImagePath is not null && Thumbnail(tile.ImagePath) is { } logo)
+        if (tile.FillImage && tile.ImagePath is not null && Thumbnail(tile.ImagePath) is { } photo)
+        {
+            // De borde a borde de la casilla (dentro del marco), con las esquinas redondeadas.
+            content = new Border { CornerRadius = new CornerRadius(11), Background = new ImageBrush(photo) { Stretch = Stretch.UniformToFill } };
+        }
+        else if (tile.ImagePath is not null && Thumbnail(tile.ImagePath) is { } logo)
         {
             content = new Image { Source = logo, Stretch = Stretch.Uniform, Margin = new Thickness(10), SnapsToDevicePixels = true };
             RenderOptions.SetBitmapScalingMode(content, BitmapScalingMode.HighQuality);
