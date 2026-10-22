@@ -77,10 +77,50 @@ public static class SteamAchievements
     }
 
     /// <summary>Lo último que se supo del juego (puede ser viejo), o null si nunca se ha leído.</summary>
-    public static AchievementProgress? Cached(int appId) => Cache.GetValueOrDefault(appId);
+    /// <summary>Tu cuenta de Steam (la ventana la pone al arrancar): sus logros van en achievements.json; los de los demás, aparte.</summary>
+    public static string? MySteamId { get; set; }
+
+    static bool IsMine(string? steamId) => steamId is null || MySteamId is null || steamId == MySteamId;
+
+    static readonly string OthersPath = Path.Combine(AppInfo.DataDirectory, "achievements-family.json");
+    static Dictionary<string, AchievementProgress>? _others;
+
+    /// <summary>Lo último que se supo de los logros de los demás miembros de la familia, por «cuenta:juego».</summary>
+    static Dictionary<string, AchievementProgress> Others
+    {
+        get
+        {
+            if (_others is not null)
+                return _others;
+            try
+            {
+                _others = File.Exists(OthersPath)
+                    ? JsonSerializer.Deserialize<Dictionary<string, AchievementProgress>>(File.ReadAllText(OthersPath)) ?? []
+                    : [];
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                _others = [];
+            }
+            return _others;
+        }
+    }
+
+    static void Store(int appId, string steamId, AchievementProgress progress)
+    {
+        if (IsMine(steamId))
+            Cache[appId] = progress;
+        else
+            Others[$"{steamId}:{appId}"] = progress;
+        Save();
+    }
+
+    /// <summary>Lo último que se supo de los logros de un juego (tuyos, o de otra cuenta), o null si nunca se ha leído.</summary>
+    public static AchievementProgress? Cached(int appId, string? steamId = null) =>
+        IsMine(steamId) ? Cache.GetValueOrDefault(appId) : Others.GetValueOrDefault($"{steamId}:{appId}");
 
     /// <summary>True si hay que volver a preguntar a Steam (no se sabe o tiene más de 30 minutos).</summary>
-    public static bool IsStale(int appId) => Cached(appId) is not { } known || DateTime.Now - known.Read > MaxAge;
+    public static bool IsStale(int appId, string? steamId = null) => Cached(appId, steamId) is not { } known || DateTime.Now - known.Read > MaxAge;
 
     /// <summary>Pide a Steam los logros del juego y los guarda.</summary>
     /// <exception cref="AchievementsException">Si Steam no los da (perfil privado, sin conexión…).</exception>
@@ -147,13 +187,12 @@ public static class SteamAchievements
             }
 
             var progress = new AchievementProgress(unlocked, total, DateTime.Now);
-            Cache[appId] = progress;
-            Save();
+            Store(appId, steamId, progress);
             return progress;
         }
     }
 
-    static readonly Dictionary<int, (DateTime Read, List<AchievementInfo> List)> Details = [];
+    static readonly Dictionary<string, (DateTime Read, List<AchievementInfo> List)> Details = [];
 
     /// <summary>
     /// Todos los logros del juego para la página de logros: nombre, descripción e iconos (GetSchemaForGame), si los tienes
@@ -161,7 +200,7 @@ public static class SteamAchievements
     /// </summary>
     public static async Task<List<AchievementInfo>> DetailsAsync(int appId, string steamId, string apiKey, CancellationToken cancellation)
     {
-        if (Details.TryGetValue(appId, out var known) && DateTime.Now - known.Read < MaxAge)
+        if (Details.TryGetValue($"{steamId}:{appId}", out var known) && DateTime.Now - known.Read < MaxAge)
             return known.List;
 
         var auth = $"key={Uri.EscapeDataString(apiKey)}";
@@ -228,9 +267,8 @@ public static class SteamAchievements
             }
         }
 
-        Details[appId] = (DateTime.Now, result);
-        Cache[appId] = new AchievementProgress(result.Count(a => a.Unlocked), result.Count, DateTime.Now);
-        Save();
+        Details[$"{steamId}:{appId}"] = (DateTime.Now, result);
+        Store(appId, steamId, new AchievementProgress(result.Count(a => a.Unlocked), result.Count, DateTime.Now));
         return result;
     }
 
@@ -257,6 +295,11 @@ public static class SteamAchievements
             var temp = CachePath + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(Cache));
             File.Move(temp, CachePath, overwrite: true);
+            if (_others is { Count: > 0 })
+            {
+                File.WriteAllText(OthersPath + ".tmp", JsonSerializer.Serialize(_others));
+                File.Move(OthersPath + ".tmp", OthersPath, overwrite: true);
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

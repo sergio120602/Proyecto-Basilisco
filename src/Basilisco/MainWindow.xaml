@@ -403,6 +403,8 @@
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
                     <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="↑  Volver (Esc)" VerticalAlignment="Top"
                             Focusable="False" Click="OnAchievementsBackClick"/>
+                    <Button x:Name="MemberGamesButton" DockPanel.Dock="Right" Style="{StaticResource PillButton}" VerticalAlignment="Top" Margin="0,0,10,0"
+                            Focusable="False" Click="OnMemberGamesClick" Visibility="Collapsed"/>
                     <StackPanel>
                         <TextBlock x:Name="AchievementsPageKind" Text="LOGROS DE STEAM" FontSize="13" FontWeight="Bold" Foreground="#8FA3BF"/>
                         <TextBlock x:Name="AchievementsPageTitle" FontSize="34" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,4"/>

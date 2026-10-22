@@ -3,6 +3,16 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.13] - 2026-10-23
+
+- **Logros de cada miembro de Steam familiar**: en su menú de personalizar (clic derecho en el miembro) hay un botón nuevo, **«Ver sus logros»** («Ver mis logros» en tu caso).
+  - Abre, con la misma animación, la lista de **todos sus juegos**, cada uno con su portada, su **plataforma** y su **barra de logros** (azul con degradado, y dorada al 100 %).
+  - Tú ves todos tus juegos, los que tienen logros y los que no, y los que no son de Steam con su consola y su perfil de trofeos. Los demás miembros ven sus juegos de Steam, también marcados como «Steam».
+  - Al elegir un juego se ven sus logros. Si el juego lo tenéis varios, cada logro dice **quién lo tiene** (por ejemplo «Frank ✓   Tú ✗»), y arriba cuántos tenéis cada uno y cuántos los dos.
+  - «← Sus juegos» o `Esc` vuelve a la lista.
+  - Los logros de los demás se leen con tu clave de la Web API de Steam, así que hace falta que sus perfiles dejen ver los «Detalles de juegos».
+- La **foto de cada miembro** ocupa ahora **toda su casilla** en el menú de Steam familiar.
+
 ## [0.6.12] - 2026-10-23
 
 - **Perfil de trofeos** para los juegos que no tienen logros de Steam. Va en el sitio de la barra de logros y abre la misma página, con la misma animación.

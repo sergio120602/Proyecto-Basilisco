@@ -43,14 +43,31 @@ public partial class ConsolePanel : UserControl
             "Buscar en LaunchBox", "La foto de la consola en la base de datos de LaunchBox", () => LaunchBoxRequested?.Invoke(platform));
 
     /// <param name="downloadAvatar">Descarga su foto de perfil de Steam y devuelve la ruta (null si no tiene o falla).</param>
-    public void OpenMember(FamilyMember member, Func<Task<string?>>? downloadAvatar) =>
+    /// <param name="viewAchievements">«Ver sus logros»: sus juegos con su progreso (lo abre la ventana principal).</param>
+    public void OpenMember(FamilyMember member, Func<Task<string?>>? downloadAvatar, Action? viewAchievements = null)
+    {
         Show(member.Name, AppInfo.FamilyImagesDirectory, member.Key,
             "La imagen que se ve en el menú de Steam familiar. Sin imagen, se escribe su nombre.",
             downloadAvatar is null ? null : "Foto de perfil de Steam", "Su foto de perfil de Steam, en grande",
             downloadAvatar is null ? null : () => _ = UseAvatarAsync(downloadAvatar));
+        _viewAchievements = viewAchievements;
+        AchievementsButton.Visibility = viewAchievements is null ? Visibility.Collapsed : Visibility.Visible;
+        AchievementsButton.Content = member.IsMe ? "Ver mis logros" : "Ver sus logros";
+    }
+
+    Action? _viewAchievements;
+
+    void OnAchievementsClick(object sender, RoutedEventArgs e)
+    {
+        var view = _viewAchievements;
+        Close();
+        view?.Invoke();
+    }
 
     void Show(string name, string folder, string id, string help, string? sourceLabel, string? sourceTip, Action? source)
     {
+        _viewAchievements = null;
+        AchievementsButton.Visibility = Visibility.Collapsed;
         _name = name;
         _folder = folder;
         _id = id;
