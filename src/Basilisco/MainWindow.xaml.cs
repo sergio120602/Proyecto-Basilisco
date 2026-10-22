@@ -2525,6 +2525,95 @@ public partial class MainWindow : Window
 
     void StepZoom(double delta) => ZoomSlider.Value = Math.Clamp(ZoomSlider.Value + delta, ZoomSlider.Minimum, ZoomSlider.Maximum);
 
+    // ---- Buscador ----
+
+    /// <summary>Una sugerencia del buscador: el juego y, a la derecha, su consola.</summary>
+    sealed record SearchHit(Game Game, string Name, string Detail);
+
+    void FocusSearch()
+    {
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+    }
+
+    void OnSearchFocusChanged(object sender, KeyboardFocusChangedEventArgs e) =>
+        SearchHint.Visibility = SearchBox.IsKeyboardFocused || SearchBox.Text.Length > 0 ? Visibility.Collapsed : Visibility.Visible;
+
+    void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        SearchHint.Visibility = SearchBox.IsKeyboardFocused || SearchBox.Text.Length > 0 ? Visibility.Collapsed : Visibility.Visible;
+        var query = SearchBox.Text.Trim();
+        if (query.Length == 0)
+        {
+            SearchPopup.IsOpen = false;
+            return;
+        }
+
+        var hits = GameSearch.Find(Games, game => game.Name, query, 8)
+            .Select(game => new SearchHit(game, game.Name, Platforms.Find(game.Platform)?.Name ?? ""))
+            .ToList();
+        SearchResults.ItemsSource = hits;
+        SearchResults.SelectedIndex = hits.Count > 0 ? 0 : -1;
+        SearchResults.Visibility = hits.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        SearchEmpty.Visibility = hits.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        // El menú va escalado como el resto de la interfaz (un Popup no hereda la escala de la ventana).
+        SearchPopupCard.LayoutTransform = _uiScale;
+        SearchPopupCard.MinWidth = Math.Max(320, SearchField.ActualWidth);
+        SearchPopup.IsOpen = true;
+    }
+
+    void OnSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        var count = SearchResults.Items.Count;
+        switch (e.Key)
+        {
+            case Key.Down when count > 0:
+                SearchResults.SelectedIndex = (SearchResults.SelectedIndex + 1) % count;
+                SearchResults.ScrollIntoView(SearchResults.SelectedItem);
+                break;
+            case Key.Up when count > 0:
+                SearchResults.SelectedIndex = (SearchResults.SelectedIndex - 1 + count) % count;
+                SearchResults.ScrollIntoView(SearchResults.SelectedItem);
+                break;
+            case Key.Enter:
+                if (SearchPopup.IsOpen && SearchResults.SelectedItem is SearchHit hit)
+                    GoToGame(hit.Game);
+                break;
+            case Key.Escape:
+                EndSearch();
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
+    }
+
+    void OnSearchResultClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source && ItemsControl.ContainerFromElement(SearchResults, source) is ListBoxItem { Content: SearchHit hit })
+            GoToGame(hit.Game);
+    }
+
+    /// <summary>Lleva el carrusel al juego elegido. Si no está en lo que se ve (otra consola, otro filtro), se pasa a «Todos los juegos».</summary>
+    void GoToGame(Game game)
+    {
+        EndSearch();
+        if (_flow.ShelfMode)
+            ExitShelf();
+        if (!_visibleGames.Contains(game))
+            SelectView(null, null);
+        var index = _visibleGames.IndexOf(game);
+        if (index >= 0)
+            _flow.JumpTo(index);
+    }
+
+    void EndSearch()
+    {
+        SearchPopup.IsOpen = false;
+        SearchBox.Text = "";
+        Focus();
+    }
+
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         // La misma pulsación del mando repetida como tecla por Steam: se ignora.
@@ -2538,9 +2627,16 @@ public partial class MainWindow : Window
         if (!_injectingKey)
             SetPadMode(false);
 
-        // Con un menú abierto las teclas son para él (escribir el nombre, Enter, Esc).
-        if (IsPanelOpen)
+        // Con un menú abierto las teclas son para él (escribir el nombre, Enter, Esc); en el buscador, para escribir.
+        if (IsPanelOpen || SearchBox.IsKeyboardFocused)
             return;
+
+        if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            FocusSearch();
+            e.Handled = true;
+            return;
+        }
 
         if (_flow.ShelfMode)
         {

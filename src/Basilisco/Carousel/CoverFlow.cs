@@ -266,6 +266,22 @@ public sealed class CoverFlow
 
     public void MoveBy(int delta) => Select(_target + delta);
 
+    /// <summary>Se coloca directamente en una caja, sin deslizar por las de en medio (al elegirla en el buscador).</summary>
+    public void JumpTo(int index)
+    {
+        if (_slots.Count == 0)
+            return;
+        _slots[_target].NormalizeYaw();
+        _target = Math.Clamp(index, 0, _slots.Count - 1);
+        _position = _target;
+        foreach (var (slot, i) in _slots.Select((slot, i) => (slot, i)))
+            slot.Shown = i;
+        _yawTarget = _pitchTarget = 0;
+        ApplyLayout();
+        StartAnimation();
+        SelectedIndexChanged?.Invoke(_target);
+    }
+
     public void Select(int index)
     {
         if (_slots.Count == 0)
