@@ -346,10 +346,13 @@ public partial class CustomizePanel : UserControl
         RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         var pdf = CurrentManualPdf();
-        ManualPdfText.Text = pdf is null
-            ? "Sin manual en PDF: se creará al abrirlo desde la caja abierta."
-            : _manualPdf.NewPath is not null ? "Manual en PDF nuevo (se guarda al darle a Guardar)." : "Tiene manual en PDF.";
-        ReadManualButton.IsEnabled = RemoveManualPdfButton.IsEnabled = pdf is not null;
+        var pages = _game?.ManualPages?.Count ?? 0;
+        ManualPdfText.Text = (pages > 0 ? $"Manual de Pinterest: {pages} {(pages == 1 ? "página" : "páginas")} (es el que se lee). " : "") + (pdf is null
+            ? pages > 0 ? "" : "Sin manual en PDF: se creará al abrirlo desde la caja abierta."
+            : _manualPdf.NewPath is not null ? "Manual en PDF nuevo (se guarda al darle a Guardar)." : "Tiene manual en PDF.");
+        ReadManualButton.IsEnabled = pdf is not null || pages > 0;
+        RemoveManualPdfButton.IsEnabled = pdf is not null;
+        RemovePinterestButton.Visibility = pages > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>El PDF que tendrá el juego como manual si se guarda ahora.</summary>
@@ -407,9 +410,35 @@ public partial class CustomizePanel : UserControl
 
     void OnReadManualClick(object sender, RoutedEventArgs e)
     {
-        if (CurrentManualPdf() is { } pdf)
+        if (_game is { ManualPages.Count: > 0 } game)
+            ImageManualReadRequested?.Invoke(game);
+        else if (CurrentManualPdf() is { } pdf)
             ManualReadRequested?.Invoke(pdf, NameBox.Text.Trim());
     }
+
+    /// <summary>«Ver Pinterest»: elegir imágenes para el manual (lo abre la ventana principal, encima de este menú).</summary>
+    public event Action<Game, string>? PinterestRequested;
+
+    /// <summary>Hay que leer el manual de imágenes del juego.</summary>
+    public event Action<Game>? ImageManualReadRequested;
+
+    /// <summary>Quitar el manual de Pinterest (se quita al momento).</summary>
+    public event Action<Game>? ImageManualRemoveRequested;
+
+    void OnPinterestClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is { } game)
+            PinterestRequested?.Invoke(game, NameBox.Text.Trim());
+    }
+
+    void OnRemovePinterestClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is { } game)
+            ImageManualRemoveRequested?.Invoke(game);
+    }
+
+    /// <summary>Vuelve a contar las páginas del manual (después de guardar o quitar el de Pinterest).</summary>
+    public void RefreshManualInfo() => UpdateExtrasText();
 
     void OnVimmClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.ManualPdf, ArtSource.Default);
 

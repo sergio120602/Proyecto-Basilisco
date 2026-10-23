@@ -16,7 +16,7 @@
     <!-- Logo: icono del .exe, de la ventana y de la barra de tareas. -->
     <ApplicationIcon>Assets\basilisco.ico</ApplicationIcon>
 
-    <Version>0.6.14</Version>
+    <Version>0.6.15</Version>
     <Product>Proyecto Basilisco</Product>
     <Description>Launcher de videojuegos portable</Description>
 
@@ -35,6 +35,8 @@
   <ItemGroup>
     <!-- Lectura de mandos con los mapeos correctos de Xbox, DualSense y Switch Pro; trae SDL3.dll. -->
     <PackageReference Include="ppy.SDL3-CS" Version="2026.1002.1" />
+    <!-- Navegador dentro de Basilisco (Edge, que ya viene en Windows), para elegir imágenes de Pinterest para los manuales. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
   </ItemGroup>
 
   <ItemGroup>

@@ -200,7 +200,11 @@
                                 ToolTip="Un manual tuyo en PDF (por ejemplo, el original escaneado)"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en Vimm's Lair" Click="OnVimmClick" Margin="0,0,10,10"
                                 ToolTip="Manuales originales escaneados (vimm.net/manual): se abre en el navegador para descargarlo y Basilisco lo recoge de Descargas"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="Ver Pinterest" Click="OnPinterestClick" Margin="0,0,10,10"
+                                ToolTip="Busca en Pinterest (#juego #artbook), elige las imágenes en orden y se guardan como el manual"/>
                         <Button x:Name="ReadManualButton" Style="{StaticResource PillButton}" Content="Leer" Click="OnReadManualClick" Margin="0,0,10,10"/>
+                        <Button x:Name="RemovePinterestButton" Style="{StaticResource PillButton}" Content="Quitar manual de Pinterest" Click="OnRemovePinterestClick"
+                                Margin="0,0,10,10"/>
                         <Button x:Name="RemoveManualPdfButton" Style="{StaticResource PillButton}" Content="Quitar PDF" Click="OnRemoveManualPdfClick" Margin="0,0,10,10"/>
                     </WrapPanel>
                     <TextBlock x:Name="ManualPdfText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextWrapping="Wrap"/>

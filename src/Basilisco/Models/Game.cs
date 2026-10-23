@@ -22,6 +22,12 @@ public sealed class Game
     /// </summary>
     public List<string> SteamOwnerIds { get; set; } = [];
 
+    /// <summary>Manual hecho con imágenes (de Pinterest), en orden. Si tiene, es el que se lee (antes que el PDF).</summary>
+    public List<ManualPage>? ManualPages { get; set; }
+
+    /// <summary>Última vez que se abrió el manual (para soltar antes los que menos se leen si se pasa el tope de espacio).</summary>
+    public DateTime? ManualOpened { get; set; }
+
     /// <summary>Perfil de trofeos (juegos sin logros de Steam): creados a mano o de RetroAchievements, RPCS3 o PlayStation.</summary>
     public TrophyProfile? Trophies { get; set; }
 

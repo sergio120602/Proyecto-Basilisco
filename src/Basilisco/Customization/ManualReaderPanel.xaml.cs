@@ -10,16 +10,19 @@ using Basilisco.Services;
 namespace Basilisco.Customization;
 
 /// <summary>
-/// Lector de manuales en PDF dentro de Basilisco: se pasa de página con las flechas, el mando, la rueda o haciendo
-/// clic en la página. Las páginas se dibujan con el lector de PDF de Windows a medida que hacen falta.
+/// Lector de manuales: el manual como un libro en 3D, con la hoja pasando al avanzar o volver (flechas, mando, rueda o un
+/// clic en la mitad derecha o izquierda). Vale para los PDF y para los manuales de imágenes. Solo se tienen en memoria las
+/// páginas que se ven y las de al lado (para que pasar sea instantáneo), al alto de la pantalla.
 /// </summary>
 public partial class ManualReaderPanel : UserControl
 {
+    // Las páginas ya dibujadas, solo las de cerca de donde estás (las demás se sueltan).
     readonly Dictionary<int, BitmapSource> _pages = [];
-    string? _path;
+    ManualSource? _source;
     int _pageCount;
     int _spread;            // 0: solo la portada; n: las páginas 2n−1 y 2n
     int _version;           // cambia al abrir otro manual, para descartar páginas de uno anterior
+    bool _busy;
 
     public event Action? Closed;
 
@@ -31,21 +34,25 @@ public partial class ManualReaderPanel : UserControl
         Visibility = Visibility.Collapsed;
     }
 
-    public async void Open(string path, string title, bool padMode)
+    public void Open(string path, string title, bool padMode) => Open(new PdfManual(path), title, padMode);
+
+    public async void Open(ManualSource source, string title, bool padMode)
     {
         var version = ++_version;
-        _path = path;
+        _source = source;
         _pages.Clear();
         _spread = 0;
         _pageCount = 0;
         TitleText.Text = title;
         HintText.Text = padMode ? "← →  Pasar página     ·     B  Cerrar" : "← →  Pasar página     ·     Esc  Cerrar";
-        LeftPage.Source = RightPage.Source = null;
+        ExternalButton.Visibility = source.PdfPath is null ? Visibility.Collapsed : Visibility.Visible;
+        Book.Show(null, null);
+        LoadingText.Text = "Abriendo el manual…";
         LoadingText.Visibility = Visibility.Visible;
         Visibility = Visibility.Visible;
         _ = Dispatcher.BeginInvoke(() => Focus(), DispatcherPriority.Input);
 
-        _pageCount = await PdfRenderer.PageCountAsync(path);
+        _pageCount = await source.CountAsync();
         if (version != _version)
             return;
         if (_pageCount == 0)
@@ -53,7 +60,13 @@ public partial class ManualReaderPanel : UserControl
             LoadingText.Text = "No se ha podido abrir el manual.";
             return;
         }
-        await ShowSpreadAsync();
+        // Las páginas, con su proporción (la de la portada).
+        if (await PageAsync(0) is { } cover)
+            Book.PageAspect = (double)cover.PixelWidth / cover.PixelHeight;
+        if (version != _version)
+            return;
+        LoadingText.Visibility = Visibility.Collapsed;
+        await ShowSpreadAsync(direction: 0);
     }
 
     int SpreadCount => _pageCount / 2 + 1;
@@ -62,7 +75,10 @@ public partial class ManualReaderPanel : UserControl
         ? (null, 0)
         : (2 * spread - 1, 2 * spread < _pageCount ? 2 * spread : null);
 
-    async Task ShowSpreadAsync()
+    async Task<BitmapSource?> Page(int? index) => index is { } i ? await PageAsync(i) : null;
+
+    /// <summary>Enseña la doble página actual; con <paramref name="direction"/>, pasando la hoja desde la anterior.</summary>
+    async Task ShowSpreadAsync(int direction)
     {
         var version = _version;
         var (left, right) = PagesOf(_spread);
@@ -72,45 +88,75 @@ public partial class ManualReaderPanel : UserControl
         PreviousButton.IsEnabled = _spread > 0;
         NextButton.IsEnabled = _spread < SpreadCount - 1;
 
-        LeftPage.Source = left is { } l ? await PageAsync(l) : null;
-        RightPage.Source = right is { } r ? await PageAsync(r) : null;
+        if (direction == 0)
+        {
+            Book.Show(await Page(left), await Page(right));
+        }
+        else
+        {
+            var (oldLeft, oldRight) = PagesOf(_spread - direction);
+            // Hacia delante: la hoja es la derecha de antes y por detrás la nueva izquierda. Hacia atrás, al revés.
+            var front = direction > 0 ? await Page(oldRight) : await Page(right);
+            var back = direction > 0 ? await Page(left) : await Page(oldLeft);
+            var underLeft = direction > 0 ? await Page(oldLeft) : await Page(left);
+            var underRight = direction > 0 ? await Page(right) : await Page(oldRight);
+            if (version != _version)
+                return;
+            Book.Turn(direction, front, back, underLeft, underRight);
+        }
         if (version != _version)
             return;
-        LoadingText.Visibility = Visibility.Collapsed;
 
-        // Se adelanta la siguiente doble página para que pasar sea instantáneo.
-        if (_spread + 1 < SpreadCount)
+        // Se adelantan las de la siguiente y la anterior doble página, y se sueltan las lejanas.
+        var near = new HashSet<int>();
+        for (var spread = Math.Max(0, _spread - 1); spread <= Math.Min(SpreadCount - 1, _spread + 1); spread++)
         {
-            var (nextLeft, nextRight) = PagesOf(_spread + 1);
-            foreach (var page in new[] { nextLeft, nextRight }.OfType<int>())
-                await PageAsync(page);
+            var (l, r) = PagesOf(spread);
+            foreach (var page in new[] { l, r }.OfType<int>())
+                near.Add(page);
         }
+        foreach (var far in _pages.Keys.Where(page => !near.Contains(page) && page != 0).ToList())
+            _pages.Remove(far);
+        foreach (var page in near)
+            await PageAsync(page);
     }
 
     async Task<BitmapSource?> PageAsync(int index)
     {
         if (_pages.TryGetValue(index, out var cached))
             return cached;
-        if (_path is not { } path)
+        if (_source is not { } source || index < 0 || index >= _pageCount && _pageCount > 0)
             return null;
         var version = _version;
         // Al alto de la pantalla, en píxeles reales, para que el texto se lea nítido.
         var dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
-        var height = (int)Math.Clamp(ActualHeight * dpi, 800, 2400);
-        var rendered = await PdfRenderer.RenderAsync(path, height, [index]);
-        if (version != _version || rendered.Count == 0)
+        var height = (int)Math.Clamp(ActualHeight * dpi, 800, 2000);
+        var page = await source.PageAsync(index, height, CancellationToken.None);
+        if (version != _version || page is null)
             return null;
-        _pages[index] = rendered[0];
-        return rendered[0];
+        _pages[index] = page;
+        return page;
     }
 
-    public void Flip(int direction)
+    public async void Flip(int direction)
     {
         var next = Math.Clamp(_spread + direction, 0, Math.Max(0, SpreadCount - 1));
-        if (next == _spread || _pageCount == 0)
+        if (next == _spread || _pageCount == 0 || _busy)
             return;
-        _spread = next;
-        _ = ShowSpreadAsync();
+        _busy = true;
+        try
+        {
+            Book.Finish();
+            var step = Math.Sign(next - _spread);
+            // Saltos largos (Inicio, Fin): directamente, sin pasar todas las hojas.
+            var animate = Math.Abs(next - _spread) == 1;
+            _spread = next;
+            await ShowSpreadAsync(animate ? step : 0);
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     public void Close()
@@ -118,9 +164,11 @@ public partial class ManualReaderPanel : UserControl
         if (!IsOpen)
             return;
         _version++;
+        Book.Finish();
+        Book.Show(null, null);
         Visibility = Visibility.Collapsed;
-        LeftPage.Source = RightPage.Source = null;
         _pages.Clear();
+        _source = null;
         LoadingText.Text = "Abriendo el manual…";
         Closed?.Invoke();
     }
@@ -141,9 +189,7 @@ public partial class ManualReaderPanel : UserControl
 
     void OnMouseWheel(object sender, MouseWheelEventArgs e) => Flip(e.Delta < 0 ? 1 : -1);
 
-    void OnLeftPageClick(object sender, MouseButtonEventArgs e) => Flip(-1);
-
-    void OnRightPageClick(object sender, MouseButtonEventArgs e) => Flip(1);
+    void OnBookClick(object sender, MouseButtonEventArgs e) => Flip(Book.IsLeftHalf(e.GetPosition(Book)) ? -1 : 1);
 
     void OnPreviousClick(object sender, RoutedEventArgs e) => Flip(-1);
 
@@ -153,11 +199,11 @@ public partial class ManualReaderPanel : UserControl
 
     void OnOpenExternalClick(object sender, RoutedEventArgs e)
     {
-        if (_path is null)
+        if (_source?.PdfPath is not { } path)
             return;
         try
         {
-            Process.Start(new ProcessStartInfo(_path) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {

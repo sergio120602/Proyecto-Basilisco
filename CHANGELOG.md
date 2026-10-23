@@ -3,6 +3,19 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.15] - 2026-10-23
+
+- **Manuales con Pinterest**: en el menú de edición de cada juego, en la sección del manual, hay un botón nuevo, **«Ver Pinterest»**.
+  - Abre Pinterest dentro de Basilisco, con tu cuenta (el navegador Edge que trae Windows; la sesión se guarda en `basilisco-data/webview`). La búsqueda viene puesta como «#juego #artbook» y se puede cambiar.
+  - Un clic en una imagen la elige o la quita. Encima lleva un **número con su orden de selección** y un borde dorado, y abajo se ven las elegidas en orden (un clic en una la quita).
+  - Con «Seleccionar imágenes» apagado, Pinterest funciona como siempre (abrir pines, iniciar sesión…).
+  - **«Guardar como manual»** descarga las elegidas y pasan a ser el manual del juego, en ese orden. Va antes que el PDF, y la primera página es el librito de la caja abierta si no tenía imagen.
+- **El lector de manuales es un libro en 3D**: abierto sobre su tapa y algo tumbado. Al avanzar o volver, la **hoja pasa curvándose** sobre el lomo, con la página siguiente por detrás, como un cuaderno impreso. Vale para los PDF y para los manuales de imágenes.
+- **Para que los manuales ocupen poco**:
+  - Cada página se guarda como JPEG al alto al que se lee (1600 px, calidad 82), unos 250-400 KB por página. Las imágenes repetidas se guardan una sola vez.
+  - Hay un **tope de espacio** (2 GB, que se cambia en `settings.json` con `ManualSpaceLimitMb`). Si se pasa, se sueltan las páginas de los manuales que llevas más tiempo sin abrir, y se vuelven a descargar solas al abrirlos.
+  - El libro solo tiene en memoria las páginas que se ven y las de al lado.
+
 ## [0.6.14] - 2026-10-23
 
 - Arreglado **«Ver sus logros»**, que decía «perfil privado» a miembros con el perfil público. Pasaban dos cosas:

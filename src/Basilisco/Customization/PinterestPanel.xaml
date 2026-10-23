@@ -1,0 +1,53 @@
+<UserControl x:Class="Basilisco.Customization.PinterestPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
+    <!-- Pinterest dentro de Basilisco: buscas, eliges imágenes (con su número de orden) y se guardan como el manual del juego -->
+    <Grid Background="#F70B0D11">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel x:Name="TopBar" Margin="40,26,40,14">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <ToggleButton x:Name="SelectToggle" Style="{StaticResource FilterToggle}" Content="Seleccionar imágenes" IsChecked="True"
+                              Margin="0,0,10,0" VerticalAlignment="Center" Click="OnSelectToggleClick" Focusable="False"
+                              ToolTip="Encendido: un clic en una imagen la elige (o la quita). Apagado: Pinterest funciona como siempre (abrir pines, iniciar sesión…)"/>
+                <Button Style="{StaticResource PillButton}" Content="Cerrar" Click="OnCancelClick" Focusable="False"/>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="PINTEREST · MANUAL" FontSize="13" FontWeight="Bold" Foreground="#8FA3BF"/>
+                <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,10" TextTrimming="CharacterEllipsis"/>
+                <DockPanel MaxWidth="900" HorizontalAlignment="Left">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Buscar" Margin="10,0,0,0" Click="OnSearchClick" Focusable="False"/>
+                    <TextBox x:Name="SearchBox" Style="{StaticResource FieldTextBox}" FontSize="15" MinWidth="520" KeyDown="OnSearchKeyDown"/>
+                </DockPanel>
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="1" Margin="40,0,40,0" CornerRadius="10" ClipToBounds="True" Background="White">
+            <Grid>
+                <wv2:WebView2 x:Name="Browser"/>
+                <TextBlock x:Name="BrowserStatus" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Foreground="#555"
+                           TextWrapping="Wrap" MaxWidth="700" TextAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <DockPanel x:Name="BottomBar" Grid.Row="2" Margin="40,14,40,26">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="ClearButton" Style="{StaticResource PillButton}" Content="Vaciar" Margin="0,0,10,0" Click="OnClearClick" Focusable="False"/>
+                <Button x:Name="SaveButton" Style="{StaticResource PrimaryButton}" Content="Guardar como manual" Click="OnSaveClick" Focusable="False"/>
+            </StackPanel>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="CountText" FontSize="15" FontWeight="SemiBold" Foreground="White" Margin="2,0,0,8"/>
+                <!-- Las elegidas, en su orden (un clic en una la quita) -->
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Focusable="False">
+                    <StackPanel x:Name="SelectedStrip" Orientation="Horizontal" Height="92"/>
+                </ScrollViewer>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</UserControl>
