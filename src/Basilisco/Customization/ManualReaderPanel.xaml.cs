@@ -44,7 +44,10 @@ public partial class ManualReaderPanel : UserControl
         _spread = 0;
         _pageCount = 0;
         TitleText.Text = title;
-        HintText.Text = padMode ? "← →  Pasar página     ·     B  Cerrar" : "← →  Pasar página     ·     Esc  Cerrar";
+        HintText.Text = padMode
+            ? "← →  Pasar página     ·     B  Cerrar"
+            : "← →  Pasar página     ·     Ctrl + rueda o + −  Zoom (arrastra para moverte)     ·     Esc  Cerrar";
+        SetZoom(1);
         ExternalButton.Visibility = source.PdfPath is null ? Visibility.Collapsed : Visibility.Visible;
         Book.Show(null, null);
         LoadingText.Text = "Abriendo el manual…";
@@ -130,7 +133,8 @@ public partial class ManualReaderPanel : UserControl
         var version = _version;
         // Al alto de la pantalla, en píxeles reales, para que el texto se lea nítido.
         var dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
-        var height = (int)Math.Clamp(ActualHeight * dpi, 800, 2000);
+        // Con zoom, más resolución (hasta 3200 px), para que el texto siga nítido de cerca.
+        var height = (int)Math.Clamp(ActualHeight * dpi * Math.Min(Book.Zoom, 2), 800, 3200);
         var page = await source.PageAsync(index, height, CancellationToken.None);
         if (version != _version || page is null)
             return null;
@@ -179,6 +183,9 @@ public partial class ManualReaderPanel : UserControl
         {
             case Key.Right or Key.PageDown or Key.Enter or Key.Space: Flip(1); break;
             case Key.Left or Key.PageUp: Flip(-1); break;
+            case Key.OemPlus or Key.Add: SetZoom(Book.Zoom * ZoomStep); break;
+            case Key.OemMinus or Key.Subtract: SetZoom(Book.Zoom / ZoomStep); break;
+            case Key.D0 or Key.NumPad0: SetZoom(1); break;
             case Key.Home: Flip(-SpreadCount); break;
             case Key.End: Flip(SpreadCount); break;
             case Key.Escape or Key.Back: Close(); break;
@@ -187,9 +194,100 @@ public partial class ManualReaderPanel : UserControl
         e.Handled = true;
     }
 
-    void OnMouseWheel(object sender, MouseWheelEventArgs e) => Flip(e.Delta < 0 ? 1 : -1);
+    // ---- Zoom ----
 
-    void OnBookClick(object sender, MouseButtonEventArgs e) => Flip(Book.IsLeftHalf(e.GetPosition(Book)) ? -1 : 1);
+    const double ZoomStep = 1.25;
+    Point? _dragStart;
+    Point _dragLast;
+    bool _dragged;
+    double _renderedZoom = 1;
+    DispatcherTimer? _sharpen;
+
+    /// <summary>
+    /// Acerca o aleja el libro (del 100 % al 400 %), hacia el ratón si se da su posición. Al pararse, las páginas se
+    /// vuelven a dibujar con más resolución para que el texto se lea nítido de cerca.
+    /// </summary>
+    void SetZoom(double zoom, Point? at = null)
+    {
+        zoom = Math.Clamp(zoom, Carousel.BookView.MinZoom, Carousel.BookView.MaxZoom);
+        if (Math.Abs(zoom - 1) < 0.04)
+            zoom = 1;
+        if (at is { } point)
+            Book.ZoomAt(zoom, point);
+        else
+            Book.Zoom = zoom;
+        ZoomText.Text = $"{Book.Zoom * 100:0} %";
+        FitButton.IsEnabled = Book.Zoom > 1;
+        Book.Cursor = Book.Zoom > 1 ? Cursors.SizeAll : Cursors.Hand;
+
+        if (Math.Abs(Math.Min(Book.Zoom, 2) - Math.Min(_renderedZoom, 2)) < 0.2 || _pageCount == 0)
+            return;
+        _sharpen ??= new DispatcherTimer(TimeSpan.FromMilliseconds(350), DispatcherPriority.Background, async (_, _) =>
+        {
+            _sharpen!.Stop();
+            _renderedZoom = Book.Zoom;
+            _pages.Clear();
+            if (!Book.IsTurning && _pageCount > 0)
+                await ShowSpreadAsync(direction: 0);
+        }, Dispatcher);
+        _sharpen.Stop();
+        _sharpen.Start();
+    }
+
+    void OnZoomInClick(object sender, RoutedEventArgs e) => SetZoom(Book.Zoom * ZoomStep);
+
+    void OnZoomOutClick(object sender, RoutedEventArgs e) => SetZoom(Book.Zoom / ZoomStep);
+
+    void OnFitClick(object sender, RoutedEventArgs e) => SetZoom(1);
+
+    // La rueda pasa página; con Ctrl, hace zoom hacia el ratón.
+    void OnMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            SetZoom(Book.Zoom * (e.Delta > 0 ? ZoomStep : 1 / ZoomStep), e.GetPosition(Book));
+        else
+            Flip(e.Delta < 0 ? 1 : -1);
+        e.Handled = true;
+    }
+
+    void OnBookMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // Doble clic: del libro entero al doble, y vuelta.
+        if (e.ClickCount == 2)
+        {
+            SetZoom(Book.Zoom > 1 ? 1 : 2, e.GetPosition(Book));
+            _dragStart = null;
+            e.Handled = true;
+            return;
+        }
+        _dragStart = _dragLast = e.GetPosition(Book);
+        _dragged = false;
+        Book.CaptureMouse();
+    }
+
+    void OnBookMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragStart is not { } start || e.LeftButton != MouseButtonState.Pressed)
+            return;
+        var now = e.GetPosition(Book);
+        if (!_dragged && (now - start).Length < 6)
+            return;
+        _dragged = true;
+        Book.PanBy(now - _dragLast);
+        _dragLast = now;
+    }
+
+    void OnBookLostCapture(object sender, MouseEventArgs e) => _dragStart = null;
+
+    // Un clic (sin arrastrar) en la mitad derecha pasa página; en la izquierda, vuelve.
+    void OnBookClick(object sender, MouseButtonEventArgs e)
+    {
+        var wasDrag = _dragged || _dragStart is null;
+        _dragStart = null;
+        Book.ReleaseMouseCapture();
+        if (!wasDrag)
+            Flip(Book.IsLeftHalf(e.GetPosition(Book)) ? -1 : 1);
+    }
 
     void OnPreviousClick(object sender, RoutedEventArgs e) => Flip(-1);
 

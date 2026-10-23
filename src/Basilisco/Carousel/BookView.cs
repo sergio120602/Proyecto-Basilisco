@@ -19,7 +19,8 @@ public sealed class BookView : ContentControl
     static readonly TimeSpan TurnTime = TimeSpan.FromMilliseconds(650);
     static readonly Color Paper = Color.FromRgb(0xF3, 0xEF, 0xE6);
 
-    readonly Viewport3D _viewport = new() { ClipToBounds = false };
+    // Recortado a su zona: con zoom, el libro no tapa los botones de arriba ni de abajo.
+    readonly Viewport3D _viewport = new() { ClipToBounds = true };
     readonly PerspectiveCamera _camera = new() { FieldOfView = 38, UpDirection = new Vector3D(0, 1, 0) };
     readonly GeometryModel3D _left = new(), _right = new(), _board = new(), _sheetFront = new(), _sheetBack = new();
     readonly MeshGeometry3D _frontMesh = new(), _backMesh = new();
@@ -228,9 +229,67 @@ public sealed class BookView : ContentControl
     {
         double width = Math.Max(1, ActualWidth), height = Math.Max(1, ActualHeight);
         var half = Math.Tan(_camera.FieldOfView * Math.PI / 360);
-        var distance = Math.Max((_width + 0.08) / half, 0.62 / (half * height / width));
-        _camera.Position = new Point3D(0, -0.05, distance);
+        var distance = Math.Max((_width + 0.08) / half, 0.62 / (half * height / width)) / _zoom;
+        _camera.Position = new Point3D(_pan.X, -0.05 + _pan.Y, distance);
         _camera.LookDirection = new Vector3D(0, 0.05, -distance);
+    }
+
+    // ---- Zoom (para las pantallas pequeñas) ----
+
+    public const double MinZoom = 1, MaxZoom = 4;
+    double _zoom = 1;
+    Vector _pan;
+
+    /// <summary>Lo cerca que se ve el libro (1 = entero). Con zoom, se mueve arrastrándolo (ver <see cref="PanBy"/>).</summary>
+    public double Zoom
+    {
+        get => _zoom;
+        set
+        {
+            _zoom = Math.Clamp(value, MinZoom, MaxZoom);
+            ClampPan();
+            UpdateCamera();
+        }
+    }
+
+    /// <summary>Mueve el libro con el ratón: <paramref name="pixels"/> es lo arrastrado en pantalla.</summary>
+    public void PanBy(Vector pixels)
+    {
+        if (_zoom <= MinZoom || ActualWidth <= 0)
+            return;
+        // Lo que se ve de ancho en unidades del libro, para que el libro siga al ratón.
+        var half = Math.Tan(_camera.FieldOfView * Math.PI / 360);
+        var visible = 2 * _camera.Position.Z * half;
+        _pan -= new Vector(pixels.X, -pixels.Y) * (visible / ActualWidth);
+        ClampPan();
+        UpdateCamera();
+    }
+
+    /// <summary>Acerca hacia un punto de la pantalla (donde está el ratón), como en un visor de fotos.</summary>
+    public void ZoomAt(double zoom, Point point)
+    {
+        var before = ToBook(point);
+        Zoom = zoom;
+        var after = ToBook(point);
+        _pan += before - after;
+        ClampPan();
+        UpdateCamera();
+    }
+
+    /// <summary>Un punto de la pantalla en unidades del libro (aproximado, sin la inclinación).</summary>
+    Vector ToBook(Point point)
+    {
+        var half = Math.Tan(_camera.FieldOfView * Math.PI / 360);
+        var visible = 2 * _camera.Position.Z * half;
+        var scale = visible / Math.Max(1, ActualWidth);
+        return new Vector(_pan.X + (point.X - ActualWidth / 2) * scale, _pan.Y - (point.Y - ActualHeight / 2) * scale);
+    }
+
+    /// <summary>Sin salirse del libro: cuanto más zoom, más se puede mover.</summary>
+    void ClampPan()
+    {
+        var room = 1 - 1 / _zoom;
+        _pan = new Vector(Math.Clamp(_pan.X, -(_width + 0.05) * room, (_width + 0.05) * room), Math.Clamp(_pan.Y, -0.55 * room, 0.55 * room));
     }
 
     /// <summary>True si el punto (en coordenadas de este control) está en la mitad izquierda del libro.</summary>
