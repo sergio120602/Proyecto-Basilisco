@@ -24,6 +24,9 @@ public sealed class AppSettings
     public string? RetroAchievementsUser { get; set; }
     public string? RetroAchievementsApiKey { get; set; }
 
+    /// <summary>Tope de espacio de las páginas de los manuales de imágenes, en MB (si se pasa, se sueltan las de los menos leídos).</summary>
+    public int ManualSpaceLimitMb { get; set; } = 2048;
+
     /// <summary>Carpeta de RPCS3 (o directamente la de sus trofeos), para leer los trofeos de los juegos de PS3.</summary>
     public string? Rpcs3Folder { get; set; }
 
