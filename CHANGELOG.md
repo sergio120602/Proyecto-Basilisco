@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.17] - 2026-10-23
+
+- **Zoom en los manuales**, para las pantallas pequeñas: del 100 % al 400 %.
+  - Se usa con **Ctrl + rueda** (acerca hacia donde está el ratón), con **+** y **−**, con los botones nuevos de abajo («−», el porcentaje y «+»), o con **doble clic** (alterna entre el libro entero y el doble). «Ajustar» o **0** vuelven al libro entero.
+  - Con zoom, el libro se mueve **arrastrándolo** con el ratón. Un clic sin arrastrar sigue pasando página.
+  - Al acercar, las páginas se vuelven a dibujar con más resolución para que el texto se lea nítido. El libro se queda en su zona y no tapa los botones.
+
 ## [0.6.16] - 2026-10-23
 
 - Arreglado el **inicio de sesión en Pinterest**, que se quedaba en blanco al entrar con Google, Facebook o Apple. Esas ventanas de inicio de sesión se abren ahora como **ventanas de verdad**, con la misma sesión. Al terminar avisan a Pinterest y se cierran solas, y la sesión queda iniciada. Lo demás que se abra en otra pestaña (un pin) se sigue abriendo dentro.
