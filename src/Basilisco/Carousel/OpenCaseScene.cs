@@ -129,8 +129,49 @@ public sealed class OpenCaseScene
     public void Spin()
     {
         _spinning = true;
+        _stopping = false;
         _spinTime = 0;
         StartAnimation();
+    }
+
+    // Frenando: el disco pierde velocidad poco a poco (o el cartucho vuelve a bajar) y después se avisa.
+    bool _stopping;
+    double _stopTime;
+    Action? _stopped;
+    const double StopSeconds = 2.4;
+
+    /// <summary>El disco deja de girar poco a poco (el cartucho vuelve a la caja) y avisa al acabar.</summary>
+    public void StopSpin(Action stopped)
+    {
+        if (!_spinning)
+        {
+            stopped();
+            return;
+        }
+        _stopping = true;
+        _stopTime = 0;
+        _stopped = stopped;
+        StartAnimation();
+    }
+
+    bool _paused;
+
+    /// <summary>
+    /// Mientras juegas, Basilisco no se ve: la animación se para para no gastar la gráfica y sigue donde iba al volver.
+    /// </summary>
+    public bool Paused
+    {
+        get => _paused;
+        set
+        {
+            if (_paused == value)
+                return;
+            _paused = value;
+            if (value)
+                StopAnimation();
+            else if (_spinning || _open != _openTarget)
+                StartAnimation();
+        }
     }
 
     /// <summary>Cierra la tapa y avisa al acabar.</summary>
@@ -145,7 +186,8 @@ public sealed class OpenCaseScene
     {
         StopAnimation();
         _content.Content = null;
-        _spinning = false;
+        _spinning = _stopping = _paused = false;
+        _stopped = null;
     }
 
     void StartAnimation()
@@ -178,17 +220,31 @@ public sealed class OpenCaseScene
         if (_spinning)
         {
             _spinTime += dt;
+            // Al frenar, de la velocidad que llevaba a cero, cada vez más despacio.
+            var brake = 1.0;
+            if (_stopping)
+            {
+                _stopTime += dt;
+                brake = 1 - Ease(Math.Min(1, _stopTime / StopSeconds));
+            }
             if (_cartridge)
             {
-                // El cartucho sale de la caja hacia arriba, acercándose un poco.
-                var t = Ease(Math.Min(1, _spinTime / SpinRamp));
+                // El cartucho sale de la caja hacia arriba, acercándose un poco (y al frenar, vuelve a bajar).
+                var t = Ease(Math.Min(1, _spinTime / SpinRamp)) * brake;
                 _lift.OffsetY = t * _shape.Height * 0.8;
                 _lift.OffsetZ = t * 0.25;
             }
             else
             {
-                _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp);
+                _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp) * brake;
                 _disc.Angle = (_disc.Angle - _spin * 360 * dt) % 360;
+            }
+            if (_stopping && _stopTime >= StopSeconds)
+            {
+                _spinning = _stopping = false;
+                var stopped = _stopped;
+                _stopped = null;
+                stopped?.Invoke();
             }
         }
         Apply();
