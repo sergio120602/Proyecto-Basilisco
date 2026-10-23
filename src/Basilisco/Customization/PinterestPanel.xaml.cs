@@ -25,6 +25,7 @@ public partial class PinterestPanel : UserControl
 
     List<Pick> _picks = [];
     bool _ready;
+    CoreWebView2Environment? _environment;
     Task? _starting;
 
     /// <summary>Se ha pulsado «Guardar como manual»: las direcciones de las imágenes elegidas, en su orden.</summary>
@@ -74,8 +75,8 @@ public partial class PinterestPanel : UserControl
         try
         {
             Directory.CreateDirectory(ProfileFolder);
-            var environment = await CoreWebView2Environment.CreateAsync(null, ProfileFolder);
-            await Browser.EnsureCoreWebView2Async(environment);
+            _environment = await CoreWebView2Environment.CreateAsync(null, ProfileFolder);
+            await Browser.EnsureCoreWebView2Async(_environment);
         }
         catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or System.Runtime.InteropServices.COMException or InvalidOperationException or IOException
                                    or UnauthorizedAccessException)
@@ -91,14 +92,74 @@ public partial class PinterestPanel : UserControl
         core.WebMessageReceived += OnWebMessage;
         // Cada página nueva empieza sin saber qué hay elegido: se le dice.
         core.NavigationCompleted += (_, _) => _ = PushStateAsync();
-        // Los pines que abren otra ventana se quedan aquí.
-        core.NewWindowRequested += (_, e) =>
-        {
-            e.Handled = true;
-            core.Navigate(e.Uri);
-        };
+        core.NewWindowRequested += OnNewWindowRequested;
         _ready = true;
         BrowserStatus.Text = "";
+    }
+
+    /// <summary>
+    /// Las ventanas de inicio de sesión (Google, Facebook, Apple…) se abren como ventanas de verdad, con la misma sesión:
+    /// al terminar avisan a Pinterest y se cierran solas (cargadas aquí dentro se quedaban en blanco). Lo demás que pida
+    /// otra pestaña (abrir un pin) se abre aquí mismo.
+    /// </summary>
+    async void OnNewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
+    {
+        if (!IsLoginWindow(e) || _environment is null)
+        {
+            e.Handled = true;
+            Browser.CoreWebView2.Navigate(e.Uri);
+            return;
+        }
+
+        var deferral = e.GetDeferral();
+        var owner = Window.GetWindow(this);
+        var features = e.WindowFeatures;
+        var popup = new Window
+        {
+            Title = "Iniciar sesión · Pinterest",
+            Width = features.HasSize ? Math.Max(420, features.Width) : 520,
+            Height = features.HasSize ? Math.Max(560, features.Height) : 720,
+            Owner = owner,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = false,
+            Icon = owner?.Icon,
+        };
+        var view = new Microsoft.Web.WebView2.Wpf.WebView2();
+        popup.Content = view;
+        popup.Show();
+        try
+        {
+            await view.EnsureCoreWebView2Async(_environment);
+            e.NewWindow = view.CoreWebView2;
+            e.Handled = true;
+            view.CoreWebView2.WindowCloseRequested += (_, _) => popup.Close();
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException)
+        {
+            popup.Close();
+            e.Handled = true;
+            Browser.CoreWebView2.Navigate(e.Uri);
+        }
+        finally
+        {
+            deferral.Complete();
+        }
+        popup.Closed += (_, _) =>
+        {
+            view.Dispose();
+            _ = PushStateAsync();
+        };
+    }
+
+    /// <summary>¿Es una ventana de inicio de sesión? Las piden con tamaño propio, o son de los servicios de cuentas.</summary>
+    static bool IsLoginWindow(CoreWebView2NewWindowRequestedEventArgs e)
+    {
+        if (e.WindowFeatures.HasSize)
+            return true;
+        var host = Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) ? uri.Host : "";
+        return host.Contains("google.", StringComparison.OrdinalIgnoreCase) || host.Contains("facebook.", StringComparison.OrdinalIgnoreCase) ||
+               host.Contains("apple.com", StringComparison.OrdinalIgnoreCase) || e.Uri.Contains("oauth", StringComparison.OrdinalIgnoreCase) ||
+               e.Uri.Contains("login", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(e.Uri) || e.Uri == "about:blank";
     }
 
     void Search()

@@ -3,6 +3,10 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.16] - 2026-10-23
+
+- Arreglado el **inicio de sesión en Pinterest**, que se quedaba en blanco al entrar con Google, Facebook o Apple. Esas ventanas de inicio de sesión se abren ahora como **ventanas de verdad**, con la misma sesión. Al terminar avisan a Pinterest y se cierran solas, y la sesión queda iniciada. Lo demás que se abra en otra pestaña (un pin) se sigue abriendo dentro.
+
 ## [0.6.15] - 2026-10-23
 
 - **Manuales con Pinterest**: en el menú de edición de cada juego, en la sección del manual, hay un botón nuevo, **«Ver Pinterest»**.
