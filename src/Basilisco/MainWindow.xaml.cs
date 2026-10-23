@@ -138,12 +138,19 @@ public partial class MainWindow : Window
         HeaderBar.SizeChanged += (_, _) => UpdateOverlayLayout();
         Activated += async (_, _) =>
         {
+            CaseView.SetPaused(false);
             if (BackgroundVideo.Source is not null && _settings.AnimatedBackgrounds) BackgroundVideo.Play();
             EndPlaySession(returned: true);
             if (DateTime.Now - _lastSteamSync > TimeSpan.FromSeconds(30))
                 await SyncSteamPlaytimeAsync(online: false);
         };
-        Deactivated += (_, _) => BackgroundVideo.Pause();
+        Deactivated += (_, _) =>
+        {
+            BackgroundVideo.Pause();
+            // Mientras juegas, el disco que gira no se ve: no se gasta gráfica en él.
+            if (CaseView.IsPlaying)
+                CaseView.SetPaused(true);
+        };
         ZoomSlider.Value = Math.Clamp(_settings.Zoom, CoverFlow.MinZoom, CoverFlow.MaxZoom);
         _flow.Shift = _settings.CarouselShift;
         ShiftSlider.Value = _flow.Shift;
@@ -156,10 +163,12 @@ public partial class MainWindow : Window
         ApplyZoom(ZoomSlider.Value, save: false);
 
         _gamepad.IsActive = () => IsActive && WindowState != WindowState.Minimized;
-        _gamepad.Pressed += OnPadPressed;
-        _gamepad.Navigate += OnPadNavigate;
-        _gamepad.RightStick += OnPadRightStick;
-        _gamepad.NavigateVertical += OnPadVertical;
+        // El mando solo cuenta con Basilisco delante: mientras juegas, lo que pulses es para el juego (antes, un B en el
+        // juego cerraba la caja abierta, y las flechas movían el carrusel por detrás).
+        _gamepad.Pressed += action => { if (IsActive) OnPadPressed(action); };
+        _gamepad.Navigate += direction => { if (IsActive) OnPadNavigate(direction); };
+        _gamepad.RightStick += (x, y) => { if (IsActive) OnPadRightStick(x, y); };
+        _gamepad.NavigateVertical += direction => { if (IsActive) OnPadVertical(direction); };
         _gamepad.Connected += (name, style) =>
         {
             SetPadMode(true);
@@ -1901,6 +1910,20 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// El juego se ha cerrado: si se lanzó desde la caja abierta, Basilisco vuelve al frente y el disco frena poco a poco
+    /// hasta pararse, y la tapa se cierra.
+    /// </summary>
+    void GameClosed(Game game)
+    {
+        if (!CaseView.IsPlaying || CaseView.Game != game)
+            return;
+        if (WindowState == WindowState.Minimized)
+            WindowState = _fullScreen ? WindowState.Maximized : WindowState.Normal;
+        Activate();
+        CaseView.GameEnded();
+    }
+
     /// <summary>Al abrir Basilisco: si quedó una partida a medias, se sigue contando (si el juego sigue abierto) o se apunta.</summary>
     async Task RestorePlaySessionAsync()
     {
@@ -1941,6 +1964,7 @@ public partial class MainWindow : Window
         _session = null;
         _playTimer.Stop();
         SavedSession.Clear();
+        GameClosed(session.Game);
         var minutes = (int)Math.Max(0, elapsed.TotalMinutes);
         if (minutes < 1 || !Games.Contains(session.Game))
             return;
@@ -2290,6 +2314,7 @@ public partial class MainWindow : Window
         {
             MessageBox.Show(this, $"No se pudo iniciar «{game.Name}».\n\n{ex.Message}",
                 "Basilisco", MessageBoxButton.OK, MessageBoxImage.Error);
+            CaseView.GameEnded();
             return;
         }
 

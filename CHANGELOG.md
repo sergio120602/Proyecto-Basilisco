@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.18] - 2026-10-23
+
+- Al jugar desde la **caja abierta**, el disco **sigue girando mientras el juego esté abierto** (antes la caja se cerraba a los pocos segundos). Al cerrar el juego, **Basilisco vuelve al frente**, el disco **frena poco a poco** hasta pararse (el cartucho vuelve a bajar a la caja) y la **carátula se cierra**. Si el juego no llega a arrancar, también frena y se cierra.
+- Mientras juegas, la animación del disco se pausa (no se ve), para no gastar gráfica, y sigue al volver.
+- Arreglado: Basilisco hacía caso al **mando aunque no estuviera delante**. Mientras jugabas, un B en el juego cerraba la caja, y las flechas movían el carrusel por detrás. Ahora el mando solo cuenta con Basilisco en primer plano.
+
 ## [0.6.17] - 2026-10-23
 
 - **Zoom en los manuales**, para las pantallas pequeñas: del 100 % al 400 %.

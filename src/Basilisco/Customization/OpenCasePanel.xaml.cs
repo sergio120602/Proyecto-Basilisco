@@ -16,7 +16,6 @@ public partial class OpenCasePanel : UserControl
 {
     // Lo que gira el disco antes de lanzar el juego, y lo que sigue girando después antes de cerrarse.
     static readonly TimeSpan LaunchDelay = TimeSpan.FromSeconds(1.3);
-    static readonly TimeSpan CloseDelay = TimeSpan.FromSeconds(1.6);
 
     readonly OpenCaseScene _scene;
     Game? _game;
@@ -113,11 +112,27 @@ public partial class OpenCasePanel : UserControl
         // Si mientras tanto se ha cerrado la caja, el juego no se lanza.
         if (!IsOpen || _closing || _game != game)
             return;
+        // El disco sigue girando mientras el juego esté abierto: al cerrarlo, la ventana principal llama a GameEnded.
         PlayRequested?.Invoke(game);
+    }
 
-        await Task.Delay(CloseDelay);
-        if (IsOpen && !_closing && _game == game)
-            Close();
+    /// <summary>True mientras el juego lanzado desde la caja sigue abierto (el disco girando).</summary>
+    public bool IsPlaying => IsOpen && _playing && !_closing;
+
+    /// <summary>Mientras juegas, la caja no se ve: su animación se para y sigue al volver.</summary>
+    public void SetPaused(bool paused) => _scene.Paused = paused;
+
+    /// <summary>El juego se ha cerrado (o no ha llegado a arrancar): el disco frena poco a poco y la tapa se cierra.</summary>
+    public void GameEnded()
+    {
+        if (!IsPlaying)
+            return;
+        _scene.Paused = false;
+        _scene.StopSpin(() =>
+        {
+            if (IsOpen && !_closing)
+                Close();
+        });
     }
 
     public void Close()
