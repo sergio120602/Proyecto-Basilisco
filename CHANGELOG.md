@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.7.0] - 2026-10-24
+
+- **Cartuchos de Game Boy y Game Boy Advance**, dibujados como los de verdad:
+  - Game Boy: gris oscuro, con la esquina de arriba cortada, la placa con «Nintendo GAME BOY» en relieve y sus estrías, y la pegatina hundida con la franja de la consola.
+  - Game Boy Advance: gris, apaisado, con la franja de arriba «GAME BOY ADVANCE» en relieve, la pegatina grande y la flechita de abajo.
+  - Todos los cartuchos tienen ahora **grosor** en 3D (sus cantos del color del plástico).
+- **Al darle a Jugar en un juego de cartucho**: el cartucho sale de su hueco y se eleva, la caja se cierra y se tumba, y el cartucho baja y **se mete en la caja por arriba**, como en la ranura de una consola, dejando fuera un tercio. La cámara lo sigue. Al cerrar el juego, el cartucho sale, la caja se levanta y se abre, y vuelve a su hueco.
+- **Pegatina del cartucho desde SteamGridDB**: en Personalizar → Disco o cartucho, para los juegos de cartucho, el botón **«Pegatina en SteamGridDB»** busca los **grids apaisados 92:43** del juego (920×430 y 460×215).
+  - Si la imagen tiene una forma muy distinta de la pegatina (por ejemplo, una 92:43 en el cartucho casi cuadrado de Game Boy), se ve entera y el resto de la pegatina se rellena con ella desenfocada, en vez de recortarla.
+- La tapa de las cajas tiene ahora sus cantos (abajo y al lado): cerrada ya no deja ver el interior por los bordes. Arriba queda la ranura.
+
 ## [0.6.24] - 2026-10-24
 
 - La hoja del disco ahora **gira sobre su bisagra, pegada a la tapa**, como en una caja de verdad: ya no se separa de ella al pasarla, y al acabar queda tumbada justo encima.

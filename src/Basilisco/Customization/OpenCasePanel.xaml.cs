@@ -14,9 +14,6 @@ namespace Basilisco.Customization;
 /// </summary>
 public partial class OpenCasePanel : UserControl
 {
-    // Lo que gira el disco antes de lanzar el juego, y lo que sigue girando después antes de cerrarse.
-    static readonly TimeSpan LaunchDelay = TimeSpan.FromSeconds(1.3);
-
     readonly OpenCaseScene _scene;
     Game? _game;
     CarouselItem? _item;
@@ -120,7 +117,8 @@ public partial class OpenCasePanel : UserControl
         PlayButton.IsEnabled = false;
         _scene.Spin();
 
-        await Task.Delay(LaunchDelay);
+        // Lo que tarda el disco en coger velocidad o el cartucho en meterse en la caja.
+        await Task.Delay(_scene.LaunchDelay);
         // Si mientras tanto se ha cerrado la caja, el juego no se lanza.
         if (!IsOpen || _closing || _game != game)
             return;

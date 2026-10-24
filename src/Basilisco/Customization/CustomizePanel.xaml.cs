@@ -468,7 +468,7 @@ public partial class CustomizePanel : UserControl
     void UpdateExtrasText()
     {
         DiscText.Text = CurrentExtra(GameExtra.Disc) is { } disc
-            ? $"Disco: {Path.GetFileName(disc)}"
+            ? $"{(CartridgeArt.HasCartridge(_platform) ? "Pegatina" : "Disco")}: {Path.GetFileName(disc)}"
             : "Sin imagen: el disco o la pegatina del cartucho llevan la portada.";
         ManualText.Text = CurrentExtra(GameExtra.Manual) is { } manual
             ? $"Manual: {Path.GetFileName(manual)}"
@@ -480,6 +480,7 @@ public partial class CustomizePanel : UserControl
         FrameManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
         FrameDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null && !CartridgeArt.HasCartridge(_platform);
+        CartridgeGridButton.Visibility = CartridgeArt.HasCartridge(_platform) ? Visibility.Visible : Visibility.Collapsed;
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         var pdf = CurrentManualPdf();
         var pages = _game?.ManualPages?.Count ?? 0;
@@ -1073,6 +1074,7 @@ public partial class CustomizePanel : UserControl
         foreach (var toggle in PlatformToggles.Children.OfType<ToggleButton>())
             toggle.IsChecked = Equals(toggle.Tag, option);
         UpdatePreview();
+        UpdateExtrasText();
         _preview.ShowFront();
     }
 
@@ -1106,6 +1108,8 @@ public partial class CustomizePanel : UserControl
     void OnLaunchBoxManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.LaunchBox);
 
     void OnSteamGridDbManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.SteamGridDb);
+
+    void OnSteamGridDbCartridgeClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Disc, ArtSource.SteamGridDb);
 
     void OnSearchBackgroundClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Background, ArtSource.Default);
 

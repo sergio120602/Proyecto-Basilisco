@@ -9,7 +9,9 @@ namespace Basilisco.Carousel;
 
 /// <summary>
 /// La caja abierta en 3D: la tapa gira sobre el lomo y queda a la izquierda enseñando el manual, y a la derecha
-/// queda la bandeja con el disco. Al jugar, el disco empieza a girar cada vez más deprisa.
+/// queda la bandeja con el disco. Al jugar, el disco empieza a girar cada vez más deprisa. Con un cartucho, al jugar
+/// el cartucho sale de su hueco y se eleva, la caja se cierra y se tumba, y el cartucho se mete en ella por arriba,
+/// como en la ranura de una consola (al acabar de jugar, lo mismo al revés).
 /// </summary>
 public sealed class OpenCaseScene
 {
@@ -38,6 +40,15 @@ public sealed class OpenCaseScene
     readonly TranslateTransform3D _lift = new();
     bool _cartridge;
     readonly TranslateTransform3D _shift = new();
+
+    // Meter el cartucho en la caja: 0 en su hueco de la bandeja, 1 dentro de la caja cerrada y tumbada.
+    const double InsertSeconds = 2.3;
+    const double RemoveSeconds = 1.9;
+    const double TiltDegrees = 62;
+    readonly AxisAngleRotation3D _tilt = new(new Vector3D(1, 0, 0), 0);
+    double _insert, _insertTarget;
+    Point _cartCenter;
+    Size _cartHalf;
 
     BoxShape _shape = BoxShape.Square;
     double _open;           // 0 cerrada, 1 abierta
@@ -96,6 +107,10 @@ public sealed class OpenCaseScene
         lid.Children.Add(Face(new(0, 0, d), new(w, 0, d), new(w, h, d), new(0, h, d), new ImageBrush(cover)));
         _inside = new ImageBrush(inside);
         lid.Children.Add(Face(new(w, 0, d - 0.002), new(0, 0, d - 0.002), new(0, h, d - 0.002), new(w, h, d - 0.002), _inside));
+        // Las paredes de la tapa (la otra mitad del canto): abajo y a la derecha. Arriba no, para que quede la ranura por
+        // donde entra el cartucho.
+        lid.Children.Add(Face(new(0, 0, d), new(w, 0, d), new(w, 0, wall), new(0, 0, wall), plastic));
+        lid.Children.Add(Face(new(w, 0, wall), new(w, 0, d), new(w, h, d), new(w, h, wall), plastic));
         // Gira sobre el lomo: el eje está en x = 0, a media altura de la caja.
         lid.Transform = new RotateTransform3D(_lid, new Point3D(0, 0, d / 2));
 
@@ -104,8 +119,12 @@ public sealed class OpenCaseScene
         var center = OpenCaseArt.ContentCenter(content.Cartridge);
         // En la escena la altura crece hacia arriba; en las texturas, hacia abajo.
         var (cx, cy) = (w * center.X, h * (1 - center.Y));
-        var discModel = Face(new(cx - rx, cy - ry, 0.004), new(cx + rx, cy - ry, 0.004),
-                             new(cx + rx, cy + ry, 0.004), new(cx - rx, cy + ry, 0.004), new ImageBrush(content.Image));
+        Model3D discModel = content.Cartridge
+            ? Cartridge(content, cx, cy, rx, ry)
+            : Face(new(cx - rx, cy - ry, 0.004), new(cx + rx, cy - ry, 0.004),
+                   new(cx + rx, cy + ry, 0.004), new(cx - rx, cy + ry, 0.004), new ImageBrush(content.Image));
+        _cartCenter = new Point(cx, cy);
+        _cartHalf = new Size(rx, ry);
         _lift.OffsetX = _lift.OffsetY = _lift.OffsetZ = 0;
         discModel.Transform = new Transform3DGroup { Children = { new RotateTransform3D(_disc, new Point3D(cx, cy, 0)), _lift } };
 
@@ -115,7 +134,8 @@ public sealed class OpenCaseScene
         var trayPage = new Model3DGroup { Transform = new RotateTransform3D(_tray, new Point3D(0, 0, TrayHinge)) };
         trayPage.Children.Add(bottom);
         trayPage.Children.Add(discModel);
-        var group = new Model3DGroup { Transform = _shift };
+        // Primero se centra (cerrada) y después se tumba hacia atrás sobre su borde de abajo (al meter el cartucho).
+        var group = new Model3DGroup { Transform = new Transform3DGroup { Children = { _shift, new RotateTransform3D(_tilt, new Point3D(0, 0, 0)) } } };
         group.Children.Add(lid);
         group.Children.Add(trayPage);
         _content.Content = group;
@@ -128,6 +148,8 @@ public sealed class OpenCaseScene
         _spin = 0;
         _spinning = false;
         _disc.Angle = 0;
+        _insert = _insertTarget = 0;
+        _tilt.Angle = 0;
         _closed = null;
         Apply();
         UpdateCamera();
@@ -149,7 +171,39 @@ public sealed class OpenCaseScene
         _spinning = true;
         _stopping = false;
         _spinTime = 0;
+        _insertTarget = 1;
         StartAnimation();
+    }
+
+    /// <summary>Lo que hay que esperar al darle a Jugar antes de lanzar el juego: lo que tarda en girar el disco o en meterse el cartucho.</summary>
+    public TimeSpan LaunchDelay => TimeSpan.FromSeconds(_cartridge ? InsertSeconds + 0.15 : 1.3);
+
+    /// <summary>
+    /// El cartucho de un cartucho con grosor: la pegatina delante, el mismo dibujo detrás y los cantos del color de su
+    /// plástico (un poco metidos, para no asomar por las esquinas redondeadas).
+    /// </summary>
+    static Model3DGroup Cartridge(CaseContent content, double cx, double cy, double rx, double ry)
+    {
+        const double back = 0.004;
+        var front = back + Math.Max(0.006, content.Thickness);
+        var image = new ImageBrush(content.Image);
+        var edge = new SolidColorBrush(content.Body);
+        double ix = rx * 0.94, iy = ry * 0.94;
+        var model = new Model3DGroup();
+        model.Children.Add(Face(new(cx - rx, cy - ry, front), new(cx + rx, cy - ry, front), new(cx + rx, cy + ry, front), new(cx - rx, cy + ry, front), image));
+        model.Children.Add(Edges());
+        return model;
+
+        Model3DGroup Edges()
+        {
+            var sides = new Model3DGroup();
+            sides.Children.Add(Face(new(cx - ix, cy - iy, back), new(cx + ix, cy - iy, back), new(cx + ix, cy - iy, front), new(cx - ix, cy - iy, front), edge));   // abajo
+            sides.Children.Add(Face(new(cx - ix, cy + iy, front), new(cx + ix, cy + iy, front), new(cx + ix, cy + iy, back), new(cx - ix, cy + iy, back), edge));   // arriba
+            sides.Children.Add(Face(new(cx - ix, cy - iy, back), new(cx - ix, cy - iy, front), new(cx - ix, cy + iy, front), new(cx - ix, cy + iy, back), edge));   // izquierda
+            sides.Children.Add(Face(new(cx + ix, cy - iy, front), new(cx + ix, cy - iy, back), new(cx + ix, cy + iy, back), new(cx + ix, cy + iy, front), edge));   // derecha
+            sides.Children.Add(Face(new(cx + rx, cy - ry, back), new(cx - rx, cy - ry, back), new(cx - rx, cy + ry, back), new(cx + rx, cy + ry, back), image));    // detrás
+            return sides;
+        }
     }
 
     // Frenando: el disco pierde velocidad poco a poco (o el cartucho vuelve a bajar) y después se avisa.
@@ -201,6 +255,7 @@ public sealed class OpenCaseScene
             stopped();
             return;
         }
+        _insertTarget = 0;
         _stopping = true;
         _stopTime = 0;
         _stopped = stopped;
@@ -281,7 +336,19 @@ public sealed class OpenCaseScene
             }
         }
 
-        if (_spinning)
+        if (_spinning && _cartridge)
+        {
+            // El cartucho: entra en la caja (o sale y vuelve a su hueco, al acabar de jugar) y avisa al terminar.
+            _insert = _insertTarget > _insert ? Math.Min(_insertTarget, _insert + dt / InsertSeconds) : Math.Max(_insertTarget, _insert - dt / RemoveSeconds);
+            if (_stopping && _insert == 0)
+            {
+                _spinning = _stopping = false;
+                var stopped = _stopped;
+                _stopped = null;
+                stopped?.Invoke();
+            }
+        }
+        else if (_spinning)
         {
             _spinTime += dt;
             // Al frenar, de la velocidad que llevaba a cero, cada vez más despacio.
@@ -291,18 +358,8 @@ public sealed class OpenCaseScene
                 _stopTime += dt;
                 brake = 1 - Ease(Math.Min(1, _stopTime / StopSeconds));
             }
-            if (_cartridge)
-            {
-                // El cartucho sale de la caja hacia arriba, acercándose un poco (y al frenar, vuelve a bajar).
-                var t = Ease(Math.Min(1, _spinTime / SpinRamp)) * brake;
-                _lift.OffsetY = t * _shape.Height * 0.8;
-                _lift.OffsetZ = t * 0.25;
-            }
-            else
-            {
-                _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp) * brake;
-                _disc.Angle = (_disc.Angle - _spin * 360 * dt) % 360;
-            }
+            _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp) * brake;
+            _disc.Angle = (_disc.Angle - _spin * 360 * dt) % 360;
             if (_stopping && _stopTime >= StopSeconds)
             {
                 _spinning = _stopping = false;
@@ -319,21 +376,45 @@ public sealed class OpenCaseScene
             StopAnimation();
             closed();
         }
-        else if (_open == _openTarget && !_spinning && _trayTurn == _trayTarget)
+        else if (_open == _openTarget && _trayTurn == _trayTarget && (!_spinning || _cartridge && _insert == _insertTarget))
         {
+            // Con el cartucho ya metido no hay nada que mover mientras juegas.
             StopAnimation();
         }
     }
 
     void Apply()
     {
-        var t = Ease(_open);
+        // Al meter el cartucho, la caja se cierra (y se tumba) aunque esté abierta.
+        var close = _cartridge ? Stage(0.32, 0.6) : 0;
+        var t = Ease(_open) * (1 - close);
         // Cerrada se ve centrada; abierta, el lomo queda en el centro con la tapa a la izquierda.
         _lid.Angle = -180 * t;
         // La hoja pasa hasta tumbarse sobre la tapa (por la bisagra, queda justo encima, sin pisarla).
         _tray.Angle = -180 * Ease(_trayTurn);
         _shift.OffsetX = -_shape.Width / 2 * (1 - t);
+        if (!_cartridge)
+            return;
+        UpdateCamera();
+        _tilt.Angle = -TiltDegrees * Stage(0.42, 0.76);
+
+        // El cartucho, en las medidas de la caja (antes de tumbarla): sale hacia delante, sube por encima de la caja
+        // (lejos de la tapa, que se cierra), baja a la altura de la ranura (entre la bandeja y la tapa) y entra por arriba
+        // hasta dejar fuera un tercio, como en una consola.
+        double w = _shape.Width, h = _shape.Height, d = Math.Max(_shape.Depth, 0.03);
+        var rise = Stage(0, 0.2);
+        var up = Stage(0.12, 0.38);
+        var align = Stage(0.55, 0.76);
+        var insert = Stage(0.76, 1);
+        var above = h + _cartHalf.Height + 0.05;
+        var inside = h - 0.3 * _cartHalf.Height;
+        _lift.OffsetX = (w / 2 - _cartCenter.X) * up;
+        _lift.OffsetY = (above - _cartCenter.Y) * up + (inside - above) * insert;
+        _lift.OffsetZ = 0.22 * rise * (1 - align) + (d * 0.52 - 0.004) * align;
     }
+
+    /// <summary>Lo que va de un tramo de la animación del cartucho (de <paramref name="from"/> a <paramref name="to"/>), suavizado.</summary>
+    double Stage(double from, double to) => Ease(Math.Clamp((_insert - from) / (to - from), 0, 1));
 
     static double Ease(double t) => t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
 
@@ -375,9 +456,24 @@ public sealed class OpenCaseScene
         var halfFov = _camera.FieldOfView / 2 * Math.PI / 180;
         var needWidth = _shape.Width * 2 * 1.12;
         var needHeight = _shape.Height * 1.12;
+        var centerY = _shape.Height / 2;
+        if (_cartridge && _insert > 0)
+        {
+            // Mientras el cartucho entra: la caja (cerrándose, más estrecha) con el cartucho por encima, sin que se salga.
+            var top = _shape.Height + 2 * _cartHalf.Height + 0.08;
+            var above = Stage(0.06, 0.36);
+            var closed = Stage(0.32, 0.6);
+            needWidth += (_shape.Width * 1.6 - needWidth) * closed;
+            needHeight += (top * 1.1 - needHeight) * above;
+            centerY += (top / 2 - centerY) * above;
+            // Ya tumbada se ve más baja: la cámara se acerca a ella y al cartucho que asoma.
+            var lying = Stage(0.42, 0.85);
+            needHeight += (_shape.Height * 0.9 - needHeight) * lying;
+            centerY += (_shape.Height * 0.36 - centerY) * lying;
+        }
         var width = Math.Max(needWidth, needHeight * aspect);
         var distance = width / 2 / Math.Tan(halfFov);
-        var center = new Point3D(0, _shape.Height / 2, 0);
+        var center = new Point3D(0, centerY, 0);
         _camera.Position = new Point3D(center.X, center.Y + distance * 0.12, distance);
         _camera.LookDirection = center - _camera.Position;
     }
