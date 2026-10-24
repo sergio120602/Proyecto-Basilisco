@@ -118,6 +118,13 @@ public partial class MainWindow : Window
         Customizer.ImageManualReadRequested += OpenImageManual;
         Customizer.SoundtrackChanged += _ => Save();
         CaseView.Volume = _settings.SoundtrackVolume;
+        CaseView.YouTubeKey = _settings.YouTubeApiKey;
+        CaseView.YouTubeKeyChanged += key =>
+        {
+            _settings.YouTubeApiKey = key;
+            _settings.Save();
+        };
+        CaseView.SoundtrackEdited += _ => Save();
         CaseView.VolumeChanged += volume => _settings.SoundtrackVolume = volume;
         CaseView.Closed += () => _settings.Save();
         Customizer.ImageManualRemoveRequested += RemoveImageManual;

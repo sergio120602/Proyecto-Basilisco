@@ -187,6 +187,16 @@ public partial class OpenCasePanel : UserControl
     {
         if (_soundtrackShown)
         {
+            // Eligiendo el vídeo de YouTube (o escribiendo la clave), las teclas son para YouTube; Esc cancela.
+            if (YouTubePicker.Visibility == Visibility.Visible)
+            {
+                if (e.Key == Key.Escape)
+                {
+                    ClosePicker();
+                    e.Handled = true;
+                }
+                return;
+            }
             switch (e.Key)
             {
                 case Key.Up: SelectTrack(-1); break;

@@ -21,8 +21,6 @@ public partial class PinterestPanel : UserControl
     /// <summary>Una imagen elegida: su parte de la dirección en i.pinimg.com, la grande y la miniatura.</summary>
     sealed record Pick(string Key, string Url, string Thumb);
 
-    static readonly string ProfileFolder = Path.Combine(AppInfo.DataDirectory, "webview");
-
     List<Pick> _picks = [];
     bool _ready;
     CoreWebView2Environment? _environment;
@@ -74,8 +72,7 @@ public partial class PinterestPanel : UserControl
         BrowserStatus.Text = "Abriendo Pinterest…";
         try
         {
-            Directory.CreateDirectory(ProfileFolder);
-            _environment = await CoreWebView2Environment.CreateAsync(null, ProfileFolder);
+            _environment = await Services.WebViews.EnvironmentAsync();
             await Browser.EnsureCoreWebView2Async(_environment);
         }
         catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or System.Runtime.InteropServices.COMException or InvalidOperationException or IOException

@@ -153,6 +153,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.17** — Zoom en los manuales (Ctrl + rueda, + −, doble clic) y arrastrar para moverse
 - [x] **v0.6.18** — El disco gira mientras juegas y frena al cerrar el juego; el mando solo cuenta con Basilisco delante
 - [x] **v0.6.19** — Banda sonora en la caja abierta (MusicBrainz + tu música importada) y ajuste de los discos
+- [x] **v0.6.20** — Canciones sin archivo desde el reproductor oficial de YouTube, a la vista
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

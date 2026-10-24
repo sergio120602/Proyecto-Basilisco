@@ -1,6 +1,6 @@
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using Basilisco.Carousel;
 using Basilisco.Models;
 using Basilisco.Services;
+using Microsoft.Web.WebView2.Core;
 
 namespace Basilisco.Customization;
 
@@ -16,14 +17,30 @@ namespace Basilisco.Customization;
 /// aparece un papel con «Banda Sonora» y las canciones (a la izquierda) y el disco de la banda sonora (a la derecha).
 /// Un clic en el disco hace sonar la canción elegida y lo pone a girar; otro clic la para. Las flechas izquierda y derecha
 /// retroceden y avanzan en la canción, y debajo del disco están la barra de la canción y la del volumen.
+/// Las canciones suenan desde tus archivos importados o, si no los tienes, desde el reproductor oficial de YouTube, que
+/// se ve debajo del disco mientras suena (así lo piden las condiciones de YouTube; por eso se para al salir de aquí).
 /// </summary>
 public partial class OpenCasePanel
 {
     readonly MediaPlayer _player = new();
-    readonly DispatcherTimer _progress = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    readonly DispatcherTimer _progress = new() { Interval = TimeSpan.FromMilliseconds(300) };
     bool _soundtrackShown, _turning, _seeking, _musicPlaying, _padMode;
     SoundtrackTrack? _current;
     bool _playerReady;
+
+    // YouTube: si la canción que suena va por ahí, por dónde va y cuánto dura (se pregunta al reproductor).
+    bool _youTube;
+    double _ytTime, _ytDuration;
+    Task? _ytStarting;
+    SoundtrackTrack? _picking;
+
+    /// <summary>Ha cambiado el vídeo de YouTube de alguna canción (hay que guardar la biblioteca).</summary>
+    public event Action<Game>? SoundtrackEdited;
+
+    /// <summary>Clave de la API de YouTube (para buscar sola el vídeo de cada canción); la guarda la ventana principal.</summary>
+    public string? YouTubeKey { get; set; }
+
+    public event Action<string?>? YouTubeKeyChanged;
 
     void ShowGameHint() => HintText.Text = _padMode
         ? "A  Jugar     ·     X  Manual     ·     →  Banda sonora     ·     B  Volver"
@@ -41,7 +58,12 @@ public partial class OpenCasePanel
             StopMusic();
         };
         _player.MediaOpened += (_, _) => UpdateProgress();
-        _progress.Tick += (_, _) => UpdateProgress();
+        _progress.Tick += async (_, _) =>
+        {
+            if (_youTube)
+                await ReadYouTubeAsync();
+            UpdateProgress();
+        };
     }
 
     void OnSoundtrackClick(object sender, RoutedEventArgs e) => ShowSoundtrack();
@@ -70,9 +92,15 @@ public partial class OpenCasePanel
             : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     Esc  Volver al juego";
     }
 
-    /// <summary>Vuelve al juego: la hoja del disco regresa a su sitio. La música sigue sonando hasta que cierres la caja.</summary>
+    /// <summary>
+    /// Vuelve al juego: la hoja del disco regresa a su sitio. Tu música sigue sonando hasta que cierres la caja; la de
+    /// YouTube se para, porque su reproductor dejaría de verse.
+    /// </summary>
     void LeaveSoundtrack(bool immediate = false)
     {
+        ClosePicker();
+        if (_youTube)
+            StopMusic();
         SoundtrackView.BeginAnimation(OpacityProperty, null);
         SoundtrackView.Opacity = 0;
         SoundtrackView.Visibility = Visibility.Collapsed;
@@ -99,33 +127,65 @@ public partial class OpenCasePanel
         SoundtrackDisc.Source = OpenCaseArt.RenderDisc(ImageStore.GetSoundtrackDiscPath(game), _item?.ImagePath, soundtrack?.DiscFrame);
         TrackList.Items.Clear();
         var withMusic = 0;
+        var muted = new SolidColorBrush(Color.FromRgb(0x7A, 0x71, 0x66));
         foreach (var track in soundtrack?.Tracks ?? [])
         {
-            var hasMusic = Soundtracks.PathOf(game, track) is not null;
-            withMusic += hasMusic ? 1 : 0;
+            var hasFile = Soundtracks.PathOf(game, track) is not null;
+            withMusic += hasFile ? 1 : 0;
             var row = new DockPanel { Margin = new Thickness(2, 3, 6, 3) };
-            var length = new TextBlock { Text = Soundtracks.Length(track.LengthMs), FontSize = 14, Foreground = new SolidColorBrush(Color.FromRgb(0x7A, 0x71, 0x66)), Margin = new Thickness(12, 0, 0, 0) };
+            var length = new TextBlock { Text = Soundtracks.Length(track.LengthMs), FontSize = 14, Foreground = muted, Margin = new Thickness(12, 0, 0, 0) };
             DockPanel.SetDock(length, Dock.Right);
             row.Children.Add(length);
+            if (!hasFile && track.YouTubeId is not null)
+            {
+                var tag = new TextBlock { Text = "YouTube", FontSize = 11, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0xC4, 0x30, 0x2B)), Margin = new Thickness(10, 3, 0, 0) };
+                DockPanel.SetDock(tag, Dock.Right);
+                row.Children.Add(tag);
+            }
             row.Children.Add(new TextBlock { Text = $"{track.Number}.", Width = 34, FontSize = 15, Foreground = new SolidColorBrush(Color.FromRgb(0x8C, 0x82, 0x76)) });
             row.Children.Add(new TextBlock { Text = track.Title, FontSize = 15, FontFamily = new FontFamily("Georgia"), Foreground = new SolidColorBrush(Color.FromRgb(0x2A, 0x24, 0x20)), TextTrimming = TextTrimming.CharacterEllipsis });
-            TrackList.Items.Add(new ListBoxItem
+            var item = new ListBoxItem
             {
-                Content = row, Tag = track, Opacity = hasMusic ? 1 : 0.45, Cursor = hasMusic ? Cursors.Hand : Cursors.Arrow,
-                ToolTip = hasMusic ? "Doble clic para escucharla" : "Sin música: impórtala en Personalizar → Banda sonora",
-            });
+                Content = row, Tag = track, Cursor = Cursors.Hand,
+                Opacity = hasFile || track.YouTubeId is not null ? 1 : 0.62,
+                ToolTip = hasFile ? "Doble clic para escucharla"
+                    : track.YouTubeId is not null ? "Suena desde YouTube (clic derecho para elegir otro vídeo)"
+                    : "Sin archivo: doble clic para escucharla desde YouTube",
+                ContextMenu = TrackMenu(game, track),
+            };
+            TrackList.Items.Add(item);
         }
         SoundtrackEmpty.Text = soundtrack is null
-            ? "Este juego aún no tiene banda sonora. Búscala en Personalizar (E) → Banda sonora e importa tus archivos de música."
-            : withMusic == 0
-                ? "Ninguna canción tiene música todavía: impórtala en Personalizar (E) → Banda sonora. Se registran las que se llamen como en la lista."
-                : withMusic < soundtrack.Tracks.Count ? $"{withMusic} de {soundtrack.Tracks.Count} canciones con música." : "";
-        // Elegida, la que suena o la primera con música.
-        var selected = TrackList.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Tag == _current)
-                       ?? TrackList.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Opacity == 1);
+            ? "Este juego aún no tiene banda sonora. Búscala en Personalizar (E) → Banda sonora."
+            : withMusic < soundtrack.Tracks.Count
+                ? $"{withMusic} de {soundtrack.Tracks.Count} con tu música; las demás suenan desde YouTube (el reproductor se ve debajo del disco)."
+                : "";
+        var selected = TrackList.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Tag == _current) ?? TrackList.Items.OfType<ListBoxItem>().FirstOrDefault();
         TrackList.SelectedItem = selected;
         NowPlaying.Text = _current is { } current && _musicPlaying ? current.Title : (selected?.Tag as SoundtrackTrack)?.Title ?? "";
         UpdateProgress();
+    }
+
+    ContextMenu TrackMenu(Game game, SoundtrackTrack track)
+    {
+        var menu = new ContextMenu();
+        var choose = new MenuItem { Header = track.YouTubeId is null ? "Elegir vídeo de YouTube…" : "Elegir otro vídeo de YouTube…" };
+        choose.Click += (_, _) => OpenPicker(track);
+        menu.Items.Add(choose);
+        if (track.YouTubeId is not null)
+        {
+            var remove = new MenuItem { Header = "Quitar vídeo de YouTube" };
+            remove.Click += (_, _) =>
+            {
+                if (_current == track && _youTube)
+                    StopMusic();
+                track.YouTubeId = null;
+                SoundtrackEdited?.Invoke(game);
+                FillSoundtrack(game);
+            };
+            menu.Items.Add(remove);
+        }
+        return menu;
     }
 
     void SelectTrack(int direction)
@@ -142,7 +202,7 @@ public partial class OpenCasePanel
     void OnTrackDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (TrackList.SelectedItem is ListBoxItem { Tag: SoundtrackTrack track })
-            PlayTrack(track);
+            _ = PlayTrackAsync(track);
     }
 
     void OnSoundtrackDiscClick(object sender, MouseButtonEventArgs e) => ToggleMusic();
@@ -151,69 +211,229 @@ public partial class OpenCasePanel
     void ToggleMusic()
     {
         var selected = (TrackList.SelectedItem as ListBoxItem)?.Tag as SoundtrackTrack;
-        if (_musicPlaying)
+        var same = selected is null || selected == _current;
+        if (_current is not null && same)
         {
-            if (selected is null || selected == _current)
-            {
-                _player.Pause();
-                SetPlaying(false);
-                return;
-            }
-        }
-        else if (_current is not null && (selected is null || selected == _current) && _player.Source is not null)
-        {
-            _player.Play();
-            SetPlaying(true);
+            if (_musicPlaying)
+                Pause();
+            else
+                Resume();
             return;
         }
         if (selected is not null)
-            PlayTrack(selected);
+            _ = PlayTrackAsync(selected);
     }
 
-    void PlayTrack(SoundtrackTrack track)
+    void Pause()
     {
-        if (_game is not { } game || Soundtracks.PathOf(game, track) is not { } path)
+        if (_youTube)
+            _ = YouTubeScriptAsync("bas.pause()");
+        else
+            _player.Pause();
+        SetPlaying(false);
+    }
+
+    void Resume()
+    {
+        if (_youTube)
+            _ = YouTubeScriptAsync("bas.play()");
+        else
+            _player.Play();
+        SetPlaying(true);
+    }
+
+    /// <summary>Suena la canción: desde tu archivo si lo tienes; si no, desde YouTube (eligiendo el vídeo si aún no tiene).</summary>
+    async Task PlayTrackAsync(SoundtrackTrack track)
+    {
+        if (_game is not { } game)
+            return;
+        EnsurePlayer();
+        if (Soundtracks.PathOf(game, track) is { } path)
         {
-            NowPlaying.Text = "Esta canción no tiene música: impórtala en Personalizar → Banda sonora";
+            StopYouTube();
+            _current = track;
+            _player.Open(new Uri(path));
+            _player.Volume = VolumeSlider.Value;
+            _player.Play();
+            Playing(track);
             return;
         }
-        EnsurePlayer();
+
+        if (track.YouTubeId is null && YouTubeKey is { Length: > 0 } key)
+        {
+            NowPlaying.Text = "Buscando la canción en YouTube…";
+            if (await YouTubeMusic.SearchAsync($"{game.Name} {track.Title} soundtrack", key, CancellationToken.None) is { } found && _game == game)
+            {
+                track.YouTubeId = found;
+                SoundtrackEdited?.Invoke(game);
+                FillSoundtrack(game);
+            }
+        }
+        if (track.YouTubeId is not { } video)
+        {
+            OpenPicker(track);
+            return;
+        }
+
+        if (_playerReady)
+        {
+            _player.Stop();
+            _player.Close();
+        }
         _current = track;
-        _player.Open(new Uri(path));
-        _player.Volume = VolumeSlider.Value;
-        _player.Play();
+        _youTube = true;
+        _ytTime = _ytDuration = 0;
+        YouTubeHost.Visibility = Visibility.Visible;
+        if (await StartYouTubeAsync() is false)
+        {
+            NowPlaying.Text = "No se ha podido abrir el reproductor de YouTube (navegador de Windows WebView2).";
+            StopMusic();
+            return;
+        }
+        YouTubePlayer.CoreWebView2.Navigate(YouTubeMusic.PlayerUrl(video, VolumeSlider.Value));
+        Playing(track);
+    }
+
+    void Playing(SoundtrackTrack track)
+    {
         NowPlaying.Text = track.Title;
         TrackList.SelectedItem = TrackList.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Tag == track);
         SetPlaying(true);
     }
 
-    /// <summary>Al acabar una canción, la siguiente que tenga música.</summary>
+    async Task<bool> StartYouTubeAsync()
+    {
+        try
+        {
+            await (_ytStarting ??= StartYouTubeCoreAsync());
+            return YouTubePlayer.CoreWebView2 is not null;
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException or WebView2RuntimeNotFoundException)
+        {
+            _ytStarting = null;
+            return false;
+        }
+    }
+
+    async Task StartYouTubeCoreAsync()
+    {
+        var environment = await WebViews.EnvironmentAsync();
+        await YouTubePlayer.EnsureCoreWebView2Async(environment);
+        var core = YouTubePlayer.CoreWebView2;
+        core.Settings.AreDevToolsEnabled = false;
+        core.Settings.IsStatusBarEnabled = false;
+        core.SetVirtualHostNameToFolderMapping(YouTubeMusic.Host, YouTubeMusic.PlayerFolder(), CoreWebView2HostResourceAccessKind.Allow);
+        core.WebMessageReceived += OnYouTubeMessage;
+        // Los enlaces del reproductor (el logotipo, «Ver en YouTube») se abren en tu navegador.
+        core.NewWindowRequested += (_, e) =>
+        {
+            e.Handled = true;
+            OpenInBrowser(e.Uri);
+        };
+    }
+
+    /// <summary>Lo que cuenta el reproductor: suena (1), parado (2), se ha acabado (0) o no se puede poner aquí.</summary>
+    void OnYouTubeMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(e.TryGetWebMessageAsString());
+            if (json.RootElement.TryGetProperty("error", out _))
+            {
+                NowPlaying.Text = "Ese vídeo no se puede poner fuera de YouTube: clic derecho en la canción para elegir otro";
+                SetPlaying(false);
+                return;
+            }
+            switch (json.RootElement.GetProperty("state").GetInt32())
+            {
+                case 0: PlayNext(); break;
+                case 1: if (!_musicPlaying) SetPlaying(true); break;
+                case 2: if (_musicPlaying) SetPlaying(false); break;
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or ArgumentException)
+        {
+        }
+    }
+
+    async Task<string?> YouTubeScriptAsync(string script)
+    {
+        if (!_youTube || YouTubePlayer.CoreWebView2 is null)
+            return null;
+        try
+        {
+            return await YouTubePlayer.CoreWebView2.ExecuteScriptAsync($"window.bas ? {script} : null");
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    async Task ReadYouTubeAsync()
+    {
+        if (await YouTubeScriptAsync("bas.info()") is not { } result || result == "null")
+            return;
+        try
+        {
+            // Llega como texto JSON dentro de otro texto JSON.
+            using var outer = JsonDocument.Parse(result);
+            using var json = JsonDocument.Parse(outer.RootElement.GetString() ?? "{}");
+            _ytTime = json.RootElement.TryGetProperty("t", out var t) ? t.GetDouble() : 0;
+            _ytDuration = json.RootElement.TryGetProperty("d", out var d) ? d.GetDouble() : 0;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
+        {
+        }
+    }
+
+    /// <summary>Al acabar una canción, la siguiente que pueda sonar (con archivo o con vídeo de YouTube ya elegido).</summary>
     void PlayNext()
     {
         var tracks = _game?.Soundtrack?.Tracks ?? [];
         var index = _current is null ? -1 : tracks.IndexOf(_current);
-        var next = tracks.Skip(index + 1).FirstOrDefault(track => _game is { } g && Soundtracks.PathOf(g, track) is not null);
+        var next = tracks.Skip(index + 1).FirstOrDefault(track => _game is { } g && (Soundtracks.PathOf(g, track) is not null || track.YouTubeId is not null));
         if (next is not null)
-            PlayTrack(next);
+            _ = PlayTrackAsync(next);
         else
             StopMusic();
     }
 
     void Seek(double seconds)
     {
-        if (_current is null || !_player.NaturalDuration.HasTimeSpan)
+        if (_current is null)
+            return;
+        if (_youTube)
+        {
+            _ = YouTubeScriptAsync($"bas.seek({seconds.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+            _ytTime = Math.Clamp(_ytTime + seconds, 0, Math.Max(0, _ytDuration));
+            UpdateProgress();
+            return;
+        }
+        if (!_player.NaturalDuration.HasTimeSpan)
             return;
         var target = _player.Position + TimeSpan.FromSeconds(seconds);
         _player.Position = target < TimeSpan.Zero ? TimeSpan.Zero : target > _player.NaturalDuration.TimeSpan ? _player.NaturalDuration.TimeSpan : target;
         UpdateProgress();
     }
 
+    void StopYouTube()
+    {
+        if (!_youTube)
+            return;
+        _youTube = false;
+        YouTubePlayer.CoreWebView2?.Navigate("about:blank");
+        YouTubeHost.Visibility = Visibility.Collapsed;
+    }
+
     void StopMusic()
     {
-        if (!_playerReady)
-            return;
-        _player.Stop();
-        _player.Close();
+        StopYouTube();
+        if (_playerReady)
+        {
+            _player.Stop();
+            _player.Close();
+        }
         _current = null;
         SetPlaying(false);
         UpdateProgress();
@@ -232,7 +452,7 @@ public partial class OpenCasePanel
                 new DoubleAnimation(angle % 360, angle % 360 + 360, TimeSpan.FromSeconds(1.8)) { RepeatBehavior = RepeatBehavior.Forever });
             _progress.Start();
         }
-        else
+        else if (!_youTube)
         {
             _progress.Stop();
         }
@@ -242,8 +462,17 @@ public partial class OpenCasePanel
     {
         if (_seeking)
             return;
-        var duration = _current is not null && _player.NaturalDuration.HasTimeSpan ? _player.NaturalDuration.TimeSpan : TimeSpan.Zero;
-        var position = _current is not null ? _player.Position : TimeSpan.Zero;
+        TimeSpan duration, position;
+        if (_youTube)
+        {
+            duration = TimeSpan.FromSeconds(Math.Max(0, _ytDuration));
+            position = TimeSpan.FromSeconds(Math.Max(0, _ytTime));
+        }
+        else
+        {
+            duration = _current is not null && _player.NaturalDuration.HasTimeSpan ? _player.NaturalDuration.TimeSpan : TimeSpan.Zero;
+            position = _current is not null ? _player.Position : TimeSpan.Zero;
+        }
         SeekSlider.Maximum = Math.Max(1, duration.TotalSeconds);
         SeekSlider.Value = Math.Min(SeekSlider.Maximum, position.TotalSeconds);
         ElapsedText.Text = Time(position);
@@ -259,7 +488,17 @@ public partial class OpenCasePanel
     {
         _seeking = false;
         if (_current is not null)
-            _player.Position = TimeSpan.FromSeconds(SeekSlider.Value);
+        {
+            if (_youTube)
+            {
+                _ytTime = SeekSlider.Value;
+                _ = YouTubeScriptAsync($"bas.seekTo({SeekSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+            }
+            else
+            {
+                _player.Position = TimeSpan.FromSeconds(SeekSlider.Value);
+            }
+        }
         UpdateProgress();
     }
 
@@ -267,8 +506,99 @@ public partial class OpenCasePanel
     {
         if (_playerReady)
             _player.Volume = e.NewValue;
+        _ = YouTubeScriptAsync($"bas.volume({(int)Math.Round(e.NewValue * 100)})");
         if (VolumeText is not null)
             VolumeText.Text = $"{e.NewValue * 100:0} %";
         VolumeChanged?.Invoke(e.NewValue);
+    }
+
+    // ---- Elegir el vídeo de YouTube de una canción ----
+
+    /// <summary>Abre la búsqueda de YouTube para la canción; el vídeo que abras se queda para ella y empieza a sonar.</summary>
+    async void OpenPicker(SoundtrackTrack track)
+    {
+        if (_game is not { } game)
+            return;
+        if (_youTube && _musicPlaying)
+            Pause();
+        _picking = track;
+        PickerTitle.Text = $"YouTube · «{track.Title}»";
+        YouTubeKeyBox.Text = YouTubeKey ?? "";
+        // Un reproductor por encima de otro no se ve bien: el pequeño se esconde mientras se elige.
+        YouTubeHost.Visibility = Visibility.Collapsed;
+        YouTubePicker.Visibility = Visibility.Visible;
+        try
+        {
+            var environment = await WebViews.EnvironmentAsync();
+            if (YouTubeSearch.CoreWebView2 is null)
+            {
+                await YouTubeSearch.EnsureCoreWebView2Async(environment);
+                YouTubeSearch.CoreWebView2.Settings.AreDevToolsEnabled = false;
+                // YouTube cambia de página sin recargarla: se mira la dirección cada vez que cambia.
+                YouTubeSearch.CoreWebView2.SourceChanged += (_, _) => OnPickerSourceChanged();
+                YouTubeSearch.CoreWebView2.NewWindowRequested += (_, e) =>
+                {
+                    e.Handled = true;
+                    YouTubeSearch.CoreWebView2.Navigate(e.Uri);
+                };
+            }
+            var query = $"{game.Soundtrack?.Title ?? game.Name} {track.Title} soundtrack";
+            YouTubeSearch.CoreWebView2.Navigate($"https://www.youtube.com/results?search_query={Uri.EscapeDataString(query)}");
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException or WebView2RuntimeNotFoundException)
+        {
+            ClosePicker();
+            NowPlaying.Text = "No se ha podido abrir YouTube (navegador de Windows WebView2).";
+        }
+    }
+
+    void OnPickerSourceChanged()
+    {
+        if (_picking is not { } track || _game is not { } game || YouTubeMusic.VideoIdOf(YouTubeSearch.CoreWebView2?.Source) is not { } video)
+            return;
+        track.YouTubeId = video;
+        SoundtrackEdited?.Invoke(game);
+        ClosePicker();
+        FillSoundtrack(game);
+        _ = PlayTrackAsync(track);
+    }
+
+    void ClosePicker()
+    {
+        if (YouTubePicker.Visibility != Visibility.Visible)
+            return;
+        _picking = null;
+        YouTubeSearch.CoreWebView2?.Navigate("about:blank");
+        YouTubePicker.Visibility = Visibility.Collapsed;
+        if (_youTube)
+            YouTubeHost.Visibility = Visibility.Visible;
+    }
+
+    void OnPickerCancelClick(object sender, RoutedEventArgs e) => ClosePicker();
+
+    void OnSaveYouTubeKeyClick(object sender, RoutedEventArgs e)
+    {
+        var key = YouTubeKeyBox.Text.Trim();
+        YouTubeKey = key.Length > 0 ? key : null;
+        YouTubeKeyChanged?.Invoke(YouTubeKey);
+        // Con la clave, la canción que se estaba eligiendo se busca sola.
+        if (_picking is { } track && YouTubeKey is not null)
+        {
+            ClosePicker();
+            _ = PlayTrackAsync(track);
+        }
+    }
+
+    void OnYouTubeKeyHelpClick(object sender, RoutedEventArgs e) => OpenInBrowser(YouTubeMusic.KeyUrl);
+
+    static void OpenInBrowser(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+        }
     }
 }

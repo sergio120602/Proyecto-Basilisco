@@ -1,6 +1,7 @@
 <UserControl x:Class="Basilisco.Customization.OpenCasePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
     <!-- La caja abierta: el manual a la izquierda, el disco a la derecha y «Jugar» debajo -->
     <Grid>
@@ -49,7 +50,7 @@
                 </Border>
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Width="440">
-                    <Grid Width="400" Height="400" HorizontalAlignment="Center" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="OnSoundtrackDiscClick"
+                    <Grid x:Name="SoundtrackDiscHost" Width="330" Height="330" HorizontalAlignment="Center" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="OnSoundtrackDiscClick"
                           ToolTip="Clic: que suene la canción elegida (otro clic la para)">
                         <Grid.Effect>
                             <DropShadowEffect BlurRadius="34" ShadowDepth="8" Direction="270" Opacity="0.6"/>
@@ -75,7 +76,34 @@
                         <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" Value="0.7" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
                                 ValueChanged="OnVolumeChanged" ToolTip="Volumen"/>
                     </DockPanel>
+                    <!-- El reproductor de YouTube, a la vista mientras suena una canción desde YouTube (lo piden sus condiciones) -->
+                    <Border x:Name="YouTubeHost" Width="356" Height="200" Margin="0,16,0,0" CornerRadius="6" Background="Black" ClipToBounds="True" Visibility="Collapsed">
+                        <wv2:WebView2 x:Name="YouTubePlayer"/>
+                    </Border>
                 </StackPanel>
+
+                <!-- Elegir el vídeo de YouTube de una canción: su búsqueda de YouTube, y al abrir un vídeo se queda ese -->
+                <Grid x:Name="YouTubePicker" Grid.ColumnSpan="3" Visibility="Collapsed" Background="#F20B0D11">
+                    <DockPanel Margin="20,6,20,6">
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Cancelar" Click="OnPickerCancelClick" Focusable="False"/>
+                            <StackPanel>
+                                <TextBlock x:Name="PickerTitle" FontSize="20" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock FontSize="13" Foreground="#A9B1BD" Margin="0,4,0,8" TextWrapping="Wrap"
+                                           Text="Abre el vídeo con esa canción y se queda para ella (se recuerda). Para que se busquen solos, pon tu clave de la API de YouTube:"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Name="YouTubeKeyBox" Style="{StaticResource FieldTextBox}" FontSize="13" Width="380"/>
+                                    <Button Style="{StaticResource PillButton}" Content="Guardar clave" Margin="10,0,0,0" Click="OnSaveYouTubeKeyClick" Focusable="False"/>
+                                    <Button Style="{StaticResource PillButton}" Content="Cómo conseguirla" Margin="10,0,0,0" Click="OnYouTubeKeyHelpClick" Focusable="False"
+                                            ToolTip="Google Cloud → «YouTube Data API v3» → Habilitar → Credenciales → Crear clave de API (gratis)"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </DockPanel>
+                        <Border CornerRadius="8" ClipToBounds="True" Background="White">
+                            <wv2:WebView2 x:Name="YouTubeSearch"/>
+                        </Border>
+                    </DockPanel>
+                </Grid>
             </Grid>
         </Grid>
 
