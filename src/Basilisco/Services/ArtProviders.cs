@@ -152,17 +152,19 @@ public abstract class ArtProvider
 /// <remarks>Con <paramref name="inside"/>, para el interior de la caja: los «heroes» primero y después todas las carátulas.</remarks>
 /// <remarks>Con <paramref name="logos"/>, los logotipos del juego (PNG con fondo transparente), para los filtros.</remarks>
 /// <remarks>Con <paramref name="manual"/>, las carátulas (grids) para el librito del manual: primero las verticales y después todas.</remarks>
+/// <param name="cartridge">Para la pegatina de un cartucho: los grids apaisados 92:43 (920×430 y 460×215).</param>
 public sealed class SteamGridDbProvider(Models.CoverFormat format = Models.CoverFormat.Square, bool heroes = false, bool inside = false,
-                                        bool logos = false, bool manual = false) : ArtProvider
+                                        bool logos = false, bool manual = false, bool cartridge = false) : ArtProvider
 {
-    string Dimensions => format == Models.CoverFormat.Portrait
+    string Dimensions => cartridge ? "920x430,460x215"
+        : format == Models.CoverFormat.Portrait
         ? "600x900,342x482,660x930"
         : "1024x1024,512x512";
 
     const string BaseUrl = "https://www.steamgriddb.com/api/v2";
 
     public override string Name => "SteamGridDB";
-    public override string ImageKind => manual ? "imagen para el manual" : logos ? "logotipo" : inside ? "imagen para el interior" : heroes ? "fondo" : "portada";
+    public override string ImageKind => cartridge ? "pegatina del cartucho" : manual ? "imagen para el manual" : logos ? "logotipo" : inside ? "imagen para el interior" : heroes ? "fondo" : "portada";
     public override string KeyHelp => "Entra en steamgriddb.com con tu cuenta, ve a Preferencias → API y genera una clave (es gratis e inmediata).";
     public override string KeyUrl => "https://www.steamgriddb.com/profile/preferences/api";
 

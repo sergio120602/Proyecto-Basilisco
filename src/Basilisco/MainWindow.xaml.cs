@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbInside = new(inside: true);
     readonly SteamGridDbProvider _steamGridDbLogos = new(logos: true);
     readonly SteamGridDbProvider _steamGridDbManual = new(Models.CoverFormat.Portrait, manual: true);
+    readonly SteamGridDbProvider _steamGridDbCartridge = new(cartridge: true);
     readonly LaunchBoxPlatformProvider _launchBoxPlatforms = new();
     readonly VimmManualsProvider _vimm = new();
     readonly TheGamesDbProvider _theGamesDb = new();
@@ -2502,6 +2503,12 @@ public partial class MainWindow : Window
         if (source == ArtSource.SteamGridDb && target == ArtTarget.Manual)
         {
             ArtSearch.Open(_steamGridDbManual, _settings, gameName, Customizer.SetManualImage);
+            return;
+        }
+        // La pegatina de un cartucho desde los grids apaisados 92:43 de SteamGridDB.
+        if (source == ArtSource.SteamGridDb && target == ArtTarget.Disc)
+        {
+            ArtSearch.Open(_steamGridDbCartridge, _settings, gameName, Customizer.SetDiscImage);
             return;
         }
 
