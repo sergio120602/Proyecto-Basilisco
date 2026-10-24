@@ -114,6 +114,28 @@ public static class ImageStore
         SetExtraFile(game, extra, null);
     }
 
+    /// <summary>Imagen del disco de la banda sonora, o null si no tiene.</summary>
+    public static string? GetSoundtrackDiscPath(Game game) => Resolve(AppInfo.CoversDirectory, game.Soundtrack?.Disc);
+
+    /// <summary>Copia la imagen como el disco de la banda sonora y borra la anterior.</summary>
+    public static void SetSoundtrackDisc(Game game, string sourcePath)
+    {
+        if (game.Soundtrack is not { } soundtrack)
+            return;
+        var fileName = Import(sourcePath, AppInfo.CoversDirectory, $"{game.Id}-soundtrack");
+        Delete(AppInfo.CoversDirectory, soundtrack.Disc);
+        soundtrack.Disc = fileName;
+        soundtrack.DiscFrame = null;
+    }
+
+    public static void RemoveSoundtrackDisc(Game game)
+    {
+        if (game.Soundtrack is not { } soundtrack)
+            return;
+        Delete(AppInfo.CoversDirectory, soundtrack.Disc);
+        soundtrack.Disc = null;
+    }
+
     /// <summary>Imagen de la consola para el menú de consolas, o null si no tiene.</summary>
     public static string? GetPlatformImagePath(string platformId) => GetMenuImagePath(AppInfo.PlatformImagesDirectory, platformId);
 

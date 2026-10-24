@@ -24,6 +24,9 @@ public sealed class AppSettings
     public string? RetroAchievementsUser { get; set; }
     public string? RetroAchievementsApiKey { get; set; }
 
+    /// <summary>Volumen de la banda sonora en la caja abierta (de 0 a 1).</summary>
+    public double SoundtrackVolume { get; set; } = 0.7;
+
     /// <summary>Tope de espacio de las páginas de los manuales de imágenes, en MB (si se pasa, se sueltan las de los menos leídos).</summary>
     public int ManualSpaceLimitMb { get; set; } = 2048;
 

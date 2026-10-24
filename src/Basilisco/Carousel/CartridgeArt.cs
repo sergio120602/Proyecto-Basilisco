@@ -30,7 +30,8 @@ public static class CartridgeArt
     public static bool HasCartridge(string? platform) => Measures(platform) is not null;
 
     /// <summary>Disco o cartucho para la caja abierta de esa consola.</summary>
-    public static CaseContent ContentFor(string? platform, BoxShape shape, string? labelPath, string? coverPath)
+    /// <param name="discFrame">Encuadre de la imagen del disco (los cartuchos no lo usan).</param>
+    public static CaseContent ContentFor(string? platform, BoxShape shape, string? labelPath, string? coverPath, Models.ImageFrame? discFrame = null)
     {
         if (Measures(platform) is { } m)
         {
@@ -39,7 +40,7 @@ public static class CartridgeArt
             return new CaseContent(Render(platform!, label), size, Cartridge: true);
         }
         var diameter = Math.Min(shape.Width, shape.Height) * 0.88;
-        return new CaseContent(OpenCaseArt.RenderDisc(labelPath, coverPath), new Size(diameter, diameter), Cartridge: false);
+        return new CaseContent(OpenCaseArt.RenderDisc(labelPath, coverPath, discFrame), new Size(diameter, diameter), Cartridge: false);
     }
 
     static BitmapSource Render(string platform, BitmapSource? label) => platform switch

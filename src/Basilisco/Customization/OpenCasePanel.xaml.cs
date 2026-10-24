@@ -34,6 +34,16 @@ public partial class OpenCasePanel : UserControl
 
     public Game? Game => _game;
 
+    /// <summary>Se ha movido la barra del volumen de la banda sonora (para recordarlo).</summary>
+    public event Action<double>? VolumeChanged;
+
+    /// <summary>Volumen de la banda sonora (de 0 a 1).</summary>
+    public double Volume
+    {
+        get => VolumeSlider.Value;
+        set => VolumeSlider.Value = Math.Clamp(value, 0, 1);
+    }
+
     public bool IsOpen => Visibility == Visibility.Visible;
 
     public OpenCasePanel()
@@ -54,7 +64,9 @@ public partial class OpenCasePanel : UserControl
         TitleText.Text = game.Name;
         DetailText.Text = Platforms.Find(game.Platform)?.Name ?? "";
         PlayButton.IsEnabled = BackButton.IsEnabled = true;
-        HintText.Text = padMode ? "A  Jugar     ·     X  Manual     ·     B  Volver" : "Enter  Jugar     ·     M  Manual     ·     Esc  Volver";
+        _padMode = padMode;
+        ShowGameHint();
+        LeaveSoundtrack(immediate: true);
         ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
         ManualButton.IsEnabled = true;
 
@@ -62,7 +74,7 @@ public partial class OpenCasePanel : UserControl
         var plastic = PlatformArt.Plastic(game.Platform);
         var aspect = shape.Width / shape.Height;
         // Un disco de 12 cm en una caja de DVD (13,5 cm de ancho), o el cartucho de las consolas que lo usan.
-        var content = CartridgeArt.ContentFor(game.Platform, shape, ImageStore.GetExtraPath(game, GameExtra.Disc), item.ImagePath);
+        var content = CartridgeArt.ContentFor(game.Platform, shape, ImageStore.GetExtraPath(game, GameExtra.Disc), item.ImagePath, game.DiscFrame);
         // El plástico de dentro es translúcido: deja ver la imagen del interior, si el juego tiene.
         _inside = ImageStore.GetExtraPath(game, GameExtra.Inside) is { } insidePath ? CoverArt.LoadImage(insidePath, 2400) : null;
         _scene.Show(shape,
@@ -113,6 +125,7 @@ public partial class OpenCasePanel : UserControl
         if (!IsOpen || _closing || _game != game)
             return;
         // El disco sigue girando mientras el juego esté abierto: al cerrarlo, la ventana principal llama a GameEnded.
+        StopMusic();
         PlayRequested?.Invoke(game);
     }
 
@@ -140,6 +153,8 @@ public partial class OpenCasePanel : UserControl
         if (!IsOpen || _closing)
             return;
         _closing = true;
+        StopMusic();
+        SoundtrackView.Visibility = Visibility.Collapsed;
         BackButton.IsEnabled = PlayButton.IsEnabled = false;
         _scene.Close(() =>
         {
@@ -157,6 +172,9 @@ public partial class OpenCasePanel : UserControl
     // Clic en la caja: a la izquierda está el manual; a la derecha, el disco.
     void OnViewportClick(object sender, MouseButtonEventArgs e)
     {
+        // Con la banda sonora delante (o pasando la hoja), un clic no abre el manual ni lanza el juego.
+        if (_soundtrackShown || _turning)
+            return;
         if (e.GetPosition(CaseViewport).X < CaseViewport.ActualWidth / 2)
             RequestManual();
         else
@@ -167,8 +185,26 @@ public partial class OpenCasePanel : UserControl
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (_soundtrackShown)
+        {
+            switch (e.Key)
+            {
+                case Key.Up: SelectTrack(-1); break;
+                case Key.Down: SelectTrack(1); break;
+                case Key.Enter or Key.Space: ToggleMusic(); break;
+                case Key.Right: Seek(10); break;
+                case Key.Left: Seek(-10); break;
+                case Key.Escape or Key.Back: LeaveSoundtrack(); break;
+                default: return;
+            }
+            e.Handled = true;
+            return;
+        }
         switch (e.Key)
         {
+            case Key.Right when !_playing && !_closing:
+                ShowSoundtrack();
+                break;
             case Key.Enter or Key.Space:
                 Play();
                 break;

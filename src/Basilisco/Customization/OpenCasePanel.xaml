@@ -23,16 +23,75 @@
 
         <Grid Grid.Row="1" Margin="40,10,40,10">
             <Viewport3D x:Name="CaseViewport" MouseLeftButtonUp="OnViewportClick" Cursor="Hand"/>
+
+            <!-- La banda sonora (al pasar la hoja del disco): las canciones en un papel a la izquierda y el disco a la derecha -->
+            <Grid x:Name="SoundtrackView" Visibility="Collapsed" Opacity="0" Margin="-40,0" Background="#A60B0D11">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Background="#F4EFE4" CornerRadius="4" Padding="34,26,30,22" Width="580" HorizontalAlignment="Right">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="30" ShadowDepth="6" Direction="270" Opacity="0.55"/>
+                    </Border.Effect>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Text="Banda Sonora" FontFamily="Georgia" FontSize="34" FontStyle="Italic" Foreground="#2A2420" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="SoundtrackTitle" FontSize="15" Foreground="#5C544B" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                       TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                            <Border Height="1" Background="#C9BFAE" Margin="0,14,0,10"/>
+                        </StackPanel>
+                        <TextBlock x:Name="SoundtrackEmpty" DockPanel.Dock="Bottom" FontSize="13" Foreground="#7A7166" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                        <ListBox x:Name="TrackList" Background="Transparent" BorderThickness="0" Focusable="False" HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="OnTrackDoubleClick"/>
+                    </DockPanel>
+                </Border>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Width="440">
+                    <Grid Width="400" Height="400" HorizontalAlignment="Center" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="OnSoundtrackDiscClick"
+                          ToolTip="Clic: que suene la canción elegida (otro clic la para)">
+                        <Grid.Effect>
+                            <DropShadowEffect BlurRadius="34" ShadowDepth="8" Direction="270" Opacity="0.6"/>
+                        </Grid.Effect>
+                        <Image x:Name="SoundtrackDisc" Stretch="Uniform" RenderTransformOrigin="0.5,0.5">
+                            <Image.RenderTransform>
+                                <RotateTransform x:Name="SoundtrackSpin"/>
+                            </Image.RenderTransform>
+                        </Image>
+                    </Grid>
+                    <TextBlock x:Name="NowPlaying" FontSize="17" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,22,0,10"
+                               TextTrimming="CharacterEllipsis"/>
+                    <DockPanel>
+                        <TextBlock x:Name="ElapsedText" DockPanel.Dock="Left" Width="48" FontSize="13" Foreground="#A9B1BD" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="DurationText" DockPanel.Dock="Right" Width="48" FontSize="13" Foreground="#A9B1BD" VerticalAlignment="Center" TextAlignment="Right"/>
+                        <Slider x:Name="SeekSlider" Minimum="0" Maximum="1" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
+                                PreviewMouseLeftButtonDown="OnSeekDragStart" PreviewMouseLeftButtonUp="OnSeekDragEnd" ToolTip="Por dónde va la canción (← →)"/>
+                    </DockPanel>
+                    <DockPanel Margin="0,12,0,0">
+                        <TextBlock DockPanel.Dock="Left" Text="&#xE767;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="#A9B1BD"
+                                   VerticalAlignment="Center" Margin="12,0,14,0"/>
+                        <TextBlock x:Name="VolumeText" DockPanel.Dock="Right" Width="48" FontSize="13" Foreground="#A9B1BD" VerticalAlignment="Center" TextAlignment="Right"/>
+                        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" Value="0.7" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
+                                ValueChanged="OnVolumeChanged" ToolTip="Volumen"/>
+                    </DockPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
 
         <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,44">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <StackPanel x:Name="GameButtons" Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button x:Name="PlayButton" Style="{StaticResource PrimaryButton}" FontSize="20" MinWidth="200" Click="OnPlayClick">
                     <TextBlock><Run Text="▶" FontSize="16"/><Run Text="  Jugar"/></TextBlock>
                 </Button>
                 <Button x:Name="ManualButton" Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Leer el manual" Click="OnManualClick"
                         ToolTip="El manual del juego en PDF; si aún no tiene, se crea con la información de Steam y LaunchBox"/>
                 <Button x:Name="BackButton" Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Volver" Click="OnBackClick"/>
+                <Button x:Name="SoundtrackButton" Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Banda sonora  ▶" Click="OnSoundtrackClick"
+                        ToolTip="Pasa la hoja del disco: la banda sonora del juego (→)"/>
+            </StackPanel>
+            <StackPanel x:Name="SoundtrackButtons" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed">
+                <Button Style="{StaticResource PillButton}" FontSize="17" Content="◀  Volver al juego" Click="OnBackToGameClick"/>
             </StackPanel>
             <TextBlock x:Name="HintText" FontSize="14" Foreground="#8C95A3" HorizontalAlignment="Center" Margin="0,14,0,0"
                        Text="Enter  Jugar     ·     M  Manual     ·     Esc  Volver"/>

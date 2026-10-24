@@ -60,7 +60,7 @@ public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
     ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf,
-    ImageChange Inside, ImageFrame? ManualFrame, ImageFrame? InsideFrame);
+    ImageChange Inside, ImageFrame? ManualFrame, ImageFrame? InsideFrame, ImageFrame? DiscFrame = null);
 
 /// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco, el manual o el fondo.</summary>
 public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background, Inside, ManualPdf }
@@ -92,7 +92,7 @@ public partial class CustomizePanel : UserControl
     ImageChange _manual = ImageChange.None;
     ImageChange _manualPdf = ImageChange.None;
     ImageChange _inside = ImageChange.None;
-    ImageFrame? _manualFrame, _insideFrame;
+    ImageFrame? _manualFrame, _insideFrame, _discFrame;
     CancellationTokenSource? _manualWork;
     string? _textColor;
     bool _syncingColor;
@@ -151,7 +151,9 @@ public partial class CustomizePanel : UserControl
         _inside = ImageChange.None;
         _manualFrame = game.ManualFrame;
         _insideFrame = game.InsideFrame;
+        _discFrame = game.DiscFrame;
         _manualWork?.Cancel();
+        UpdateSoundtrackText();
         UpdateExtrasText();
         _textColor = game.TextColor;
         BuildSwatches();
@@ -246,6 +248,156 @@ public partial class CustomizePanel : UserControl
 
     void OnSearchInsideClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Inside, ArtSource.Default);
 
+    // ---- Discos y banda sonora ----
+
+    /// <summary>La banda sonora ha cambiado (se guarda al momento: la música ya está copiada).</summary>
+    public event Action<Game>? SoundtrackChanged;
+
+    /// <summary>Ajustar la imagen dentro de un disco: el del juego o el de la banda sonora.</summary>
+    void OpenDiscFrameEditor(string title, string path, ImageFrame? frame, Action<ImageFrame> accepted)
+    {
+        var cover = CurrentPath(_format, Face.Front);
+        FrameEditor.Open(title, frame ?? ImageFrame.Default, 1.6, f => OpenCaseArt.RenderDisc(path, cover, f), accepted);
+    }
+
+    void OnFrameDiscClick(object sender, RoutedEventArgs e)
+    {
+        if (CurrentExtra(GameExtra.Disc) is { } path)
+            OpenDiscFrameEditor("Ajustar el disco del juego", path, _discFrame, frame => _discFrame = frame);
+    }
+
+    void UpdateSoundtrackText()
+    {
+        var soundtrack = _game?.Soundtrack;
+        var tracks = soundtrack?.Tracks.Count ?? 0;
+        var withMusic = soundtrack?.Tracks.Count(t => _game is { } g && Soundtracks.PathOf(g, t) is not null) ?? 0;
+        SoundtrackText.Text = soundtrack is null
+            ? "Sin banda sonora. Búscala (lista de canciones de MusicBrainz) e importa tus archivos de música: los que se llamen como una canción se quedan en ella."
+            : $"{soundtrack.Title}{(soundtrack.Artist is { Length: > 0 } artist ? $" · {artist}" : "")} · {tracks} canciones · {withMusic} con música" +
+              (ImageStore.GetSoundtrackDiscPath(_game!) is null ? " · disco sin imagen (lleva la portada del juego)" : "");
+        RemoveSoundtrackButton.IsEnabled = SoundtrackDiscButton.IsEnabled = soundtrack is not null;
+        FrameSoundtrackDiscButton.IsEnabled = _game is { } game && ImageStore.GetSoundtrackDiscPath(game) is not null;
+    }
+
+    CancellationTokenSource? _soundtrackWork;
+
+    async void OnSearchSoundtrackClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is not { } game || sender is not FrameworkElement button)
+            return;
+        _soundtrackWork?.Cancel();
+        var cancellation = (_soundtrackWork = new CancellationTokenSource()).Token;
+        SoundtrackText.Text = "Buscando la banda sonora en MusicBrainz…";
+        var releases = await Soundtracks.SearchAsync(NameBox.Text.Trim(), cancellation);
+        if (cancellation.IsCancellationRequested || _game != game)
+            return;
+        if (releases.Count == 0)
+        {
+            SoundtrackText.Text = "No se ha encontrado la banda sonora en MusicBrainz. Prueba con otro nombre (el de la banda sonora) o importa tus archivos: formarán la lista.";
+            return;
+        }
+
+        // Para elegir entre las que haya (la primera, la más parecida).
+        var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        foreach (var release in releases.Take(12))
+        {
+            var chosen = release;
+            var item = new MenuItem { Header = $"{release.Title}   ·   {release.Detail}" };
+            item.Click += async (_, _) =>
+            {
+                SoundtrackText.Text = "Leyendo las canciones…";
+                if (await Soundtracks.LoadAsync(chosen, cancellation) is not { } loaded || _game != game)
+                {
+                    SoundtrackText.Text = "No se han podido leer las canciones de ese disco. Prueba con otro.";
+                    return;
+                }
+                ApplySoundtrack(game, loaded.Soundtrack, loaded.CoverPath);
+            };
+            menu.Items.Add(item);
+        }
+        menu.IsOpen = true;
+        UpdateSoundtrackText();
+    }
+
+    /// <summary>Pone la lista de canciones nueva; la música que ya tenías se queda en las canciones que se llaman igual.</summary>
+    void ApplySoundtrack(Game game, Soundtrack soundtrack, string? coverPath)
+    {
+        if (game.Soundtrack is { } old)
+        {
+            foreach (var track in soundtrack.Tracks)
+                track.File = old.Tracks.FirstOrDefault(t => t.File is not null && GameSearch.Normalize(t.Title) == GameSearch.Normalize(track.Title))?.File;
+            soundtrack.Disc = old.Disc;
+            soundtrack.DiscFrame = old.DiscFrame;
+        }
+        game.Soundtrack = soundtrack;
+        if (coverPath is not null && soundtrack.Disc is null)
+        {
+            try
+            {
+                ImageStore.SetSoundtrackDisc(game, coverPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+        SoundtrackChanged?.Invoke(game);
+        UpdateSoundtrackText();
+    }
+
+    void OnImportMusicClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is not { } game)
+            return;
+        var dialog = new OpenFileDialog { Title = "Importar música", Filter = Soundtracks.FileFilter, Multiselect = true };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true || dialog.FileNames.Length == 0)
+            return;
+        var result = Soundtracks.Import(game, dialog.FileNames);
+        SoundtrackChanged?.Invoke(game);
+        UpdateSoundtrackText();
+        SoundtrackText.Text = (result.CreatedList
+                ? $"Sin lista de canciones: los {result.Registered} archivos forman la banda sonora. "
+                : $"{result.Registered} {(result.Registered == 1 ? "canción registrada" : "canciones registradas")}. ") +
+            (result.NotMatched.Count == 0 ? "" : $"{result.NotMatched.Count} no se llaman como ninguna canción de la lista y no se han importado: " +
+                string.Join(", ", result.NotMatched.Take(4)) + (result.NotMatched.Count > 4 ? "…" : "")) + "\n" + SoundtrackText.Text;
+    }
+
+    void OnSoundtrackDiscClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is not { } game || PickImage("Elegir la imagen del disco de la banda sonora") is not { } path)
+            return;
+        try
+        {
+            ImageStore.SetSoundtrackDisc(game, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return;
+        }
+        SoundtrackChanged?.Invoke(game);
+        UpdateSoundtrackText();
+    }
+
+    void OnFrameSoundtrackDiscClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is not { Soundtrack: { } soundtrack } game || ImageStore.GetSoundtrackDiscPath(game) is not { } path)
+            return;
+        OpenDiscFrameEditor("Ajustar el disco de la banda sonora", path, soundtrack.DiscFrame, frame =>
+        {
+            soundtrack.DiscFrame = frame == ImageFrame.Default ? null : frame;
+            SoundtrackChanged?.Invoke(game);
+        });
+    }
+
+    void OnRemoveSoundtrackClick(object sender, RoutedEventArgs e)
+    {
+        if (_game is not { } game)
+            return;
+        ImageStore.RemoveSoundtrackDisc(game);
+        Soundtracks.Remove(game);
+        SoundtrackChanged?.Invoke(game);
+        UpdateSoundtrackText();
+    }
+
     /// <summary>Ajustar la imagen del interior o la del manual, viendo la caja abierta de frente con todo lo elegido.</summary>
     void OpenCaseFrameEditor(GameExtra extra)
     {
@@ -314,7 +466,7 @@ public partial class CustomizePanel : UserControl
         // Una imagen nueva empieza llenando su hueco.
         switch (extra)
         {
-            case GameExtra.Disc: _disc = change; break;
+            case GameExtra.Disc: _disc = change; _discFrame = null; break;
             case GameExtra.Manual: _manual = change; _manualFrame = null; break;
             default: _inside = change; _insideFrame = null; break;
         }
@@ -344,6 +496,7 @@ public partial class CustomizePanel : UserControl
         RemoveInsideButton.IsEnabled = FrameInsideButton.IsEnabled = CurrentExtra(GameExtra.Inside) is not null;
         FrameManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         RemoveDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null;
+        FrameDiscButton.IsEnabled = CurrentExtra(GameExtra.Disc) is not null && !CartridgeArt.HasCartridge(_platform);
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         var pdf = CurrentManualPdf();
         var pages = _game?.ManualPages?.Count ?? 0;
@@ -680,7 +833,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside, _manualFrame, _insideFrame);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside, _manualFrame, _insideFrame, _discFrame);
         Close();
         Saved?.Invoke(result);
     }
