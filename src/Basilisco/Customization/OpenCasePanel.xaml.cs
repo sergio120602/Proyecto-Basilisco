@@ -201,6 +201,7 @@ public partial class OpenCasePanel : UserControl
             {
                 case Key.Up: SelectTrack(-1); break;
                 case Key.Down: SelectTrack(1); break;
+                case Key.S: SearchSoundtrack(); break;
                 case Key.Enter or Key.Space: ToggleMusic(); break;
                 case Key.Right: Seek(10); break;
                 case Key.Left: Seek(-10); break;

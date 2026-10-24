@@ -151,6 +151,36 @@ public static partial class Soundtracks
         }
     }
 
+    /// <summary>
+    /// Pone al juego una lista de canciones nueva: la música y los vídeos de YouTube que ya tenías se quedan en las canciones
+    /// que se llaman igual, y el disco, el tuyo (o, si no tenías, la carátula del disco nuevo).
+    /// </summary>
+    public static void Apply(Game game, Soundtrack soundtrack, string? coverPath)
+    {
+        if (game.Soundtrack is { } old)
+        {
+            foreach (var track in soundtrack.Tracks)
+            {
+                var same = old.Tracks.Where(t => GameSearch.Normalize(t.Title) == GameSearch.Normalize(track.Title)).ToList();
+                track.File = same.FirstOrDefault(t => t.File is not null)?.File;
+                track.YouTubeId = same.FirstOrDefault(t => t.YouTubeId is not null)?.YouTubeId;
+            }
+            soundtrack.Disc = old.Disc;
+            soundtrack.DiscFrame = old.DiscFrame;
+        }
+        game.Soundtrack = soundtrack;
+        if (coverPath is not null && soundtrack.Disc is null)
+        {
+            try
+            {
+                ImageStore.SetSoundtrackDisc(game, coverPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
     /// <summary>Busca la banda sonora del juego y se queda con la más parecida (para la descarga automática).</summary>
     public static async Task<(Soundtrack Soundtrack, string? CoverPath)?> FindAsync(string gameName, CancellationToken cancellation)
     {

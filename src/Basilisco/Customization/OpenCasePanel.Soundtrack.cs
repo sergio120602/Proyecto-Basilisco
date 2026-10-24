@@ -95,7 +95,7 @@ public partial class OpenCasePanel
         SoundtrackButtons.Visibility = Visibility.Visible;
         HintText.Text = _padMode
             ? "↑ ↓  Canción     ·     A  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     B  Volver al juego"
-            : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     Esc  Volver al juego";
+            : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     S  Buscar banda sonora     ·     Esc  Volver al juego";
     }
 
     /// <summary>
@@ -186,8 +186,9 @@ public partial class OpenCasePanel
             };
             TrackList.Items.Add(item);
         }
+        SoundtrackSearchButton.Content = soundtrack is null ? "Buscar banda sonora" : "Buscar otra banda sonora";
         SoundtrackEmpty.Text = soundtrack is null
-            ? "Este juego aún no tiene banda sonora. Búscala en Personalizar (E) → Banda sonora."
+            ? "Este juego aún no tiene banda sonora. Búscala con el botón de arriba, o importa tu música en Personalizar (E) → Banda sonora."
             : withMusic < soundtrack.Tracks.Count
                 ? $"{withMusic} de {soundtrack.Tracks.Count} con tu música; las demás suenan desde YouTube (el reproductor se ve debajo del disco)."
                 : "";
@@ -196,6 +197,64 @@ public partial class OpenCasePanel
         NowPlaying.Text = _current is { } current && _musicPlaying ? current.Title : (selected?.Tag as SoundtrackTrack)?.Title ?? "";
         UpdateProgress();
     }
+
+    CancellationTokenSource? _soundtrackSearch;
+
+    /// <summary>
+    /// «Buscar banda sonora»: busca el disco en MusicBrainz con el nombre del juego y deja elegir entre los que haya. La
+    /// música y los vídeos que ya tenías se quedan en las canciones que se llaman igual.
+    /// </summary>
+    async void SearchSoundtrack()
+    {
+        if (_game is not { } game)
+            return;
+        _soundtrackSearch?.Cancel();
+        var cancellation = (_soundtrackSearch = new CancellationTokenSource()).Token;
+        SoundtrackSearchButton.IsEnabled = false;
+        SoundtrackEmpty.Text = "Buscando la banda sonora en MusicBrainz…";
+        try
+        {
+            var releases = await Soundtracks.SearchAsync(game.Name, cancellation);
+            if (cancellation.IsCancellationRequested || _game != game)
+                return;
+            if (releases.Count == 0)
+            {
+                SoundtrackEmpty.Text = "No se ha encontrado en MusicBrainz. Prueba en Personalizar (E) → Banda sonora con otro nombre, o importa tu música: formará la lista.";
+                return;
+            }
+            var menu = new ContextMenu { PlacementTarget = SoundtrackSearchButton, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+            foreach (var release in releases.Take(12))
+            {
+                var chosen = release;
+                var item = new MenuItem { Header = $"{release.Title}   ·   {release.Detail}" };
+                item.Click += async (_, _) =>
+                {
+                    SoundtrackEmpty.Text = "Leyendo las canciones…";
+                    if (await Soundtracks.LoadAsync(chosen, cancellation) is not { } loaded || _game != game)
+                    {
+                        if (_game == game)
+                            SoundtrackEmpty.Text = "No se han podido leer las canciones de ese disco. Prueba con otro.";
+                        return;
+                    }
+                    if (_musicPlaying)
+                        StopMusic();
+                    Soundtracks.Apply(game, loaded.Soundtrack, loaded.CoverPath);
+                    SoundtrackEdited?.Invoke(game);
+                    FillSoundtrack(game);
+                };
+                menu.Items.Add(item);
+            }
+            menu.Closed += (_, _) => { if (_game == game && SoundtrackEmpty.Text.StartsWith("Elige")) FillSoundtrack(game); };
+            menu.IsOpen = true;
+            SoundtrackEmpty.Text = "Elige el disco de la lista.";
+        }
+        finally
+        {
+            SoundtrackSearchButton.IsEnabled = true;
+        }
+    }
+
+    void OnSoundtrackSearchClick(object sender, RoutedEventArgs e) => SearchSoundtrack();
 
     ContextMenu TrackMenu(Game game, SoundtrackTrack track)
     {
