@@ -13,6 +13,12 @@
 
         <DockPanel Margin="56,34,56,0">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Formato: el libro abierto (libreta, de dos en dos) o una sola página, del tamaño de su imagen -->
+                <ToggleButton x:Name="SinglePageToggle" Style="{StaticResource FilterToggle}" Content="Una sola página" Focusable="False"
+                              VerticalAlignment="Center" Margin="0,0,10,0" Click="OnSinglePageClick"
+                              ToolTip="Encendido: de página en página, cada una con su forma (las horizontales se ven enteras). Apagado: el libro abierto, en modo libreta (P)"/>
+                <Button x:Name="PinterestButton" Style="{StaticResource PillButton}" Content="Hacer con Pinterest" Margin="0,0,10,0" Focusable="False"
+                        Click="OnPinterestClick" ToolTip="Elige en Pinterest las imágenes del manual (las que ya tiene salen elegidas, para cambiarlas)"/>
                 <Button x:Name="ExternalButton" Style="{StaticResource PillButton}" Content="Abrir en el visor de PDF" Click="OnOpenExternalClick"
                         ToolTip="Abre el manual con el programa de PDF de Windows (para imprimirlo, buscar o ampliar)"/>
                 <Button Style="{StaticResource PillButton}" Content="Cerrar" Margin="10,0,0,0" Click="OnCloseClick"/>
@@ -36,6 +42,9 @@
                 <Button x:Name="PreviousButton" Style="{StaticResource PillButton}" Content="◀  Anterior" Click="OnPreviousClick"/>
                 <TextBlock x:Name="PageText" FontSize="16" Foreground="White" VerticalAlignment="Center" Margin="22,0" MinWidth="150" TextAlignment="Center"/>
                 <Button x:Name="NextButton" Style="{StaticResource PillButton}" Content="Siguiente  ▶" Click="OnNextClick"/>
+                <!-- Girar la página (solo en una sola página) -->
+                <Button x:Name="RotateButton" Style="{StaticResource PillButton}" Content="⟳  Girar" Margin="14,0,0,0" Click="OnRotateClick"
+                        ToolTip="Gira esta página un cuarto de vuelta (R); se recuerda"/>
                 <!-- Zoom: para leer bien en pantallas pequeñas -->
                 <Border Width="1" Height="26" Background="#33FFFFFF" Margin="26,0,22,0" VerticalAlignment="Center"/>
                 <Button Style="{StaticResource PillButton}" Content="−" MinWidth="44" Click="OnZoomOutClick" ToolTip="Alejar (−, o Ctrl + rueda)"/>

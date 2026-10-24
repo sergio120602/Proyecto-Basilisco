@@ -7,4 +7,10 @@ public sealed class ManualPage
     public string? Source { get; set; }
     public int Width { get; set; }
     public int Height { get; set; }
+
+    /// <summary>Ocupa las dos páginas del libro abierto (para las imágenes horizontales), en el modo libreta.</summary>
+    public bool Spread { get; set; }
+
+    /// <summary>Giro en grados (0, 90, 180 o 270), en el modo de una sola página.</summary>
+    public int Rotation { get; set; }
 }

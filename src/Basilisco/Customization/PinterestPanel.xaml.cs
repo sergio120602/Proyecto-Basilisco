@@ -18,16 +18,26 @@ namespace Basilisco.Customization;
 /// </summary>
 public partial class PinterestPanel : UserControl
 {
-    /// <summary>Una imagen elegida: su parte de la dirección en i.pinimg.com, la grande y la miniatura.</summary>
-    sealed record Pick(string Key, string Url, string Thumb);
+    /// <summary>
+    /// Una imagen elegida: su parte de la dirección en i.pinimg.com, la grande, la miniatura y si ocupa las dos páginas del
+    /// libro abierto (para las horizontales).
+    /// </summary>
+    sealed record Pick(string Key, string Url, string Thumb, bool Spread = false)
+    {
+        public static Pick FromKey(string key, bool spread = false) =>
+            new(key, "https://i.pinimg.com/originals" + key, "https://i.pinimg.com/236x" + key, spread);
+    }
+
+    /// <summary>Una página del manual que se guarda: la imagen y si ocupa las dos páginas del libro abierto.</summary>
+    public sealed record SavedPage(string Url, bool Spread);
 
     List<Pick> _picks = [];
     bool _ready;
     CoreWebView2Environment? _environment;
     Task? _starting;
 
-    /// <summary>Se ha pulsado «Guardar como manual»: las direcciones de las imágenes elegidas, en su orden.</summary>
-    public event Action<List<string>>? Saved;
+    /// <summary>Se ha pulsado «Guardar como manual»: las imágenes elegidas, en su orden.</summary>
+    public event Action<List<SavedPage>>? Saved;
 
     public event Action? Closed;
 
@@ -49,11 +59,18 @@ public partial class PinterestPanel : UserControl
         }
     }
 
-    public async void Open(string gameName)
+    /// <summary>Abre Pinterest para el manual del juego; las páginas que ya tenga salen elegidas (para cambiarlas).</summary>
+    public async void Open(string gameName, IReadOnlyList<Models.ManualPage>? existing = null)
     {
         TitleText.Text = gameName;
         SearchBox.Text = $"#{Tag(gameName)} #artbook";
         _picks = [];
+        foreach (var page in existing ?? [])
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(page.Source ?? "", @"^https://i\.pinimg\.com/(?:\d+x|originals)(/.+)$");
+            if (match.Success && _picks.All(pick => pick.Key != match.Groups[1].Value))
+                _picks.Add(Pick.FromKey(match.Groups[1].Value, page.Spread));
+        }
         SelectToggle.IsChecked = true;
         UpdateStrip();
         Visibility = Visibility.Visible;
@@ -186,11 +203,13 @@ public partial class PinterestPanel : UserControl
         try
         {
             using var json = JsonDocument.Parse(e.TryGetWebMessageAsString());
+            // Las que ya estaban elegidas conservan si son dobles.
+            var spread = _picks.Where(pick => pick.Spread).Select(pick => pick.Key).ToHashSet();
             var picks = new List<Pick>();
             foreach (var item in json.RootElement.EnumerateArray())
             {
                 if (item.GetString() is { Length: > 1 } key && key.StartsWith('/'))
-                    picks.Add(new Pick(key, "https://i.pinimg.com/originals" + key, "https://i.pinimg.com/236x" + key));
+                    picks.Add(Pick.FromKey(key, spread.Contains(key)));
             }
             _picks = picks;
             UpdateStrip();
@@ -211,7 +230,8 @@ public partial class PinterestPanel : UserControl
             thumb.UriSource = new Uri(pick.Thumb);
             thumb.DecodePixelHeight = 184;
             thumb.EndInit();
-            var tile = new Grid { Height = 88, Width = 66, Margin = new Thickness(0, 0, 8, 0), Cursor = Cursors.Hand, ToolTip = "Clic para quitarla" };
+            // Las dobles, el doble de anchas: así se ve cómo quedarán en el libro abierto.
+            var tile = new Grid { Height = 88, Width = pick.Spread ? 140 : 66, Margin = new Thickness(0, 0, 8, 0), Cursor = Cursors.Hand, ToolTip = "Clic para quitarla" };
             tile.Children.Add(new Border
             {
                 CornerRadius = new CornerRadius(6), BorderBrush = new SolidColorBrush(Color.FromRgb(0xE8, 0xB9, 0x23)), BorderThickness = new Thickness(2),
@@ -224,6 +244,31 @@ public partial class PinterestPanel : UserControl
                 Child = new TextBlock { Text = (i + 1).ToString(), FontWeight = FontWeights.Bold, FontSize = 13, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
             });
             var key = pick.Key;
+            // «↔ Doble»: la imagen ocupa las dos páginas del libro abierto (sobre todo para las horizontales).
+            var gold = Color.FromRgb(0xE8, 0xB9, 0x23);
+            var spreadButton = new Border
+            {
+                CornerRadius = new CornerRadius(5), Margin = new Thickness(4), Padding = new Thickness(6, 1, 6, 2),
+                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
+                Background = pick.Spread ? new SolidColorBrush(gold) : new SolidColorBrush(Color.FromArgb(0xD0, 0x0B, 0x0D, 0x11)),
+                Child = new TextBlock
+                {
+                    Text = pick.Spread ? "↔ Doble" : "↔", FontWeight = FontWeights.Bold, FontSize = 12,
+                    Foreground = pick.Spread ? Brushes.Black : Brushes.White,
+                },
+                ToolTip = pick.Spread
+                    ? "Ocupa las dos páginas del libro abierto. Clic: que vuelva a ser una página"
+                    : "Clic: que ocupe las dos páginas del libro abierto (para las imágenes horizontales). En una sola página se ve entera igual",
+            };
+            spreadButton.MouseLeftButtonUp += (_, e) =>
+            {
+                e.Handled = true;
+                var index = _picks.FindIndex(p => p.Key == key);
+                if (index >= 0)
+                    _picks[index] = _picks[index] with { Spread = !_picks[index].Spread };
+                UpdateStrip();
+            };
+            tile.Children.Add(spreadButton);
             tile.MouseLeftButtonUp += (_, _) =>
             {
                 _picks.RemoveAll(p => p.Key == key);
@@ -236,7 +281,7 @@ public partial class PinterestPanel : UserControl
         {
             0 => "Pulsa las imágenes que quieras para el manual: cada una lleva su número de orden.",
             1 => "1 imagen elegida",
-            var n => $"{n} imágenes elegidas · serán las páginas del manual en este orden",
+            var n => $"{n} imágenes elegidas · serán las páginas del manual en este orden (↔: que ocupe dos páginas)",
         };
         SaveButton.IsEnabled = ClearButton.IsEnabled = _picks.Count > 0;
     }
@@ -262,9 +307,9 @@ public partial class PinterestPanel : UserControl
     {
         if (_picks.Count == 0)
             return;
-        var urls = _picks.Select(pick => pick.Url).ToList();
+        var pages = _picks.Select(pick => new SavedPage(pick.Url, pick.Spread)).ToList();
         Close();
-        Saved?.Invoke(urls);
+        Saved?.Invoke(pages);
     }
 
     void OnCancelClick(object sender, RoutedEventArgs e) => Close();

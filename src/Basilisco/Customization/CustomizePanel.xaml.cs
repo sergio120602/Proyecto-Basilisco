@@ -517,7 +517,7 @@ public partial class CustomizePanel : UserControl
     }
 
     /// <summary>Hay que leer este PDF (lo abre la ventana principal, encima de este menú).</summary>
-    public event Action<string, string>? ManualReadRequested;
+    public event Action<string, Game?, string>? ManualReadRequested;
 
     async void OnCreateManualClick(object sender, RoutedEventArgs e)
     {
@@ -566,7 +566,7 @@ public partial class CustomizePanel : UserControl
         if (_game is { ManualPages.Count: > 0 } game)
             ImageManualReadRequested?.Invoke(game);
         else if (CurrentManualPdf() is { } pdf)
-            ManualReadRequested?.Invoke(pdf, NameBox.Text.Trim());
+            ManualReadRequested?.Invoke(pdf, _game, NameBox.Text.Trim());
     }
 
     /// <summary>«Ver Pinterest»: elegir imágenes para el manual (lo abre la ventana principal, encima de este menú).</summary>
