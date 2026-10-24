@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbHeroes = new(heroes: true);
     readonly SteamGridDbProvider _steamGridDbInside = new(inside: true);
     readonly SteamGridDbProvider _steamGridDbLogos = new(logos: true);
+    readonly SteamGridDbProvider _steamGridDbManual = new(Models.CoverFormat.Portrait, manual: true);
     readonly LaunchBoxPlatformProvider _launchBoxPlatforms = new();
     readonly VimmManualsProvider _vimm = new();
     readonly TheGamesDbProvider _theGamesDb = new();
@@ -2471,6 +2472,12 @@ public partial class MainWindow : Window
         if (source == ArtSource.SpineArchive)
         {
             ArtSearch.Open(_spineArchive, _settings, gameName, Customizer.SetSpineImage);
+            return;
+        }
+        // El librito del manual desde las carátulas (grids) de SteamGridDB.
+        if (source == ArtSource.SteamGridDb && target == ArtTarget.Manual)
+        {
+            ArtSearch.Open(_steamGridDbManual, _settings, gameName, Customizer.SetManualImage);
             return;
         }
 

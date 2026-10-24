@@ -25,85 +25,112 @@
         <Grid Grid.Row="1" Margin="40,10,40,10">
             <Viewport3D x:Name="CaseViewport" MouseLeftButtonUp="OnViewportClick" Cursor="Hand"/>
 
-            <!-- La banda sonora (al pasar la hoja del disco): las canciones en un papel a la izquierda y el disco a la derecha -->
-            <Grid x:Name="SoundtrackView" Visibility="Collapsed" Opacity="0" Margin="-40,0" Background="#A60B0D11">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="60"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Border Background="#F4EFE4" CornerRadius="4" Padding="34,26,30,22" Width="580" HorizontalAlignment="Right">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="30" ShadowDepth="6" Direction="270" Opacity="0.55"/>
-                    </Border.Effect>
-                    <DockPanel>
-                        <StackPanel DockPanel.Dock="Top">
-                            <TextBlock Text="Banda Sonora" FontFamily="Georgia" FontSize="34" FontStyle="Italic" Foreground="#2A2420" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="SoundtrackTitle" FontSize="15" Foreground="#5C544B" HorizontalAlignment="Center" Margin="0,6,0,0"
-                                       TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
-                            <Border Height="1" Background="#C9BFAE" Margin="0,14,0,10"/>
-                        </StackPanel>
-                        <TextBlock x:Name="SoundtrackEmpty" DockPanel.Dock="Bottom" FontSize="13" Foreground="#7A7166" TextWrapping="Wrap" Margin="0,10,0,0"/>
-                        <ListBox x:Name="TrackList" Background="Transparent" BorderThickness="0" Focusable="False" HorizontalContentAlignment="Stretch"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="OnTrackDoubleClick"/>
-                    </DockPanel>
-                </Border>
+            <!-- La banda sonora, al pasar la hoja del disco: otra doble página de la misma caja, encima de ella (se coloca en
+                 su sitio desde el código), con el fondo de la carátula, el disco a la izquierda y el librito de canciones a la derecha -->
+            <Border x:Name="SoundtrackView" Visibility="Collapsed" Opacity="0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                    CornerRadius="10" BorderThickness="7" BorderBrush="#202227" ClipToBounds="True">
+                <Border.Background>
+                    <ImageBrush x:Name="SoundtrackBackground" Stretch="UniformToFill"/>
+                </Border.Background>
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Direction="270" Opacity="0.6"/>
+                </Border.Effect>
+                <Grid>
+                    <!-- El plástico translúcido por encima de la imagen, como en el resto de la caja -->
+                    <Border x:Name="SoundtrackPlastic" Opacity="0.38"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Width="440">
-                    <Grid x:Name="SoundtrackDiscHost" Width="330" Height="330" HorizontalAlignment="Center" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="OnSoundtrackDiscClick"
-                          ToolTip="Clic: que suene la canción elegida (otro clic la para)">
-                        <Grid.Effect>
-                            <DropShadowEffect BlurRadius="34" ShadowDepth="8" Direction="270" Opacity="0.6"/>
-                        </Grid.Effect>
-                        <Image x:Name="SoundtrackDisc" Stretch="Uniform" RenderTransformOrigin="0.5,0.5">
-                            <Image.RenderTransform>
-                                <RotateTransform x:Name="SoundtrackSpin"/>
-                            </Image.RenderTransform>
-                        </Image>
-                    </Grid>
-                    <TextBlock x:Name="NowPlaying" FontSize="17" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,22,0,10"
-                               TextTrimming="CharacterEllipsis"/>
-                    <DockPanel>
-                        <TextBlock x:Name="ElapsedText" DockPanel.Dock="Left" Width="48" FontSize="13" Foreground="#A9B1BD" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="DurationText" DockPanel.Dock="Right" Width="48" FontSize="13" Foreground="#A9B1BD" VerticalAlignment="Center" TextAlignment="Right"/>
-                        <Slider x:Name="SeekSlider" Minimum="0" Maximum="1" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
-                                PreviewMouseLeftButtonDown="OnSeekDragStart" PreviewMouseLeftButtonUp="OnSeekDragEnd" ToolTip="Por dónde va la canción (← →)"/>
-                    </DockPanel>
-                    <DockPanel Margin="0,12,0,0">
-                        <TextBlock DockPanel.Dock="Left" Text="&#xE767;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="#A9B1BD"
-                                   VerticalAlignment="Center" Margin="12,0,14,0"/>
-                        <TextBlock x:Name="VolumeText" DockPanel.Dock="Right" Width="48" FontSize="13" Foreground="#A9B1BD" VerticalAlignment="Center" TextAlignment="Right"/>
-                        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" Value="0.7" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
-                                ValueChanged="OnVolumeChanged" ToolTip="Volumen"/>
-                    </DockPanel>
-                    <!-- El reproductor de YouTube, a la vista mientras suena una canción desde YouTube (lo piden sus condiciones) -->
-                    <Border x:Name="YouTubeHost" Width="356" Height="200" Margin="0,16,0,0" CornerRadius="6" Background="Black" ClipToBounds="True" Visibility="Collapsed">
-                        <wv2:WebView2 x:Name="YouTubePlayer"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- Elegir el vídeo de YouTube de una canción: su búsqueda de YouTube, y al abrir un vídeo se queda ese -->
-                <Grid x:Name="YouTubePicker" Grid.ColumnSpan="3" Visibility="Collapsed" Background="#F20B0D11">
-                    <DockPanel Margin="20,6,20,6">
-                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Cancelar" Click="OnPickerCancelClick" Focusable="False"/>
-                            <StackPanel>
-                                <TextBlock x:Name="PickerTitle" FontSize="20" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock FontSize="13" Foreground="#A9B1BD" Margin="0,4,0,8" TextWrapping="Wrap"
-                                           Text="Abre el vídeo con esa canción y se queda para ella (se recuerda). Para que se busquen solos, pon tu clave de la API de YouTube:"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBox x:Name="YouTubeKeyBox" Style="{StaticResource FieldTextBox}" FontSize="13" Width="380"/>
-                                    <Button Style="{StaticResource PillButton}" Content="Guardar clave" Margin="10,0,0,0" Click="OnSaveYouTubeKeyClick" Focusable="False"/>
-                                    <Button Style="{StaticResource PillButton}" Content="Cómo conseguirla" Margin="10,0,0,0" Click="OnYouTubeKeyHelpClick" Focusable="False"
-                                            ToolTip="Google Cloud → «YouTube Data API v3» → Habilitar → Credenciales → Crear clave de API (gratis)"/>
+                        <!-- Izquierda: el disco en su bandeja, y debajo la canción, las barras y el reproductor de YouTube -->
+                        <StackPanel x:Name="SoundtrackLeft" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <Grid x:Name="SoundtrackDiscHost" Width="330" Height="330" HorizontalAlignment="Center" Cursor="Hand" Background="Transparent"
+                                  MouseLeftButtonUp="OnSoundtrackDiscClick" ToolTip="Clic: que suene la canción elegida (otro clic la para)">
+                                <Ellipse Margin="-10" Fill="#33000000" Stroke="#40FFFFFF" StrokeThickness="2"/>
+                                <Image x:Name="SoundtrackDisc" Stretch="Uniform" RenderTransformOrigin="0.5,0.5">
+                                    <Image.RenderTransform>
+                                        <RotateTransform x:Name="SoundtrackSpin"/>
+                                    </Image.RenderTransform>
+                                    <Image.Effect>
+                                        <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.6"/>
+                                    </Image.Effect>
+                                </Image>
+                            </Grid>
+                            <Border x:Name="SoundtrackControls" Background="#B80B0D11" CornerRadius="10" Padding="16,10,16,12" Margin="0,18,0,0" Width="380">
+                                <StackPanel>
+                                    <TextBlock x:Name="NowPlaying" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,8"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <DockPanel>
+                                        <TextBlock x:Name="ElapsedText" DockPanel.Dock="Left" Width="42" FontSize="12" Foreground="#C9D3E0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="DurationText" DockPanel.Dock="Right" Width="42" FontSize="12" Foreground="#C9D3E0" VerticalAlignment="Center" TextAlignment="Right"/>
+                                        <Slider x:Name="SeekSlider" Minimum="0" Maximum="1" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
+                                                PreviewMouseLeftButtonDown="OnSeekDragStart" PreviewMouseLeftButtonUp="OnSeekDragEnd" ToolTip="Por dónde va la canción (← →)"/>
+                                    </DockPanel>
+                                    <DockPanel Margin="0,8,0,0">
+                                        <TextBlock DockPanel.Dock="Left" Text="&#xE767;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" Foreground="#C9D3E0"
+                                                   VerticalAlignment="Center" Margin="8,0,12,0"/>
+                                        <TextBlock x:Name="VolumeText" DockPanel.Dock="Right" Width="42" FontSize="12" Foreground="#C9D3E0" VerticalAlignment="Center" TextAlignment="Right"/>
+                                        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" Value="0.7" Focusable="False" VerticalAlignment="Center" IsMoveToPointEnabled="True"
+                                                ValueChanged="OnVolumeChanged" ToolTip="Volumen"/>
+                                    </DockPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </DockPanel>
-                        <Border CornerRadius="8" ClipToBounds="True" Background="White">
-                            <wv2:WebView2 x:Name="YouTubeSearch"/>
+                            </Border>
+                            <!-- El reproductor de YouTube, a la vista mientras suena una canción desde YouTube (lo piden sus condiciones) -->
+                            <Border x:Name="YouTubeHost" Width="356" Height="200" Margin="0,12,0,0" CornerRadius="6" Background="Black" ClipToBounds="True" Visibility="Collapsed">
+                                <wv2:WebView2 x:Name="YouTubePlayer"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- El lomo de la caja, en medio -->
+                        <Border Grid.Column="1" Width="10" Background="#202227">
+                            <Border Width="2" HorizontalAlignment="Center" Background="#40FFFFFF"/>
                         </Border>
-                    </DockPanel>
+
+                        <!-- Derecha: el librito con las canciones, como el manual -->
+                        <Border x:Name="SoundtrackBooklet" Grid.Column="2" Background="#F2F4EFE4" CornerRadius="3" Margin="28,26,30,26" Padding="30,22,26,18">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="250" Opacity="0.5"/>
+                            </Border.Effect>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Top">
+                                    <TextBlock Text="Banda Sonora" FontFamily="Georgia" FontSize="32" FontStyle="Italic" Foreground="#2A2420" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="SoundtrackTitle" FontSize="14" Foreground="#5C544B" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                               TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                                    <Border Height="1" Background="#C9BFAE" Margin="0,12,0,8"/>
+                                </StackPanel>
+                                <TextBlock x:Name="SoundtrackEmpty" DockPanel.Dock="Bottom" FontSize="12" Foreground="#7A7166" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                <ListBox x:Name="TrackList" Background="Transparent" BorderThickness="0" Focusable="False" HorizontalContentAlignment="Stretch"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="OnTrackDoubleClick"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
                 </Grid>
+            </Border>
+
+            <!-- Elegir el vídeo de YouTube de una canción: su búsqueda de YouTube, y al abrir un vídeo se queda ese -->
+            <Grid x:Name="YouTubePicker" Visibility="Collapsed" Background="#F20B0D11">
+                <DockPanel Margin="20,6,20,6">
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Cancelar" Click="OnPickerCancelClick" Focusable="False"/>
+                        <StackPanel>
+                            <TextBlock x:Name="PickerTitle" FontSize="20" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock FontSize="13" Foreground="#A9B1BD" Margin="0,4,0,8" TextWrapping="Wrap"
+                                       Text="Abre el vídeo con esa canción y se queda para ella (se recuerda). Para que se busquen solos, pon tu clave de la API de YouTube:"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="YouTubeKeyBox" Style="{StaticResource FieldTextBox}" FontSize="13" Width="380"/>
+                                <Button Style="{StaticResource PillButton}" Content="Guardar clave" Margin="10,0,0,0" Click="OnSaveYouTubeKeyClick" Focusable="False"/>
+                                <Button Style="{StaticResource PillButton}" Content="Cómo conseguirla" Margin="10,0,0,0" Click="OnYouTubeKeyHelpClick" Focusable="False"
+                                        ToolTip="Google Cloud → «YouTube Data API v3» → Habilitar → Credenciales → Crear clave de API (gratis)"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
+                    <Border CornerRadius="8" ClipToBounds="True" Background="White">
+                        <wv2:WebView2 x:Name="YouTubeSearch"/>
+                    </Border>
+                </DockPanel>
             </Grid>
         </Grid>
 

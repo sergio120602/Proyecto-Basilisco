@@ -69,7 +69,7 @@ public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background, Inside, Ma
 /// Dónde se busca: el servicio de siempre de cada cara (SteamGridDB o TheGamesDB), LaunchBox, The Spine Archive
 /// o Steam Game Covers.
 /// </summary>
-public enum ArtSource { Default, LaunchBox, SpineArchive, SteamGameCovers }
+public enum ArtSource { Default, LaunchBox, SpineArchive, SteamGameCovers, SteamGridDb }
 
 /// <summary>
 /// Menú para cambiar el nombre, el formato, las imágenes, la consola y los filtros de un juego,
@@ -1121,6 +1121,8 @@ public partial class CustomizePanel : UserControl
     void OnLaunchBoxDiscClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Disc, ArtSource.LaunchBox);
 
     void OnLaunchBoxManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.LaunchBox);
+
+    void OnSteamGridDbManualClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Manual, ArtSource.SteamGridDb);
 
     void OnSearchBackgroundClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.Background, ArtSource.Default);
 
