@@ -29,4 +29,7 @@ public sealed class SoundtrackTrack
     public string Title { get; set; } = "";
     public int? LengthMs { get; set; }
     public string? File { get; set; }
+
+    /// <summary>El vídeo de YouTube con esta canción (para escucharla sin tener el archivo), o null.</summary>
+    public string? YouTubeId { get; set; }
 }

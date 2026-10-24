@@ -24,6 +24,9 @@ public sealed class AppSettings
     public string? RetroAchievementsUser { get; set; }
     public string? RetroAchievementsApiKey { get; set; }
 
+    /// <summary>Clave de la API de YouTube (opcional): con ella, el vídeo de cada canción se busca solo.</summary>
+    public string? YouTubeApiKey { get; set; }
+
     /// <summary>Volumen de la banda sonora en la caja abierta (de 0 a 1).</summary>
     public double SoundtrackVolume { get; set; } = 0.7;
 

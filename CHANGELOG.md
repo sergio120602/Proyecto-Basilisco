@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.20] - 2026-10-24
+
+- Las canciones de la banda sonora que no tienes en archivo suenan desde **YouTube**, con su **reproductor oficial a la vista** debajo del disco (como piden las condiciones de YouTube).
+  - Es streaming: no se descarga nada.
+  - El disco, las flechas, la barra de la canción y la del volumen lo manejan igual que tu música.
+  - Al salir de la banda sonora se para, porque el reproductor dejaría de verse. Tu música sigue sonando.
+- **Elegir el vídeo de cada canción**: la primera vez se abre la búsqueda de YouTube de esa canción, y el vídeo que abras se queda para ella (se recuerda; en la lista lleva «YouTube»).
+  - Con **clic derecho** en una canción se elige otro vídeo o se quita.
+  - Con tu **clave de la API de YouTube** (gratuita; se pone en esa misma ventana), el vídeo se busca solo.
+- Pinterest y el reproductor de YouTube comparten el mismo navegador de Windows y la misma sesión.
+
 ## [0.6.19] - 2026-10-24
 
 - **Banda sonora** en la caja abierta.
