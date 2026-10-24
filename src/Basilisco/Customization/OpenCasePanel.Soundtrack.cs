@@ -58,6 +58,11 @@ public partial class OpenCasePanel
             StopMusic();
         };
         _player.MediaOpened += (_, _) => UpdateProgress();
+        CaseViewport.SizeChanged += (_, _) =>
+        {
+            if (_soundtrackShown || _turning)
+                PlaceSoundtrack();
+        };
         _progress.Tick += async (_, _) =>
         {
             if (_youTube)
@@ -82,6 +87,7 @@ public partial class OpenCasePanel
         {
             _turning = false;
             _soundtrackShown = true;
+            PlaceSoundtrack();
             SoundtrackView.Visibility = Visibility.Visible;
             SoundtrackView.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260)));
         });
@@ -120,9 +126,34 @@ public partial class OpenCasePanel
         _scene.TurnTray(false, () => _turning = false);
     }
 
+    /// <summary>
+    /// La banda sonora es otra doble página de la misma caja: se pone justo encima de la caja abierta, del mismo tamaño, y
+    /// el disco y el librito se ajustan a ella (el disco, más pequeño cuando debajo se ve el reproductor de YouTube).
+    /// </summary>
+    void PlaceSoundtrack()
+    {
+        var bounds = _scene.OpenSpreadBounds();
+        if (bounds.IsEmpty || bounds.Width < 100)
+            return;
+        // Un poco más grande: la tapa, ya pasada, asoma en perspectiva por debajo y por la izquierda
+        bounds.Inflate(16, 16);
+        SoundtrackView.Margin = new Thickness(bounds.X, bounds.Y, 0, 0);
+        SoundtrackView.Width = bounds.Width;
+        SoundtrackView.Height = bounds.Height;
+        var half = bounds.Width / 2;
+        var controls = Math.Min(380, half * 0.86);
+        SoundtrackControls.Width = controls;
+        var video = YouTubeHost.Visibility == Visibility.Visible ? YouTubeHost.Height + 12 : 0;
+        var disc = Math.Max(140, Math.Min(half * 0.62, bounds.Height - 150 - video - 40));
+        SoundtrackDiscHost.Width = SoundtrackDiscHost.Height = disc;
+    }
+
     void FillSoundtrack(Game game)
     {
         var soundtrack = game.Soundtrack;
+        // De fondo, la de la carátula: la imagen del interior de la caja (o, si no tiene, la portada), bajo el plástico.
+        SoundtrackBackground.ImageSource = _inside ?? (_item?.ImagePath is { } cover ? CoverArt.LoadImage(cover, 1400) : null);
+        SoundtrackPlastic.Background = new SolidColorBrush(PlatformArt.Plastic(game.Platform));
         SoundtrackTitle.Text = soundtrack is null ? game.Name : soundtrack.Artist is { Length: > 0 } artist ? $"{soundtrack.Title} · {artist}" : soundtrack.Title;
         SoundtrackDisc.Source = OpenCaseArt.RenderDisc(ImageStore.GetSoundtrackDiscPath(game), _item?.ImagePath, soundtrack?.DiscFrame);
         TrackList.Items.Clear();
@@ -284,6 +315,7 @@ public partial class OpenCasePanel
         _youTube = true;
         _ytTime = _ytDuration = 0;
         YouTubeHost.Visibility = Visibility.Visible;
+        PlaceSoundtrack();
         if (await StartYouTubeAsync() is false)
         {
             NowPlaying.Text = "No se ha podido abrir el reproductor de YouTube (navegador de Windows WebView2).";
@@ -424,6 +456,7 @@ public partial class OpenCasePanel
         _youTube = false;
         YouTubePlayer.CoreWebView2?.Navigate("about:blank");
         YouTubeHost.Visibility = Visibility.Collapsed;
+        PlaceSoundtrack();
     }
 
     void StopMusic()

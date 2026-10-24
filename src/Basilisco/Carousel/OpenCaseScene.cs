@@ -314,6 +314,36 @@ public sealed class OpenCaseScene
     static double Ease(double t) => t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
 
     /// <summary>La cámara encuadra la caja abierta entera (las dos mitades) con un poco de aire alrededor.</summary>
+    /// <summary>
+    /// Dónde se ve en pantalla la caja abierta (las dos mitades, de la tapa a la bandeja), en coordenadas del viewport:
+    /// para poner encima, en su sitio, otra doble página (la banda sonora).
+    /// </summary>
+    public Rect OpenSpreadBounds()
+    {
+        double width = _viewport.ActualWidth, height = _viewport.ActualHeight;
+        if (width <= 0 || height <= 0 || _shape is null)
+            return Rect.Empty;
+        var forward = _camera.LookDirection;
+        forward.Normalize();
+        var right = Vector3D.CrossProduct(forward, _camera.UpDirection);
+        right.Normalize();
+        var up = Vector3D.CrossProduct(right, forward);
+        var tan = Math.Tan(_camera.FieldOfView * Math.PI / 360);
+        Point Project(Point3D point)
+        {
+            var v = point - _camera.Position;
+            var depth = Vector3D.DotProduct(v, forward);
+            var x = Vector3D.DotProduct(v, right) / (depth * tan);
+            var y = Vector3D.DotProduct(v, up) / (depth * tan);
+            return new Point(width / 2 + x * width / 2, height / 2 - y * width / 2);
+        }
+        double w = _shape.Width, h = _shape.Height;
+        var corners = new[] { Project(new(-w, 0, 0)), Project(new(w, 0, 0)), Project(new(w, h, 0)), Project(new(-w, h, 0)) };
+        var left = corners.Min(p => p.X);
+        var top = corners.Min(p => p.Y);
+        return new Rect(left, top, corners.Max(p => p.X) - left, corners.Max(p => p.Y) - top);
+    }
+
     void UpdateCamera()
     {
         var aspect = _viewport.ActualWidth > 0 && _viewport.ActualHeight > 0 ? _viewport.ActualWidth / _viewport.ActualHeight : 16.0 / 9;

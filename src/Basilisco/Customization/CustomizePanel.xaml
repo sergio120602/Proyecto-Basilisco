@@ -201,6 +201,8 @@
                     <TextBlock Text="MANUAL" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
                     <WrapPanel>
                         <Button Style="{StaticResource PillButton}" Content="Elegir imagen…" Click="OnChooseManualClick" Margin="0,0,10,10"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en SteamGridDB" Click="OnSteamGridDbManualClick" Margin="0,0,10,10"
+                                ToolTip="Las carátulas («grids») del juego en SteamGridDB, como para la portada: la que elijas hace de librito"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxManualClick" Margin="0,0,10,10"
                                 ToolTip="Un póster, un fondo o la pantalla de título del juego (gamesdb.launchbox-app.com)"/>
                         <Button x:Name="FrameManualButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"

@@ -3,6 +3,14 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.21] - 2026-10-24
+
+- La **banda sonora** ahora es **parte de la caja**: al pasar la hoja del disco aparece otra doble página encima de la caja abierta, en su sitio y con su tamaño.
+  - Tiene el **mismo fondo que la carátula** (la imagen interior o la portada), con el plástico de la consola por encima y el lomo en medio.
+  - **A la izquierda, el disco** en su bandeja, con la canción, las barras y el reproductor de YouTube debajo.
+  - **A la derecha, el librito** «Banda Sonora»: una hoja de papel con la lista de canciones, como un manual de verdad.
+- **Manual desde SteamGridDB**: nuevo botón «Buscar en SteamGridDB» en la sección del manual del menú de edición, que busca en los **grids** del juego (primero los verticales, luego todos), igual que las portadas.
+
 ## [0.6.20] - 2026-10-24
 
 - Las canciones de la banda sonora que no tienes en archivo suenan desde **YouTube**, con su **reproductor oficial a la vista** debajo del disco (como piden las condiciones de YouTube).
