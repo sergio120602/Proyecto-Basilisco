@@ -83,13 +83,22 @@ public partial class OpenCasePanel
         EnsurePlayer();
         _turning = true;
         FillSoundtrack(game);
+        // La banda sonora ya está ahí, debajo de la hoja: al pasarla se descubre el librito, y por detrás de la hoja se
+        // ve su otra mitad (el disco). Al acabar pasa delante, igual que se veía, para poder usarla.
+        PlaceSoundtrack();
+        SoundtrackView.BeginAnimation(OpacityProperty, null);
+        SoundtrackView.Opacity = 1;
+        Panel.SetZIndex(SoundtrackView, -1);
+        SoundtrackView.Visibility = Visibility.Visible;
+        SoundtrackView.UpdateLayout();
+        _scene.SetTrayBack(SoundtrackLeftHalf());
         _scene.TurnTray(true, () =>
         {
             _turning = false;
             _soundtrackShown = true;
             PlaceSoundtrack();
-            SoundtrackView.Visibility = Visibility.Visible;
-            SoundtrackView.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260)));
+            Panel.SetZIndex(SoundtrackView, 1);
+            _scene.SetTrayBack(null);
         });
         GameButtons.Visibility = Visibility.Collapsed;
         SoundtrackButtons.Visibility = Visibility.Visible;
@@ -107,23 +116,54 @@ public partial class OpenCasePanel
         ClosePicker();
         if (_youTube)
             StopMusic();
-        SoundtrackView.BeginAnimation(OpacityProperty, null);
-        SoundtrackView.Opacity = 0;
-        SoundtrackView.Visibility = Visibility.Collapsed;
         GameButtons.Visibility = Visibility.Visible;
         SoundtrackButtons.Visibility = Visibility.Collapsed;
         ShowGameHint();
-        if (immediate)
+        if (immediate || !_soundtrackShown)
         {
-            _soundtrackShown = _turning = false;
-            StopMusic();
+            HideSoundtrackView();
+            if (immediate)
+            {
+                _soundtrackShown = _turning = false;
+                StopMusic();
+            }
             return;
         }
-        if (!_soundtrackShown)
-            return;
         _soundtrackShown = false;
         _turning = true;
-        _scene.TurnTray(false, () => _turning = false);
+        // Al revés: la banda sonora vuelve debajo y la hoja la tapa al volver a su sitio (por detrás, el disco).
+        Panel.SetZIndex(SoundtrackView, -1);
+        SoundtrackView.UpdateLayout();
+        _scene.SetTrayBack(SoundtrackLeftHalf());
+        _scene.TurnTray(false, () =>
+        {
+            _turning = false;
+            HideSoundtrackView();
+        });
+    }
+
+    void HideSoundtrackView()
+    {
+        SoundtrackView.BeginAnimation(OpacityProperty, null);
+        SoundtrackView.Opacity = 0;
+        SoundtrackView.Visibility = Visibility.Collapsed;
+        Panel.SetZIndex(SoundtrackView, 1);
+        _scene.SetTrayBack(null);
+    }
+
+    /// <summary>
+    /// La mitad izquierda de la banda sonora (el disco y los controles), en vivo, para la otra cara de la hoja. El pincel
+    /// la dibuja con su desplazamiento dentro de la caja (el margen con el que se coloca), así que se recorta desde ahí.
+    /// </summary>
+    VisualBrush SoundtrackLeftHalf()
+    {
+        var offset = VisualTreeHelper.GetOffset(SoundtrackView);
+        return new VisualBrush(SoundtrackView)
+        {
+            ViewboxUnits = BrushMappingMode.Absolute,
+            Viewbox = new Rect(offset.X, offset.Y, Math.Max(1, SoundtrackView.ActualWidth / 2), Math.Max(1, SoundtrackView.ActualHeight)),
+            Stretch = Stretch.Fill,
+        };
     }
 
     /// <summary>
@@ -135,8 +175,6 @@ public partial class OpenCasePanel
         var bounds = _scene.OpenSpreadBounds();
         if (bounds.IsEmpty || bounds.Width < 100)
             return;
-        // Un poco más grande: la tapa, ya pasada, asoma en perspectiva por debajo y por la izquierda
-        bounds.Inflate(16, 16);
         SoundtrackView.Margin = new Thickness(bounds.X, bounds.Y, 0, 0);
         SoundtrackView.Width = bounds.Width;
         SoundtrackView.Height = bounds.Height;

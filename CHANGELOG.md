@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.24] - 2026-10-24
+
+- La hoja del disco ahora **gira sobre su bisagra, pegada a la tapa**, como en una caja de verdad: ya no se separa de ella al pasarla, y al acabar queda tumbada justo encima.
+- La banda sonora **ya está ahí, debajo de la hoja**: al pasarla se va descubriendo el librito de canciones, y por detrás de la hoja se ve el disco con sus controles. Ya no aparece de golpe al terminar; al volver al juego pasa lo mismo al revés.
+
 ## [0.6.23] - 2026-10-24
 
 - **Buscar la banda sonora desde la propia banda sonora**: en el librito de canciones hay un botón **«Buscar banda sonora»** (o la tecla **S**) que la busca en MusicBrainz con el nombre del juego y deja elegir el disco de una lista.

@@ -29,8 +29,12 @@ public sealed class OpenCaseScene
     // La bandeja con el disco, que pasa como la hoja de plástico de un libro para llegar a la banda sonora.
     readonly AxisAngleRotation3D _tray = new(new Vector3D(0, 1, 0), 0);
     const double TraySeconds = 0.85;
+    // La bisagra de la hoja: en el lomo, pegada a la tapa, un pelo por encima para que al tumbarse quede sobre ella.
+    const double TrayHinge = 0.003;
     double _trayTurn, _trayTarget;
     Action? _trayDone;
+    GeometryModel3D? _trayFace;
+    Material? _trayFaceBack;
     readonly TranslateTransform3D _lift = new();
     bool _cartridge;
     readonly TranslateTransform3D _shift = new();
@@ -78,7 +82,9 @@ public sealed class OpenCaseScene
 
         // La base: la bandeja (al fondo, z = 0) y sus paredes hasta media altura.
         var bottom = new Model3DGroup();
-        bottom.Children.Add(Face(new(0, 0, 0), new(w, 0, 0), new(w, h, 0), new(0, h, 0), new ImageBrush(tray)));
+        _trayFace = Face(new(0, 0, 0), new(w, 0, 0), new(w, h, 0), new(0, h, 0), new ImageBrush(tray));
+        _trayFaceBack = _trayFace.BackMaterial;
+        bottom.Children.Add(_trayFace);
         var wall = d * 0.5;
         bottom.Children.Add(Face(new(0, 0, wall), new(w, 0, wall), new(w, 0, 0), new(0, 0, 0), plastic));          // abajo
         bottom.Children.Add(Face(new(0, h, 0), new(w, h, 0), new(w, h, wall), new(0, h, wall), plastic));          // arriba
@@ -104,8 +110,9 @@ public sealed class OpenCaseScene
         discModel.Transform = new Transform3DGroup { Children = { new RotateTransform3D(_disc, new Point3D(cx, cy, 0)), _lift } };
 
         // Lo transparente (el disco) va al final para que se vea lo que hay detrás. La bandeja y el disco giran juntos
-        // sobre el lomo, como una hoja (para pasar a la banda sonora); se quedan un poco por encima de la tapa abierta.
-        var trayPage = new Model3DGroup { Transform = new RotateTransform3D(_tray, new Point3D(0, 0, d / 2)) };
+        // sobre el lomo, como una hoja (para pasar a la banda sonora): la bisagra está en el borde, pegada a la tapa, así
+        // que no se separa de ella, y al acabar queda tumbada justo encima.
+        var trayPage = new Model3DGroup { Transform = new RotateTransform3D(_tray, new Point3D(0, 0, TrayHinge)) };
         trayPage.Children.Add(bottom);
         trayPage.Children.Add(discModel);
         var group = new Model3DGroup { Transform = _shift };
@@ -168,6 +175,23 @@ public sealed class OpenCaseScene
     }
 
     public bool TrayTurned => _trayTarget == 1;
+
+    /// <summary>
+    /// Lo que se ve por detrás de la hoja del disco al pasarla (la otra cara de la página, sin luces, tal cual), o null
+    /// para dejarla como era. Se ve al revés, porque la hoja se da la vuelta: aquí se le da la vuelta de nuevo.
+    /// </summary>
+    public void SetTrayBack(Brush? brush)
+    {
+        if (_trayFace is null)
+            return;
+        if (brush is null)
+        {
+            _trayFace.BackMaterial = _trayFaceBack;
+            return;
+        }
+        brush.RelativeTransform = new ScaleTransform(-1, 1, 0.5, 0.5);
+        _trayFace.BackMaterial = new MaterialGroup { Children = { new DiffuseMaterial(Brushes.Black), new EmissiveMaterial(brush) } };
+    }
 
     /// <summary>El disco deja de girar poco a poco (el cartucho vuelve a la caja) y avisa al acabar.</summary>
     public void StopSpin(Action stopped)
@@ -306,8 +330,8 @@ public sealed class OpenCaseScene
         var t = Ease(_open);
         // Cerrada se ve centrada; abierta, el lomo queda en el centro con la tapa a la izquierda.
         _lid.Angle = -180 * t;
-        // La hoja pasa hasta casi tumbarse sobre la tapa (sin llegar, para no pisarla).
-        _tray.Angle = -176 * Ease(_trayTurn);
+        // La hoja pasa hasta tumbarse sobre la tapa (por la bisagra, queda justo encima, sin pisarla).
+        _tray.Angle = -180 * Ease(_trayTurn);
         _shift.OffsetX = -_shape.Width / 2 * (1 - t);
     }
 
