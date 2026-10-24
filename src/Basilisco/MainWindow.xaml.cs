@@ -115,7 +115,7 @@ public partial class MainWindow : Window
                 Focus();
         };
         CaseView.ManualRequested += game => _ = OpenManualAsync(game);
-        Customizer.ManualReadRequested += (path, title) => ManualReader.Open(path, title, _padMode);
+        Customizer.ManualReadRequested += (path, game, title) => ManualReader.Open(path, game, title, _padMode);
         Customizer.ImageManualReadRequested += OpenImageManual;
         Customizer.SoundtrackChanged += _ => Save();
         CaseView.Volume = _settings.SoundtrackVolume;
@@ -129,14 +129,16 @@ public partial class MainWindow : Window
         CaseView.VolumeChanged += volume => _settings.SoundtrackVolume = volume;
         CaseView.Closed += () => _settings.Save();
         Customizer.ImageManualRemoveRequested += RemoveImageManual;
-        Customizer.PinterestRequested += (game, name) =>
+        Customizer.PinterestRequested += (game, name) => OpenPinterest(game, name.Length > 0 ? name : game.Name);
+        ManualReader.PinterestRequested += game => OpenPinterest(game, game.Name);
+        ManualReader.Edited += Save;
+        PinterestPicker.Saved += pages => { if (_pinterestGame is { } game) _ = SaveImageManualAsync(game, pages); };
+        PinterestPicker.Closed += () =>
         {
-            _pinterestGame = game;
-            PinterestPicker.UiScale = _uiScale;
-            PinterestPicker.Open(name.Length > 0 ? name : game.Name);
+            if (ManualReader.IsOpen) ManualReader.Focus();
+            else if (Customizer.IsOpen) Customizer.Focus();
+            else Focus();
         };
-        PinterestPicker.Saved += urls => { if (_pinterestGame is { } game) _ = SaveImageManualAsync(game, urls); };
-        PinterestPicker.Closed += () => { if (Customizer.IsOpen) Customizer.Focus(); else Focus(); };
         ManualReader.Closed += () =>
         {
             if (Customizer.IsOpen) Customizer.Focus();
@@ -273,15 +275,35 @@ public partial class MainWindow : Window
 
     long ManualSpaceLimit => Math.Max(100, _settings.ManualSpaceLimitMb) * 1024L * 1024L;
 
-    /// <summary>
-    /// Descarga las imágenes elegidas en Pinterest y las guarda como el manual del juego (en su orden). La primera pasa a
-    /// ser el librito de la caja abierta si no tenía imagen de manual. Después se respeta el tope de espacio.
-    /// </summary>
-    async Task SaveImageManualAsync(Game game, List<string> urls)
+    /// <summary>Pinterest para el manual del juego (desde Personalizar o desde el lector), con sus páginas ya elegidas.</summary>
+    void OpenPinterest(Game game, string name)
     {
-        ShowToast($"Descargando las páginas del manual… 0 de {urls.Count}");
-        var pages = await ManualPages.ImportAsync(urls, new Progress<int>(done => ShowToast($"Descargando las páginas del manual… {done} de {urls.Count}")),
-            CancellationToken.None);
+        _pinterestGame = game;
+        PinterestPicker.UiScale = _uiScale;
+        PinterestPicker.Open(name, game.ManualPages);
+    }
+
+    /// <summary>
+    /// Descarga las imágenes elegidas en Pinterest y las guarda como el manual del juego (en su orden). Las que ya tenía
+    /// no se vuelven a descargar (y conservan su giro). La primera pasa a ser el librito de la caja abierta si no tenía
+    /// imagen de manual. Después se respeta el tope de espacio. Si el lector tenía abierto este manual, se vuelve a abrir.
+    /// </summary>
+    async Task SaveImageManualAsync(Game game, List<PinterestPanel.SavedPage> saved)
+    {
+        var previous = game.ManualPages ?? [];
+        var pages = new List<ManualPage>();
+        for (var i = 0; i < saved.Count; i++)
+        {
+            ShowToast($"Descargando las páginas del manual… {i} de {saved.Count}");
+            var item = saved[i];
+            var page = previous.FirstOrDefault(old => old.Source == item.Url && ManualPages.IsStored(old)) is { } known
+                ? new ManualPage { Hash = known.Hash, Source = known.Source, Width = known.Width, Height = known.Height, Rotation = known.Rotation }
+                : (await ManualPages.ImportAsync([item.Url], null, CancellationToken.None)).FirstOrDefault();
+            if (page is null)
+                continue;
+            page.Spread = item.Spread;
+            pages.Add(page);
+        }
         if (pages.Count == 0)
         {
             ShowToast("No se ha podido descargar ninguna de las imágenes");
@@ -304,9 +326,11 @@ public partial class MainWindow : Window
         ManualPages.EnforceLimit(Games, ManualSpaceLimit, keep: game);
         if (Customizer.IsOpen)
             Customizer.RefreshManualInfo();
+        if (ManualReader.IsOpen && ManualReader.Game == game)
+            OpenImageManual(game);
         var size = pages.Sum(page => File.Exists(ManualPages.PathOf(page)) ? new FileInfo(ManualPages.PathOf(page)).Length : 0);
         ShowToast($"Manual guardado: {pages.Count} páginas · {size / 1048576.0:0.#} MB" +
-                  (pages.Count < urls.Count ? $" ({urls.Count - pages.Count} no se pudieron descargar)" : ""));
+                  (pages.Count < saved.Count ? $" ({saved.Count - pages.Count} no se pudieron descargar)" : ""));
     }
 
     void OpenImageManual(Game game)
@@ -315,7 +339,7 @@ public partial class MainWindow : Window
             return;
         game.ManualOpened = DateTime.Now;
         Save();
-        ManualReader.Open(new ImageManual(pages), game.Name, _padMode);
+        ManualReader.Open(new ImageManual(pages), game, game.Name, _padMode);
         ManualPages.EnforceLimit(Games, ManualSpaceLimit, keep: game);
     }
 
@@ -405,7 +429,7 @@ public partial class MainWindow : Window
         }
         if (ImageStore.GetManualPdfPath(game) is { } existing && File.Exists(existing))
         {
-            ManualReader.Open(existing, game.Name, _padMode);
+            ManualReader.Open(existing, game, game.Name, _padMode);
             return;
         }
 
@@ -418,7 +442,7 @@ public partial class MainWindow : Window
             if (CaseView.Game == game)
                 CaseView.RefreshManual();
             if (ImageStore.GetManualPdfPath(game) is { } created && CaseView.IsOpen && CaseView.Game == game)
-                ManualReader.Open(created, game.Name, _padMode);
+                ManualReader.Open(created, game, game.Name, _padMode);
         }
         catch (Exception ex) when (ex is ArtProviderException or IOException or UnauthorizedAccessException or System.Net.Http.HttpRequestException
                                    or System.IO.InvalidDataException or System.Xml.XmlException)

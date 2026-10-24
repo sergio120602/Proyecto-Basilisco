@@ -449,8 +449,9 @@
         <customization:ConsolePanel x:Name="ConsoleEditor"/>
         <!-- El buscador de imágenes se abre encima de Personalizar y del editor de filtros -->
         <customization:ArtSearchPanel x:Name="ArtSearch"/>
-        <customization:PinterestPanel x:Name="PinterestPicker"/>
         <!-- El lector de manuales va encima de todo: se abre desde la caja abierta y desde Personalizar -->
         <customization:ManualReaderPanel x:Name="ManualReader"/>
+        <!-- Pinterest, encima incluso del lector (desde él se puede rehacer el manual) -->
+        <customization:PinterestPanel x:Name="PinterestPicker"/>
     </Grid>
 </Window>

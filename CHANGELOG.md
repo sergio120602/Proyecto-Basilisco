@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.22] - 2026-10-24
+
+- El lector de manuales tiene dos opciones nuevas arriba:
+  - **«Una sola página»**: alterna entre leer de página en página y el libro abierto de siempre (**modo libreta**). Se recuerda para cada juego (tecla **P**).
+  - **«Hacer con Pinterest»**: abre Pinterest para hacer el manual desde ahí. Las imágenes que ya tiene salen elegidas, para cambiarlas, quitar o reordenar; al guardar, el manual se vuelve a abrir con los cambios.
+- **Imágenes dobles**: al elegir las imágenes en Pinterest, cada una lleva un botón **«↔»** para que ocupe **las dos páginas** del libro abierto (pensado para las horizontales). En la tira de elegidas, las dobles se ven el doble de anchas.
+  - En el modo libreta, una imagen doble empieza siempre en la página izquierda; si le tocaba la derecha, esa queda en blanco.
+  - En una sola página, la imagen horizontal se ve entera, con su forma.
+- **Girar** en el modo de una sola página: el botón **«⟳ Girar»** (o la tecla **R**) gira la página un cuarto de vuelta, y se recuerda.
+- Las páginas ya no se deforman: cada imagen se ve entera sobre el papel, con su proporción.
+- Al rehacer el manual en Pinterest, las imágenes que ya tenía no se vuelven a descargar.
+
 ## [0.6.21] - 2026-10-24
 
 - La **banda sonora** ahora es **parte de la caja**: al pasar la hoja del disco aparece otra doble página encima de la caja abierta, en su sitio y con su tamaño.

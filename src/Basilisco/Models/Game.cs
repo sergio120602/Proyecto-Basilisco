@@ -31,6 +31,12 @@ public sealed class Game
     /// <summary>Manual hecho con imágenes (de Pinterest), en orden. Si tiene, es el que se lee (antes que el PDF).</summary>
     public List<ManualPage>? ManualPages { get; set; }
 
+    /// <summary>El manual se lee de página en página (true) o como un libro abierto, de dos en dos (false: modo libreta).</summary>
+    public bool ManualSinglePage { get; set; }
+
+    /// <summary>Giro de las páginas del manual en PDF (número de página → grados), en el modo de una sola página.</summary>
+    public Dictionary<int, int>? ManualPdfRotations { get; set; }
+
     /// <summary>Última vez que se abrió el manual (para soltar antes los que menos se leen si se pasa el tope de espacio).</summary>
     public DateTime? ManualOpened { get; set; }
 
