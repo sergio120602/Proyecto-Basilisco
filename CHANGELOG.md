@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.23] - 2026-10-24
+
+- **Buscar la banda sonora desde la propia banda sonora**: en el librito de canciones hay un botón **«Buscar banda sonora»** (o la tecla **S**) que la busca en MusicBrainz con el nombre del juego y deja elegir el disco de una lista.
+  - Si ya tenía una, el botón pasa a ser «Buscar otra banda sonora».
+  - Al cambiarla, la música importada y los vídeos de YouTube que ya tenías se quedan en las canciones que se llaman igual (ahora también en Personalizar).
+
 ## [0.6.22] - 2026-10-24
 
 - El lector de manuales tiene dos opciones nuevas arriba:

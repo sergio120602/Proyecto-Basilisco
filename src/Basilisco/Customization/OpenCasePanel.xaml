@@ -99,6 +99,26 @@
                                     <TextBlock Text="Banda Sonora" FontFamily="Georgia" FontSize="32" FontStyle="Italic" Foreground="#2A2420" HorizontalAlignment="Center"/>
                                     <TextBlock x:Name="SoundtrackTitle" FontSize="14" Foreground="#5C544B" HorizontalAlignment="Center" Margin="0,6,0,0"
                                                TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                                    <!-- Buscar la banda sonora en MusicBrainz, aquí mismo -->
+                                    <Button x:Name="SoundtrackSearchButton" Content="Buscar banda sonora" HorizontalAlignment="Center" Margin="0,12,0,0"
+                                            Padding="16,5" FontSize="13" Cursor="Hand" Focusable="False" Foreground="#F4EFE4" Background="#2A2420"
+                                            Click="OnSoundtrackSearchClick" ToolTip="Busca la lista de canciones en MusicBrainz y elige el disco (S)">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Back" Background="{TemplateBinding Background}" CornerRadius="14" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Back" Property="Background" Value="#4A3F36"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="Back" Property="Opacity" Value="0.5"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
                                     <Border Height="1" Background="#C9BFAE" Margin="0,12,0,8"/>
                                 </StackPanel>
                                 <TextBlock x:Name="SoundtrackEmpty" DockPanel.Dock="Bottom" FontSize="12" Foreground="#7A7166" TextWrapping="Wrap" Margin="0,8,0,0"/>

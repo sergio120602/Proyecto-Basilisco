@@ -322,24 +322,7 @@ public partial class CustomizePanel : UserControl
     /// <summary>Pone la lista de canciones nueva; la música que ya tenías se queda en las canciones que se llaman igual.</summary>
     void ApplySoundtrack(Game game, Soundtrack soundtrack, string? coverPath)
     {
-        if (game.Soundtrack is { } old)
-        {
-            foreach (var track in soundtrack.Tracks)
-                track.File = old.Tracks.FirstOrDefault(t => t.File is not null && GameSearch.Normalize(t.Title) == GameSearch.Normalize(track.Title))?.File;
-            soundtrack.Disc = old.Disc;
-            soundtrack.DiscFrame = old.DiscFrame;
-        }
-        game.Soundtrack = soundtrack;
-        if (coverPath is not null && soundtrack.Disc is null)
-        {
-            try
-            {
-                ImageStore.SetSoundtrackDisc(game, coverPath);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-            }
-        }
+        Soundtracks.Apply(game, soundtrack, coverPath);
         SoundtrackChanged?.Invoke(game);
         UpdateSoundtrackText();
     }
