@@ -3,6 +3,23 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.6.19] - 2026-10-24
+
+- **Banda sonora** en la caja abierta.
+  - Con la flecha derecha (o «Banda sonora ▶»), la **hoja de plástico donde está el disco pasa como una página**.
+  - A la izquierda aparece un papel con «**Banda Sonora**» arriba y la lista de canciones. A la derecha, el **disco de la banda sonora**.
+  - Un **clic en el disco** hace sonar la canción elegida y lo pone a girar; otro clic la para.
+  - Las **flechas izquierda y derecha** retroceden y avanzan 10 segundos en la canción, y arriba y abajo eligen canción. Debajo del disco están la **barra de la canción** (se puede arrastrar) y la del **volumen**, que se recuerda.
+  - Al acabar una canción, suena la siguiente que tenga música. Esc, B o «Volver al juego» devuelven la hoja a su sitio.
+  - Funciona también con el mando.
+- La **lista de canciones** y la carátula salen de **MusicBrainz** (base de datos de música abierta con API oficial). Si la edición encontrada no tiene carátula, se usa la de otra edición del mismo disco. VGMdb no deja conectarse a los programas.
+- En el **menú de edición**, sección nueva «**Banda sonora**»:
+  - «**Buscar banda sonora**» elige entre las que encuentre.
+  - «**Importar música…**»: eliges tus archivos (MP3, FLAC, M4A, WAV…) y los que **se llaman como una canción de la lista** se registran en ella. Da igual el número de pista, las mayúsculas o lo que lleven delante. Los demás no se importan. Si el juego no tiene lista, los archivos forman la lista. Se copian a `basilisco-data/music`.
+  - «**Imagen del disco**», «**Ajustar disco**» y «Quitar banda sonora».
+- El **disco del juego** también se puede **ajustar** en el menú de edición («Ajustar…»: ampliar y mover la imagen dentro del disco).
+- La **Descarga Metadatos Actualización** trae también la lista de canciones y el disco de la banda sonora de cada juego.
+
 ## [0.6.18] - 2026-10-23
 
 - Al jugar desde la **caja abierta**, el disco **sigue girando mientras el juego esté abierto** (antes la caja se cerraba a los pocos segundos). Al cerrar el juego, **Basilisco vuelve al frente**, el disco **frena poco a poco** hasta pararse (el cartucho vuelve a bajar a la caja) y la **carátula se cierra**. Si el juego no llega a arrancar, también frena y se cierra.

@@ -4,7 +4,7 @@ using Basilisco.Models;
 namespace Basilisco.Services;
 
 /// <summary>Cada parte de un juego que se puede descargar sola.</summary>
-public enum MetadataPart { Front, Back, Spine, Inside, Disc, Manual }
+public enum MetadataPart { Front, Back, Spine, Inside, Disc, Manual, Soundtrack }
 
 /// <summary>Servicios de los que se sacan las imágenes de forma automática.</summary>
 public enum MetadataSource { LaunchBox, SteamGridDb, SpineArchive, SteamGameCovers }
@@ -77,6 +77,9 @@ public sealed class MetadataFetcher(AppSettings settings)
             missing.Add(MetadataPart.Disc);
         if (ImageStore.GetExtraPath(game, GameExtra.Manual) is null)
             missing.Add(MetadataPart.Manual);
+        // La banda sonora: su lista de canciones y su disco (de MusicBrainz). La música la importas tú.
+        if (game.Soundtrack is null)
+            missing.Add(MetadataPart.Soundtrack);
         return missing;
     }
 

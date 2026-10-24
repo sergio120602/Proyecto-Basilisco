@@ -19,7 +19,8 @@ public static class OpenCaseArt
     /// El disco con su imagen recortada en redondo (o, si no tiene, con la portada del juego sobre un disco plateado),
     /// el anillo transparente del centro y el agujero. Fuera del círculo es transparente.
     /// </summary>
-    public static BitmapSource RenderDisc(string? discPath, string? coverPath)
+    /// <param name="frame">Encuadre de la imagen del disco (null: lo llena).</param>
+    public static BitmapSource RenderDisc(string? discPath, string? coverPath, ImageFrame? frame = null)
     {
         var size = DiscSize;
         var center = new Point(size / 2.0, size / 2.0);
@@ -42,7 +43,7 @@ public static class OpenCaseArt
                 ], 45), null, disc);
 
             if (art is not null)
-                DrawFill(dc, art, new Rect(0, 0, size, size));
+                DrawFill(dc, art, new Rect(0, 0, size, size), frame);
             else if (cover is not null)
             {
                 // Sin imagen de disco: la portada impresa en el disco, algo apagada para que se note el plateado.
@@ -251,12 +252,15 @@ public static class OpenCaseArt
     static Color WithAlpha(Color color, byte alpha) => Color.FromArgb(alpha, color.R, color.G, color.B);
 
     /// <summary>Pinta la imagen llenando el rectángulo (recortando lo que sobre), centrada.</summary>
-    static void DrawFill(DrawingContext dc, BitmapSource image, Rect target)
+    /// <param name="frame">Con encuadre: más o menos zoom y movida (en fracción de la zona).</param>
+    static void DrawFill(DrawingContext dc, BitmapSource image, Rect target, ImageFrame? frame = null)
     {
-        var scale = Math.Max(target.Width / image.Width, target.Height / image.Height);
+        var zoom = frame?.Zoom ?? 1;
+        var scale = Math.Max(target.Width / image.Width, target.Height / image.Height) * zoom;
         var size = new Size(image.Width * scale, image.Height * scale);
+        var center = new Point(target.X + target.Width / 2 + (frame?.X ?? 0) * target.Width, target.Y + target.Height / 2 + (frame?.Y ?? 0) * target.Height);
         dc.PushClip(new RectangleGeometry(target));
-        dc.DrawImage(image, new Rect(target.X + (target.Width - size.Width) / 2, target.Y + (target.Height - size.Height) / 2, size.Width, size.Height));
+        dc.DrawImage(image, new Rect(center.X - size.Width / 2, center.Y - size.Height / 2, size.Width, size.Height));
         dc.Pop();
     }
 

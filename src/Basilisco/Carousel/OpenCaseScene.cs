@@ -26,6 +26,11 @@ public sealed class OpenCaseScene
 
     readonly AxisAngleRotation3D _lid = new(new Vector3D(0, 1, 0), 0);
     readonly AxisAngleRotation3D _disc = new(new Vector3D(0, 0, 1), 0);
+    // La bandeja con el disco, que pasa como la hoja de plástico de un libro para llegar a la banda sonora.
+    readonly AxisAngleRotation3D _tray = new(new Vector3D(0, 1, 0), 0);
+    const double TraySeconds = 0.85;
+    double _trayTurn, _trayTarget;
+    Action? _trayDone;
     readonly TranslateTransform3D _lift = new();
     bool _cartridge;
     readonly TranslateTransform3D _shift = new();
@@ -98,15 +103,21 @@ public sealed class OpenCaseScene
         _lift.OffsetX = _lift.OffsetY = _lift.OffsetZ = 0;
         discModel.Transform = new Transform3DGroup { Children = { new RotateTransform3D(_disc, new Point3D(cx, cy, 0)), _lift } };
 
-        // Lo transparente (el disco) va al final para que se vea lo que hay detrás.
+        // Lo transparente (el disco) va al final para que se vea lo que hay detrás. La bandeja y el disco giran juntos
+        // sobre el lomo, como una hoja (para pasar a la banda sonora); se quedan un poco por encima de la tapa abierta.
+        var trayPage = new Model3DGroup { Transform = new RotateTransform3D(_tray, new Point3D(0, 0, d / 2)) };
+        trayPage.Children.Add(bottom);
+        trayPage.Children.Add(discModel);
         var group = new Model3DGroup { Transform = _shift };
-        group.Children.Add(bottom);
         group.Children.Add(lid);
-        group.Children.Add(discModel);
+        group.Children.Add(trayPage);
         _content.Content = group;
 
         _open = 0;
         _openTarget = 1;
+        _trayTurn = _trayTarget = 0;
+        _tray.Angle = 0;
+        _trayDone = null;
         _spin = 0;
         _spinning = false;
         _disc.Angle = 0;
@@ -139,6 +150,24 @@ public sealed class OpenCaseScene
     double _stopTime;
     Action? _stopped;
     const double StopSeconds = 2.4;
+
+    /// <summary>
+    /// Pasa la hoja de plástico donde está el disco (hacia la izquierda, para ver la banda sonora) o la devuelve a su
+    /// sitio, y avisa al acabar.
+    /// </summary>
+    public void TurnTray(bool turned, Action done)
+    {
+        _trayTarget = turned ? 1 : 0;
+        if (_trayTurn == _trayTarget)
+        {
+            done();
+            return;
+        }
+        _trayDone = done;
+        StartAnimation();
+    }
+
+    public bool TrayTurned => _trayTarget == 1;
 
     /// <summary>El disco deja de girar poco a poco (el cartucho vuelve a la caja) y avisa al acabar.</summary>
     public void StopSpin(Action stopped)
@@ -217,6 +246,17 @@ public sealed class OpenCaseScene
         var step = dt / (_openTarget > _open ? OpenSeconds : CloseSeconds);
         _open = _openTarget > _open ? Math.Min(_openTarget, _open + step) : Math.Max(_openTarget, _open - step);
 
+        if (_trayTurn != _trayTarget)
+        {
+            var trayStep = dt / TraySeconds;
+            _trayTurn = _trayTarget > _trayTurn ? Math.Min(_trayTarget, _trayTurn + trayStep) : Math.Max(_trayTarget, _trayTurn - trayStep);
+            if (_trayTurn == _trayTarget && _trayDone is { } trayDone)
+            {
+                _trayDone = null;
+                trayDone();
+            }
+        }
+
         if (_spinning)
         {
             _spinTime += dt;
@@ -255,7 +295,7 @@ public sealed class OpenCaseScene
             StopAnimation();
             closed();
         }
-        else if (_open == _openTarget && !_spinning)
+        else if (_open == _openTarget && !_spinning && _trayTurn == _trayTarget)
         {
             StopAnimation();
         }
@@ -266,6 +306,8 @@ public sealed class OpenCaseScene
         var t = Ease(_open);
         // Cerrada se ve centrada; abierta, el lomo queda en el centro con la tapa a la izquierda.
         _lid.Angle = -180 * t;
+        // La hoja pasa hasta casi tumbarse sobre la tapa (sin llegar, para no pisarla).
+        _tray.Angle = -176 * Ease(_trayTurn);
         _shift.OffsetX = -_shape.Width / 2 * (1 - t);
     }
 

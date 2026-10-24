@@ -177,10 +177,26 @@
                                 ToolTip="Pegatinas de disco de steamgamecovers.com, ya recortadas en redondo"/>
                         <Button Style="{StaticResource PillButton}" Content="Buscar en LaunchBox" Click="OnLaunchBoxDiscClick" Margin="0,0,10,10"
                                 ToolTip="Fotos reales del disco (gamesdb.launchbox-app.com)"/>
+                        <Button x:Name="FrameDiscButton" Style="{StaticResource PillButton}" Content="Ajustar…" Margin="0,0,10,10"
+                                Click="OnFrameDiscClick" ToolTip="Amplía y mueve la imagen dentro del disco"/>
                         <Button x:Name="RemoveDiscButton" Style="{StaticResource PillButton}" Content="Quitar imagen" Margin="0,0,10,10"
                                 Click="OnRemoveDiscClick"/>
                     </WrapPanel>
                     <TextBlock x:Name="DiscText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis"/>
+
+                    <!-- La banda sonora: su lista de canciones (MusicBrainz), su disco y la música que importes -->
+                    <TextBlock Text="BANDA SONORA" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
+                    <WrapPanel>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar banda sonora" Click="OnSearchSoundtrackClick" Margin="0,0,10,10"
+                                ToolTip="La lista de canciones y la carátula de la banda sonora en MusicBrainz"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="Importar música…" Click="OnImportMusicClick" Margin="0,0,10,10"
+                                ToolTip="Elige tus archivos de música: los que se llamen como una canción de la lista se quedan en ella"/>
+                        <Button x:Name="SoundtrackDiscButton" Style="{StaticResource PillButton}" Content="Imagen del disco…" Click="OnSoundtrackDiscClick" Margin="0,0,10,10"/>
+                        <Button x:Name="FrameSoundtrackDiscButton" Style="{StaticResource PillButton}" Content="Ajustar disco…" Click="OnFrameSoundtrackDiscClick" Margin="0,0,10,10"
+                                ToolTip="Amplía y mueve la imagen dentro del disco de la banda sonora"/>
+                        <Button x:Name="RemoveSoundtrackButton" Style="{StaticResource PillButton}" Content="Quitar banda sonora" Click="OnRemoveSoundtrackClick" Margin="0,0,10,10"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="SoundtrackText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,0" TextWrapping="Wrap"/>
 
                     <TextBlock Text="MANUAL" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
                     <WrapPanel>

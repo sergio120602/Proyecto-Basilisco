@@ -22,6 +22,12 @@ public sealed class Game
     /// </summary>
     public List<string> SteamOwnerIds { get; set; } = [];
 
+    /// <summary>Encuadre de la imagen del disco del juego en la caja abierta (null: lo llena).</summary>
+    public ImageFrame? DiscFrame { get; set; }
+
+    /// <summary>Banda sonora: la lista de canciones (de MusicBrainz) y la música importada para cada una.</summary>
+    public Soundtrack? Soundtrack { get; set; }
+
     /// <summary>Manual hecho con imágenes (de Pinterest), en orden. Si tiene, es el que se lee (antes que el PDF).</summary>
     public List<ManualPage>? ManualPages { get; set; }
 

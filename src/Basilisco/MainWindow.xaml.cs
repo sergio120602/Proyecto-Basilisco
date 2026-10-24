@@ -116,6 +116,10 @@ public partial class MainWindow : Window
         CaseView.ManualRequested += game => _ = OpenManualAsync(game);
         Customizer.ManualReadRequested += (path, title) => ManualReader.Open(path, title, _padMode);
         Customizer.ImageManualReadRequested += OpenImageManual;
+        Customizer.SoundtrackChanged += _ => Save();
+        CaseView.Volume = _settings.SoundtrackVolume;
+        CaseView.VolumeChanged += volume => _settings.SoundtrackVolume = volume;
+        CaseView.Closed += () => _settings.Save();
         Customizer.ImageManualRemoveRequested += RemoveImageManual;
         Customizer.PinterestRequested += (game, name) =>
         {
@@ -2363,6 +2367,7 @@ public partial class MainWindow : Window
         game.PlayMinutes = result.PlayMinutes;
         game.ManualFrame = result.ManualFrame;
         game.InsideFrame = result.InsideFrame;
+        game.DiscFrame = result.DiscFrame;
         try
         {
             if (result.Background.NewPath is { } background)
@@ -2572,8 +2577,8 @@ public partial class MainWindow : Window
         }
 
         var answer = MessageBox.Show(this,
-            $"A {games.Count} {(games.Count == 1 ? "juego le falta" : "juegos les falta")} alguna imagen (portada, contraportada, lomo, interior de la caja, disco o manual).\n\n" +
-            "Se buscarán en LaunchBox, SteamGridDB, The Spine Archive y Steam Game Covers y se pondrán solo donde falten; lo que ya tienen no se toca. " +
+            $"A {games.Count} {(games.Count == 1 ? "juego le falta" : "juegos les falta")} algo (portada, contraportada, lomo, interior de la caja, disco, manual o la lista de canciones de su banda sonora).\n\n" +
+            "Se buscarán en LaunchBox, SteamGridDB, The Spine Archive, Steam Game Covers y MusicBrainz y se pondrán solo donde falten; lo que ya tienen no se toca. " +
             (LaunchBoxDatabase.IsDownloaded ? "" : "La primera vez se descarga la base de datos de LaunchBox (unos minutos). ") +
             "Puede tardar un rato.\n\n¿Empezar?",
             "Descarga Metadatos Actualización", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -2596,6 +2601,27 @@ public partial class MainWindow : Window
                 var changed = false;
                 foreach (var part in MetadataFetcher.Missing(game))
                 {
+                    // La banda sonora no es una imagen: su lista de canciones y la carátula para su disco.
+                    if (part == MetadataPart.Soundtrack)
+                    {
+                        if (await Soundtracks.FindAsync(game.Name, cancellation) is { } found && Games.Contains(game) && game.Soundtrack is null)
+                        {
+                            game.Soundtrack = found.Soundtrack;
+                            if (found.CoverPath is { } cover)
+                            {
+                                try
+                                {
+                                    ImageStore.SetSoundtrackDisc(game, cover);
+                                }
+                                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                                {
+                                }
+                            }
+                            changed = true;
+                            parts++;
+                        }
+                        continue;
+                    }
                     var path = await Metadata.FetchAsync(game.Name, game.Platform, game.Format, part, cancellation);
                     // Mientras se buscaba ha podido quitarse el juego o recibir otra imagen.
                     if (path is null || !Games.Contains(game) || !MetadataFetcher.Missing(game).Contains(part))
@@ -2942,6 +2968,12 @@ public partial class MainWindow : Window
             FilterStrip.Move(direction);
             return;
         }
+        // En la caja abierta, izquierda y derecha: pasar a la banda sonora y, en ella, avanzar o retroceder en la canción.
+        if (CaseView.IsOpen && !Customizer.IsOpen && !ManualReader.IsOpen)
+        {
+            InjectKey(KeyForDirection(direction, vertical: false));
+            return;
+        }
         if (IsPanelOpen)
             return;
         if (_flow.ShelfMode)
@@ -2959,6 +2991,12 @@ public partial class MainWindow : Window
         if (AchievementsPage.IsVisible)
         {
             AchievementsScroll.ScrollToVerticalOffset(AchievementsScroll.VerticalOffset + direction * 160);
+            return;
+        }
+        // En la banda sonora de la caja abierta: elegir canción.
+        if (CaseView.IsOpen && !Customizer.IsOpen && !ManualReader.IsOpen)
+        {
+            InjectKey(KeyForDirection(direction, vertical: true));
             return;
         }
         if (IsPanelOpen || !_flow.ShelfMode)
