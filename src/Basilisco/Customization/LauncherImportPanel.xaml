@@ -1,0 +1,92 @@
+<UserControl x:Class="Basilisco.Customization.LauncherImportPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown" SizeChanged="OnSizeChanged">
+    <!-- Importar desde un emulador (sus carpetas de juegos) o desde una tienda de PC (sus juegos instalados) -->
+    <Grid Background="#A60E1218">
+        <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="34" Width="900" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Opacity="0.35"/>
+            </Border.Effect>
+            <ScrollViewer x:Name="Scroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel Margin="0,0,8,0">
+                    <TextBlock x:Name="TitleText" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock x:Name="SubtitleText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"/>
+
+                    <!-- Paso 1: dónde está el emulador y dónde están los juegos -->
+                    <StackPanel x:Name="SetupView">
+                        <StackPanel x:Name="EmulatorOptions">
+                            <TextBlock Text="EMULADOR" Style="{StaticResource FieldLabel}" Margin="2,20,0,8"/>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Elegir…" Margin="10,0,0,0" Click="OnChooseExeClick"/>
+                                <TextBox x:Name="ExeBox" Style="{StaticResource FieldTextBox}" FontSize="14" TextChanged="OnExeChanged"
+                                         ToolTip="El ejecutable del emulador"/>
+                            </DockPanel>
+                            <TextBlock x:Name="ExeStatus" FontSize="12" Margin="2,6,0,0" TextWrapping="Wrap"/>
+
+                            <TextBlock Text="CÓMO SE ABRE CADA JUEGO" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Por defecto" Margin="10,0,0,0" Click="OnDefaultArgumentsClick"/>
+                                <TextBox x:Name="ArgumentsBox" Style="{StaticResource FieldTextBox}" FontSize="14" FontFamily="Consolas"/>
+                            </DockPanel>
+                            <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"
+                                       Text="Los argumentos con los que Basilisco abre el emulador: {game} es el juego y {core}, el núcleo de RetroArch. Normalmente no hace falta tocarlos."/>
+
+                            <StackPanel x:Name="FoldersSection">
+                                <TextBlock Text="CARPETAS DE JUEGOS" Style="{StaticResource FieldLabel}" Margin="2,16,0,8"/>
+                                <Border Background="{DynamicResource FieldBrush}" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="6">
+                                    <StackPanel>
+                                        <ItemsControl x:Name="FoldersList"/>
+                                        <TextBlock x:Name="NoFoldersText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="10,8" TextWrapping="Wrap"
+                                                   Text="Aún no hay carpetas: añade la carpeta donde tienes los juegos de esta consola."/>
+                                    </StackPanel>
+                                </Border>
+                                <Button Style="{StaticResource PillButton}" Content="+  Añadir carpeta…" HorizontalAlignment="Left" Margin="0,10,0,0" Click="OnAddFolderClick"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                            <Button Style="{StaticResource PillButton}" Content="Cancelar" Click="OnCancelClick"/>
+                            <Button x:Name="LoadButton" Style="{StaticResource PrimaryButton}" Content="Buscar juegos" Margin="12,0,0,0" Click="OnLoadClick"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Paso 2: revisar lo encontrado -->
+                    <StackPanel x:Name="ResultsView" Visibility="Collapsed" Margin="0,18,0,0">
+                        <Grid>
+                            <TextBlock x:Name="SummaryText" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Style="{StaticResource PillButton}" Content="Marcar todos" Click="OnSelectAllClick"/>
+                                <Button Style="{StaticResource PillButton}" Content="Desmarcar todos" Margin="10,0,0,0" Click="OnSelectNoneClick"/>
+                            </StackPanel>
+                        </Grid>
+                        <Border Background="{DynamicResource FieldBrush}" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Margin="0,14,0,0" Padding="6">
+                            <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="ResultsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" IsEnabled="{Binding CanImport}" Focusable="False"
+                                                      Padding="10,0,0,0" Margin="10,6" VerticalContentAlignment="Center">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                                    <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </CheckBox>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                            <Button x:Name="BackButton" Style="{StaticResource PillButton}" Content="Volver" Click="OnBackClick"/>
+                            <Button Style="{StaticResource PillButton}" Content="Cancelar" Margin="12,0,0,0" Click="OnCancelClick"/>
+                            <Button x:Name="ImportButton" Style="{StaticResource PrimaryButton}" Content="Importar" Margin="12,0,0,0" Click="OnImportClick"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock x:Name="StatusText" FontSize="13" Margin="2,14,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

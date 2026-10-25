@@ -10,6 +10,8 @@ public static class Platforms
         new("ps1", "PS1"),
         new("ps2", "PS2"),
         new("ps3", "PS3"),
+        new("ps4", "PS4"),
+        new("ps5", "PS5"),
         new("psp", "PSP"),
         new("xbox", "Xbox"),
         new("x360", "Xbox 360"),

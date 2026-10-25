@@ -3,6 +3,24 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.8.0] - 2026-10-25
+
+- El botón «Steam» pasa a ser **«Importación Juegos NO PC»** (o la tecla `S`): abre una franja como la de los filtros con todo lo que se puede importar, diciendo qué emuladores están en este PC y cuántos juegos tienes de cada uno.
+- **Tiendas de PC**, además de Steam (se leen los juegos instalados en este PC, sin cuentas ni internet):
+  - **Epic Games**: se abren con Epic, para que inicie tu sesión.
+  - **GOG**: los de GOG Galaxy y los de los instaladores de GOG.
+  - **EA (Origin)**: los de la aplicación de EA y los de Origin.
+  - **Battle.net**: se abren con Battle.net.
+- **Emuladores**: DuckStation (PS1), PCSX2 (PS2), RPCS3 (PS3), shadPS4 (PS4), KytyPS5 (PS5), PPSSPP (PSP), Xemu (Xbox), Xenia (Xbox 360), RetroArch, Dolphin (GameCube y Wii), Cemu (Wii U) y Eden (Switch).
+  - Cada emulador **se busca solo** (Program Files, AppData, carpetas de emuladores, el menú Inicio y los programas instalados) o se elige a mano.
+  - Se leen **las carpetas de juegos que ya tiene en su configuración**, y se pueden añadir más.
+  - Los juegos **se abren directamente con su emulador**, a pantalla completa cuando el emulador lo permite, y el tiempo de juego se cuenta igual. Los argumentos con los que se abre cada emulador se pueden cambiar.
+  - Los nombres salen limpios (sin región ni número de serie). En PS3, PS4, PS5 y Wii U, el nombre de verdad del juego (de su PARAM.SFO, param.json o meta.xml).
+  - No se importan las partes sueltas (los .bin de un .cue, los discos de un .m3u) ni las actualizaciones o DLC (Switch, PS3, PS4).
+  - **Dolphin** distingue GameCube y Wii por la cabecera del disco. **RetroArch** importa tus listas, cada juego con su núcleo y su consola.
+- Nuevas consolas: **PS4** (caja azul) y **PS5** (caja blanca).
+- En las etiquetas de cada juego se ve con qué emulador se abre o de qué tienda es.
+
 ## [0.7.0] - 2026-10-24
 
 - **Cartuchos de Game Boy y Game Boy Advance**, dibujados como los de verdad:
