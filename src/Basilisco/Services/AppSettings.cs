@@ -36,6 +36,15 @@ public sealed class AppSettings
     /// <summary>Carpeta de RPCS3 (o directamente la de sus trofeos), para leer los trofeos de los juegos de PS3.</summary>
     public string? Rpcs3Folder { get; set; }
 
+    /// <summary>El ejecutable de cada emulador (por su id), si lo ha elegido el usuario o se ha encontrado.</summary>
+    public Dictionary<string, string> EmulatorPaths { get; set; } = [];
+
+    /// <summary>Los argumentos con los que se abre cada emulador, si se han cambiado ({game}: el juego; {core}: el núcleo).</summary>
+    public Dictionary<string, string> EmulatorArguments { get; set; } = [];
+
+    /// <summary>Carpetas de juegos añadidas a mano para cada emulador (además de las que tenga en su configuración).</summary>
+    public Dictionary<string, List<string>> EmulatorFolders { get; set; } = [];
+
     /// <summary>Orden de los juegos en el carrusel.</summary>
     public Models.SortMode SortMode { get; set; } = Models.SortMode.Custom;
 

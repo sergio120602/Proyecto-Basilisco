@@ -19,6 +19,10 @@ public static class GameProcesses
         string? folder = null;
         if (game.SteamAppId is { } appId)
             folder = SteamLocal.InstallDirOf(appId);
+        else if (game.InstallDir is { } installed)
+            folder = installed;
+        else if (game.Emulator is not null)
+            folder = null;
         else if (!GameLauncher.IsLink(game.Path))
         {
             var target = Path.GetExtension(game.Path).Equals(".lnk", StringComparison.OrdinalIgnoreCase) ? ShortcutTarget(game.Path) : game.Path;
@@ -44,7 +48,7 @@ public static class GameProcesses
         return special.Select(Environment.GetFolderPath).Any(path => path.Length > 0 && string.Equals(path.TrimEnd('\\'), full, StringComparison.OrdinalIgnoreCase));
     }
 
-    static string? ShortcutTarget(string lnk)
+    internal static string? ShortcutTarget(string lnk)
     {
         try
         {

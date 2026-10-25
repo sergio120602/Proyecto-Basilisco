@@ -236,6 +236,8 @@ public static class LaunchBoxDatabase
         "ps1" => "Sony Playstation",
         "ps2" => "Sony Playstation 2",
         "ps3" => "Sony Playstation 3",
+        "ps4" => "Sony Playstation 4",
+        "ps5" => "Sony Playstation 5",
         "psp" => "Sony PSP",
         "xbox" => "Microsoft Xbox",
         "x360" => "Microsoft Xbox 360",

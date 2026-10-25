@@ -200,8 +200,8 @@
                         ToolTip="Modo nocturno (N)"/>
                 <Button Style="{StaticResource PillButton}" Content="Apariencia" Click="OnThemeClick" Margin="0,0,10,0"
                         ToolTip="Fondo (imagen o vídeo) y color de las letras para todos los juegos (A)"/>
-                <Button Style="{StaticResource PillButton}" Content="Steam" Click="OnSteamClick" Margin="0,0,10,0"
-                        ToolTip="Importa tu cuenta de Steam: instalados, toda la biblioteca y Steam Familiar (S)"/>
+                <Button Style="{StaticResource PillButton}" Content="Importación Juegos NO PC" Click="OnSteamClick" Margin="0,0,10,0"
+                        ToolTip="Importa de Steam, Epic Games, GOG, EA, Battle.net y de los emuladores: DuckStation, PCSX2, RPCS3, shadPS4, KytyPS5, PPSSPP, Xemu, Xenia, RetroArch, Dolphin, Cemu y Eden (S)"/>
                 <Button Style="{StaticResource PillButton}" Content="Formato" Click="OnFormatClick" Margin="0,0,10,0"
                         ToolTip="Cambia el formato de las cajas (cuadrada o rectangular) de uno, varios o todos los juegos (F)"/>
                 <Button Style="{StaticResource PillButton}" Content="+  Importar carpeta" Click="OnImportFolderClick"
@@ -314,7 +314,7 @@
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="Ctrl+F"/></Border>
                         <TextBlock Style="{StaticResource HintText}" Text="Buscar"/>
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="S"/></Border>
-                        <TextBlock Style="{StaticResource HintText}" Text="Steam"/>
+                        <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="A"/></Border>
                         <TextBlock Style="{StaticResource HintText}" Text="Apariencia"/>
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="N"/></Border>
@@ -445,6 +445,7 @@
         <customization:PlatformPickerPanel x:Name="PlatformPicker"/>
         <customization:FormatPanel x:Name="FormatEditor"/>
         <customization:SteamPanel x:Name="SteamImporter"/>
+        <customization:LauncherImportPanel x:Name="LauncherImporter"/>
         <customization:ThemePanel x:Name="ThemeEditor"/>
         <customization:ConsolePanel x:Name="ConsoleEditor"/>
         <!-- El buscador de imágenes se abre encima de Personalizar y del editor de filtros -->

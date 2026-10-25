@@ -10,6 +10,21 @@ public sealed class Game
     /// <summary>Ejecutable, acceso directo o cualquier archivo que se pueda abrir.</summary>
     public string Path { get; set; } = "";
 
+    /// <summary>
+    /// Emulador con el que se abre (ver <see cref="Services.Emulators"/>), o null si se abre tal cual. Con emulador,
+    /// <see cref="Path"/> es el juego (la imagen del disco o la ROM) y se lanza el emulador con él.
+    /// </summary>
+    public string? Emulator { get; set; }
+
+    /// <summary>Núcleo de RetroArch con el que se abre (la .dll), si el emulador es RetroArch.</summary>
+    public string? EmulatorCore { get; set; }
+
+    /// <summary>Tienda de la que se importó («epic», «gog», «ea», «battlenet»), o null.</summary>
+    public string? Store { get; set; }
+
+    /// <summary>Carpeta donde está instalado (los de las tiendas), para saber cuándo sigue abierto aunque se abra con su lanzador.</summary>
+    public string? InstallDir { get; set; }
+
     /// <summary>Juego de Steam (se lanza con steam://rungameid/…), o null si es un archivo.</summary>
     public int? SteamAppId { get; set; }
 

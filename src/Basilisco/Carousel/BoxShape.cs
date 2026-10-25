@@ -35,6 +35,8 @@ public sealed record BoxShape(double Width, double Height, double Depth)
             "ps1" => Cm(12.5, 14.2, 1.0),   // Jewel case de CD (EE. UU.)
             "ps2" => Dvd,                   // Caja de DVD
             "ps3" => Cm(17.0, 13.5, 1.4),   // Caja de Blu-ray de PS3
+            "ps4" => Cm(17.0, 13.5, 1.2),   // Caja de Blu-ray azul de PS4
+            "ps5" => Cm(17.0, 13.5, 1.2),   // Caja de Blu-ray blanca de PS5
             "psp" => Cm(18.0, 10.5, 1.5),   // Caja de UMD
             "xbox" => Dvd,                  // Caja de DVD verde
             "x360" => Dvd,                  // Caja de DVD verde transparente

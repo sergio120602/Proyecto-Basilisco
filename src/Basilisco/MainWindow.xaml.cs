@@ -101,6 +101,13 @@ public partial class MainWindow : Window
         FilterEditor.LogoSearchRequested += name => ArtSearch.Open(_steamGridDbLogos, _settings, name, FilterEditor.SetImage);
         FolderImporter.ImportRequested += ApplyFolderImport;
         SteamImporter.ImportRequested += ApplySteamImport;
+        LauncherImporter.ImportRequested += ApplyLauncherImport;
+        LauncherImporter.Closed += () => { if (!IsPanelOpen) Focus(); };
+        var warmSettings = _settings;
+        _ = Task.Run(() => Emulators.Warm(warmSettings));
+        GameLauncher.EmulatorOf = id => Emulators.Find(id) is { } emulator
+            ? (Emulators.FindExe(emulator, _settings), _settings.EmulatorArguments.GetValueOrDefault(id) ?? emulator.DefaultArguments)
+            : (null, "\"{game}\"");
         SteamImporter.FamilyLoaded += ApplyFamily;
         ConsoleEditor.Changed += RefreshFilterTabs;
         ThemeEditor.Saved += ApplyTheme;
@@ -231,6 +238,7 @@ public partial class MainWindow : Window
         [
             HeaderBar, FooterBar, TitlePanel, ShortcutsButton, CarouselControlsLeft, CarouselControlsRight, Toast, AchievementsPageContent,
             FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
+            LauncherImporter,
         ];
         foreach (var element in scaled)
             element.LayoutTransform = _uiScale;
@@ -584,7 +592,7 @@ public partial class MainWindow : Window
     /// </summary>
     async Task RepairMovedGamesAsync()
     {
-        var missing = Games.Where(game => !GameLauncher.IsLink(game.Path) && !File.Exists(game.Path)).Select(game => (Game: game, game.Path)).ToList();
+        var missing = Games.Where(game => !GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game))).Select(game => (Game: game, game.Path)).ToList();
         if (missing.Count == 0)
             return;
 
@@ -706,7 +714,7 @@ public partial class MainWindow : Window
     List<GameFilter> Filters => _library.Filters;
 
     bool IsPanelOpen => AchievementsPage.IsVisible || PinterestPicker.IsOpen || ConsoleEditor.IsOpen || FilterStrip.IsOpen || ManualReader.IsOpen || CaseView.IsOpen || Customizer.IsOpen || FilterEditor.IsOpen || FolderImporter.IsOpen || ArtSearch.IsOpen || PlatformPicker.IsOpen ||
-                        FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen;
+                        FormatEditor.IsOpen || SteamImporter.IsOpen || ThemeEditor.IsOpen || LauncherImporter.IsOpen;
 
     bool IsAddCard(int index) => index >= _visibleGames.Count;
 
@@ -2090,7 +2098,12 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(folder))
             chips.Add($"Carpeta: '{folder}'");
 
-        if (!GameLauncher.IsLink(game.Path) && !File.Exists(game.Path))
+        if (Emulators.Find(game.Emulator) is { } emulator)
+            chips.Add($"Emulador: {emulator.Name}");
+        else if (StoreLibraries.Find(game.Store) is { } store)
+            chips.Add(store.Name);
+
+        if (!GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game)))
             chips.Add("Archivo no encontrado");
 
         return chips;
@@ -2267,6 +2280,56 @@ public partial class MainWindow : Window
     void OpenSteamImport() => SteamImporter.Open(_settings, IsSteamAppInLibrary);
 
     /// <summary>
+    /// «Importación Juegos NO PC»: la misma franja negra que la de los filtros, con Steam, las tiendas de PC y los
+    /// emuladores (diciendo cuáles están en este PC). Al elegir uno se abre su importación.
+    /// </summary>
+    void OpenImportMenu()
+    {
+        string Count(Func<Game, bool> belongs) => Games.Count(belongs) switch { 0 => "", 1 => " · 1 juego", var n => $" · {n} juegos" };
+        var tiles = new List<FilterTile>
+        {
+            new("Steam", null, "Instalados, biblioteca y Steam Familiar" + Count(game => game.SteamAppId is not null), false, OpenSteamImport),
+        };
+        foreach (var store in StoreLibraries.All)
+        {
+            var chosen = store;
+            tiles.Add(new FilterTile(store.Name, null, "PC" + Count(game => game.Store == chosen.Id), false,
+                () => LauncherImporter.OpenStore(chosen, _settings, IsImportedInLibrary)));
+        }
+        foreach (var emulator in Emulators.All)
+        {
+            var chosen = emulator;
+            var installed = Emulators.FindExe(emulator, _settings) is not null;
+            tiles.Add(new FilterTile(emulator.Name, null, $"{emulator.Console} · {(installed ? "en este PC" : "no encontrado")}" + Count(game => game.Emulator == chosen.Id),
+                false, () => LauncherImporter.OpenEmulator(chosen, _settings, IsImportedInLibrary)));
+        }
+        var scale = _uiScale.ScaleX;
+        var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
+        FilterStrip.Open(tiles, top, _padMode, "IMPORTACIÓN JUEGOS NO PC");
+    }
+
+    bool IsImportedInLibrary(ImportedGame found) => Games.Any(game => SamePath(game.Path, found.Path));
+
+    /// <summary>Añade los juegos de un emulador o una tienda, con su consola, su emulador (y núcleo) o su tienda.</summary>
+    void ApplyLauncherImport(LauncherImportResult result)
+    {
+        var byPath = result.Games.GroupBy(game => game.Path, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        AddGames(result.Games.Select(game => (game.Path, (string?)game.Name)), configure: game =>
+        {
+            if (!byPath.TryGetValue(game.Path, out var found))
+                return;
+            game.Emulator = result.Emulator?.Id;
+            game.EmulatorCore = found.Core;
+            game.Store = result.Store?.Id;
+            game.InstallDir = found.InstallDir;
+            game.Platform ??= found.Platform ?? result.Emulator?.Platform;
+            // Los juegos de consola se ven mejor en su caja de siempre (rectangular, con la franja de la consola).
+            if (game.Platform is { } platform && platform != "pc")
+                game.Format = CoverFormat.Portrait;
+        }, askPlatform: result.Games.Any(game => game.Platform is null) && result.Emulator?.Platform is null && result.Store is null);
+    }
+
+    /// <summary>
     /// Un juego de Steam ya está en la biblioteca si se importó desde Steam o si ya tenías su ejecutable
     /// (importado de la carpeta del juego dentro de steamapps).
     /// </summary>
@@ -2323,7 +2386,7 @@ public partial class MainWindow : Window
 
     void Launch(Game game)
     {
-        if (!GameLauncher.IsLink(game.Path) && !File.Exists(game.Path))
+        if (!GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game)))
         {
             // Lo más probable es que hayas movido su carpeta: primero lo buscamos nosotros.
             if (GameRelocator.FindMoved(game.Path) is { } moved)
@@ -3349,7 +3412,7 @@ public partial class MainWindow : Window
             case Key.I: Import(); break;
             case Key.C: ImportFolder(); break;
             case Key.F: OpenFormatEditor(); break;
-            case Key.S: OpenSteamImport(); break;
+            case Key.S: OpenImportMenu(); break;
             case Key.A: OpenThemeEditor(); break;
             case Key.U when _update is not null: _ = UpdateAsync(); break;
             case Key.N: SetTheme(ThemeManager.IsDark ? ColorMode.Light : ColorMode.Dark); break;
@@ -3501,7 +3564,7 @@ public partial class MainWindow : Window
         ShowToast("Apariencia guardada");
     }
 
-    void OnSteamClick(object sender, RoutedEventArgs e) => OpenSteamImport();
+    void OnSteamClick(object sender, RoutedEventArgs e) => OpenImportMenu();
 
     void OnDragOver(object sender, DragEventArgs e)
     {

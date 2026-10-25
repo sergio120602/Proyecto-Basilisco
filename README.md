@@ -31,7 +31,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Girar la caja (ver grosor y contraportada) | Arrastrar la caja central con el ratón |
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
-| Importar tu cuenta de Steam (instalados, toda la biblioteca y Steam Familiar) | `S` o botón «Steam» |
+| Importar de Steam, Epic Games, GOG, EA, Battle.net o un emulador | `S` o botón «Importación Juegos NO PC» |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
 | Personalizar (nombre, portada, contraportada, lomo, disco, manual en PDF, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
@@ -159,6 +159,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.6.23** — Botón para buscar la banda sonora dentro de la propia banda sonora
 - [x] **v0.6.24** — La hoja del disco gira sobre su bisagra y la banda sonora se descubre debajo, sin aparecer de golpe
 - [x] **v0.7.0** — Cartuchos de Game Boy y Game Boy Advance, el cartucho se mete en la caja al jugar y pegatinas 92:43 de SteamGridDB
+- [x] **v0.8.0** — «Importación Juegos NO PC»: Epic Games, GOG, EA, Battle.net y 12 emuladores (DuckStation, PCSX2, RPCS3, shadPS4, KytyPS5, PPSSPP, Xemu, Xenia, RetroArch, Dolphin, Cemu y Eden); consolas PS4 y PS5
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -166,17 +167,27 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 ### 💡 Ideas para el futuro
 - Información de cada juego (descripción, año, género…).
 - Búsqueda por nombre y categorías automáticas (jugados recientemente, favoritos…).
-- Soporte para otras plataformas (Epic Games, GOG, Xbox, etc.).
+- Soporte para más plataformas (Xbox, Ubisoft Connect, etc.).
 
 ## 🎮 Consolas
 
-Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PSP, Xbox, Xbox 360, NES, Super Nintendo, Nintendo 64, GameCube, Wii, Wii U, Nintendo Switch, Game Boy, Game Boy Advance, Nintendo DS, Arcade o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
+Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PS4, PS5, PSP, Xbox, Xbox 360, NES, Super Nintendo, Nintendo 64, GameCube, Wii, Wii U, Nintendo Switch, Game Boy, Game Boy Advance, Nintendo DS, Arcade o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
 
 Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gb.png` (Game Boy), `gba.png` (Game Boy Advance), `n64.png`, `gc.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
 
+## 📥 Importación Juegos NO PC
+
+El botón **Importación Juegos NO PC** (o la tecla `S`) abre una franja con todo lo que se puede importar:
+
+- **Steam** (ver abajo).
+- **Epic Games, GOG, EA (Origin) y Battle.net**: sus juegos instalados, leídos de tu PC sin cuentas ni internet. Los de Epic y Battle.net se abren con su lanzador.
+- **Emuladores**: DuckStation (PS1), PCSX2 (PS2), RPCS3 (PS3), shadPS4 (PS4), KytyPS5 (PS5), PPSSPP (PSP), Xemu (Xbox), Xenia (Xbox 360), RetroArch, Dolphin (GameCube y Wii), Cemu (Wii U) y Eden (Switch). Basilisco busca el emulador (o lo eliges tú), lee las carpetas de juegos que ya tiene en su configuración (y las que añadas) y abre cada juego directamente con él, a pantalla completa cuando se puede. De RetroArch se importan tus listas, con su núcleo.
+
+Basilisco no incluye emuladores, BIOS ni juegos: usa los que ya tengas.
+
 ## 🎮 Steam
 
-Con el botón **Steam** (o la tecla `S`) importas tu cuenta de Steam:
+Desde **Importación Juegos NO PC → Steam** importas tu cuenta de Steam:
 
 - **Juegos instalados**: se leen de tu instalación de Steam, sin clave ni internet.
 - **Toda la biblioteca** (también lo no instalado): con tu [clave de la Web API de Steam](https://steamcommunity.com/dev/apikey) (gratuita; tu perfil debe tener los «Detalles de juegos» públicos) o con el token de sesión.

@@ -19,6 +19,8 @@ public static class PlatformArt
     {
         "ps1" => Color.FromRgb(0x12, 0x12, 0x14),
         "ps2" or "ps3" => Color.FromRgb(0x0E, 0x0E, 0x10),
+        "ps4" => Color.FromRgb(0x0A, 0x3D, 0x91),
+        "ps5" => Color.FromRgb(0xF2, 0xF2, 0xF4),
         "psp" => Color.FromRgb(0x14, 0x14, 0x16),
         "xbox" => Color.FromRgb(0x10, 0x13, 0x10),
         "x360" => Color.FromRgb(0x5D, 0xAA, 0x2E),
@@ -70,6 +72,8 @@ public static class PlatformArt
             case "ps1": DrawPs1(dc, band); break;
             case "ps2": DrawPs2(dc, band); break;
             case "ps3": DrawPs3(dc, band); break;
+            case "ps4": DrawPs4(dc, band); break;
+            case "ps5": DrawPs5(dc, band); break;
             case "psp": DrawPsp(dc, band); break;
             case "xbox": DrawXbox(dc, band); break;
             case "x360": DrawXbox360(dc, band); break;
@@ -123,6 +127,27 @@ public static class PlatformArt
         dc.DrawRectangle(shine, null, band);
         VerticalText(dc, Spaced("PLAYSTATION 3"), TextArea(band, band.Width * 0.5, band.Width * 0.5), White, Face("Segoe UI", FontWeights.Light), maxFill: 0.55);
         Separator(dc, band, Color.FromRgb(0x3A, 0x3A, 0x3E));
+    }
+
+    // PS4: franja azul con «PS4» grande y fino.
+    static void DrawPs4(DrawingContext dc, Rect band)
+    {
+        Fill(dc, band, Color.FromRgb(0x00, 0x43, 0x9C));
+        var shine = new LinearGradientBrush(Color.FromArgb(70, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), new Point(0, 0), new Point(0, 0.15));
+        dc.DrawRectangle(shine, null, band);
+        VerticalText(dc, "PS4", TextArea(band, band.Width * 0.4, band.Height * 0.55), White, Face("Segoe UI", FontWeights.Light), alignBottom: false);
+        VerticalText(dc, Spaced("PlayStation 4"), TextArea(band, band.Height * 0.5, band.Width * 0.5), Gray(0xD8), Face("Segoe UI", FontWeights.Normal), maxFill: 0.3);
+        Separator(dc, band, Color.FromRgb(0x00, 0x30, 0x72));
+    }
+
+    // PS5: franja blanca con «PS5» en negro.
+    static void DrawPs5(DrawingContext dc, Rect band)
+    {
+        Fill(dc, band, Color.FromRgb(0xFA, 0xFA, 0xFB));
+        var ink = new SolidColorBrush(Color.FromRgb(0x10, 0x10, 0x12));
+        VerticalText(dc, "PS5", TextArea(band, band.Width * 0.4, band.Height * 0.55), ink, Face("Segoe UI", FontWeights.Light), alignBottom: false);
+        VerticalText(dc, Spaced("PlayStation 5"), TextArea(band, band.Height * 0.5, band.Width * 0.5), Gray(0x50), Face("Segoe UI", FontWeights.Normal), maxFill: 0.3);
+        Separator(dc, band, Color.FromRgb(0xD0, 0xD0, 0xD4));
     }
 
     // PSP: franja negra con «PSP» grande y en cursiva.
