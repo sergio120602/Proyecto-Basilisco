@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.8.3] - 2026-10-26
+
+- **Iconos de los logros del propio juego en `achievements/badges`**: los ports que guardan cada icono suelto con el nombre de su insignia (una columna «badge» más en set.txt, como el de Dragon Ball Z Budokai Tenkaichi 3) ya enseñan el suyo en cada logro.
+  - Para los que aún no tienes se usa su versión «_lock» si el juego la trae; si no, Basilisco crea una en gris (una vez, en basilisco-data/trophies).
+- Los logros del propio juego se vuelven a leer solos si a alguno le falta el icono (como mucho cada 10 minutos), así que los juegos ya vinculados se ponen al día sin pulsar «Actualizar».
+
 ## [0.8.2] - 2026-10-26
 
 - **Imágenes de los logros del propio juego**: a los logros que no traen icono, Basilisco les busca su imagen en la carpeta del juego y en todas las de dentro.
