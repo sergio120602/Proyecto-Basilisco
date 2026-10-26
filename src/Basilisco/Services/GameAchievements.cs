@@ -129,6 +129,10 @@ public static class GameAchievements
                 continue;
             var got = unlocked.TryGetValue(id, out var when);
             var (icon, locked) = icons?.Invoke(index, id) ?? (null, null);
+            // Con la columna «badge» (una más antes de la lógica, como el port de Budokai Tenkaichi 3), su imagen está en
+            // achievements/badges/<badge>.png.
+            if (icon is null && fields.Length >= 8 && BadgeImage(folder, fields[6]) is { } image)
+                (icon, locked) = (image, GrayBadge(folder, image));
             trophies.Add(new OwnTrophy
             {
                 Id = "game-" + id,
@@ -144,6 +148,61 @@ public static class GameAchievements
         if (trophies.Any(t => t.Icon is null))
             FindIcons(folder, trophies);
         return (title, trophies);
+    }
+
+    // ---- Imágenes de achievements/badges ----
+
+    /// <summary>La imagen de esa insignia en achievements/badges (en .png, .jpg o .webp), o null.</summary>
+    static string? BadgeImage(string folder, string badge)
+    {
+        badge = badge.Trim();
+        if (badge.Length == 0 || badge.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            return null;
+        return new[] { ".png", ".jpg", ".jpeg", ".webp" }.Select(ext => Path.Combine(folder, "badges", badge + ext)).FirstOrDefault(File.Exists);
+    }
+
+    /// <summary>
+    /// La de cuando aún no lo tienes: la que trae el juego («&lt;badge&gt;_lock.png») o, si no, la misma en gris, creada una vez
+    /// en basilisco-data/trophies (y otra vez si cambia la imagen).
+    /// </summary>
+    static string? GrayBadge(string folder, string image)
+    {
+        var name = Path.GetFileNameWithoutExtension(image);
+        foreach (var suffix in new[] { "_lock", "_locked", "_gray", "_grey" })
+        {
+            var own = Path.Combine(Path.GetDirectoryName(image)!, name + suffix + Path.GetExtension(image));
+            if (File.Exists(own))
+                return own;
+        }
+        var key = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(folder.ToLowerInvariant())))[..12];
+        var gray = Path.Combine(AppInfo.DataDirectory, "trophies", key, "badges", name + "_lock.png");
+        try
+        {
+            if (File.Exists(gray) && File.GetLastWriteTimeUtc(gray) >= File.GetLastWriteTimeUtc(image))
+                return gray;
+            Directory.CreateDirectory(Path.GetDirectoryName(gray)!);
+            BitmapSource source;
+            using (var stream = File.OpenRead(image))
+            {
+                var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad).Frames[0];
+                source = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+            }
+            var (w, h) = (source.PixelWidth, source.PixelHeight);
+            var pixels = new byte[w * h * 4];
+            source.CopyPixels(pixels, w * 4, 0);
+            for (var p = 0; p < pixels.Length; p += 4)
+            {
+                var level = (byte)(((pixels[p + 2] * 77 + pixels[p + 1] * 151 + pixels[p] * 28) >> 8) / 2 + 16);
+                pixels[p] = pixels[p + 1] = pixels[p + 2] = level;
+            }
+            Save(pixels, w, h, gray);
+            return gray;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException
+                                   or System.Runtime.InteropServices.COMException)
+        {
+            return null;
+        }
     }
 
     // ---- Imágenes sueltas en la carpeta del juego ----
@@ -326,15 +385,15 @@ public static class GameAchievements
                 gray[p] = gray[p + 1] = gray[p + 2] = level;
                 gray[p + 3] = a;
             }
-            Save(color, size, Path.Combine(target, $"{i}.png"));
-            Save(gray, size, Path.Combine(target, $"{i}_lock.png"));
+            Save(color, size, size, Path.Combine(target, $"{i}.png"));
+            Save(gray, size, size, Path.Combine(target, $"{i}_lock.png"));
         }
         return true;
     }
 
-    static void Save(byte[] bgra, int size, string path)
+    static void Save(byte[] bgra, int width, int height, string path)
     {
-        var image = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, bgra, size * 4);
+        var image = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, bgra, width * 4);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(image));
         using var file = File.Create(path);

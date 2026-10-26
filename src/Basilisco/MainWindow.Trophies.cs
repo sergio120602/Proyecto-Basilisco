@@ -636,7 +636,9 @@ public partial class MainWindow
         var profile = game.Trophies;
         if (profile is { Source: TrophySource.GameFiles, SourceId: { } folder })
         {
-            if (profile.Synced is null || GameAchievements.Changed(folder) > profile.Synced)
+            // También si a alguno le falta el icono (el juego puede haberlo añadido después), como mucho cada 10 minutos.
+            if (profile.Synced is null || GameAchievements.Changed(folder) > profile.Synced ||
+                profile.Trophies.Any(t => !t.Custom && t.Icon is null) && DateTime.Now - profile.Synced > TimeSpan.FromMinutes(10))
                 SyncGameAchievements(game);
             return;
         }
