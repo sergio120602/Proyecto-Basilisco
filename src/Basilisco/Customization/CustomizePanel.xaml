@@ -219,8 +219,8 @@
                                 ToolTip="Escribe el manual con la descripción, la ficha, los requisitos y las capturas de Steam y LaunchBox"/>
                         <Button Style="{StaticResource PillButton}" Content="Elegir PDF…" Click="OnChooseManualPdfClick" Margin="0,0,10,10"
                                 ToolTip="Un manual tuyo en PDF (por ejemplo, el original escaneado)"/>
-                        <Button Style="{StaticResource PillButton}" Content="Buscar en Vimm's Lair" Click="OnVimmClick" Margin="0,0,10,10"
-                                ToolTip="Manuales originales escaneados (vimm.net/manual): se abre en el navegador para descargarlo y Basilisco lo recoge de Descargas"/>
+                        <Button Style="{StaticResource PillButton}" Content="Buscar en Games Database" Click="OnManualSearchClick" Margin="0,0,10,10"
+                                ToolTip="Manuales originales escaneados en PDF (gamesdatabase.org): se descargan directamente"/>
                         <Button Style="{StaticResource PrimaryButton}" Content="Ver Pinterest" Click="OnPinterestClick" Margin="0,0,10,10"
                                 ToolTip="Busca en Pinterest (#juego #artbook), elige las imágenes en orden y se guardan como el manual"/>
                         <Button x:Name="ReadManualButton" Style="{StaticResource PillButton}" Content="Leer" Click="OnReadManualClick" Margin="0,0,10,10"/>

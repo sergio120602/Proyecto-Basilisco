@@ -163,6 +163,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.8.1** — Logros del propio juego (como el port de Ratchet & Clank), que se actualizan al desbloquearlos
 - [x] **v0.8.2** — Los iconos de los logros del propio juego se buscan en toda su carpeta
 - [x] **v0.8.3** — Iconos de los logros del propio juego desde achievements/badges (Budokai Tenkaichi 3)
+- [x] **v0.8.4** — Manuales originales de Games Database (descarga directa del PDF) en lugar de Vimm's Lair
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -210,7 +211,7 @@ El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco 
 
 ## 📖 Manuales
 
-Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo, buscar el **manual original escaneado en [Vimm's Lair](https://vimm.net/manual)** (se abre en el navegador para descargarlo y Basilisco lo recoge de tu carpeta de Descargas) o quitarlo. La imagen del librito y la del interior de la caja se pueden **ajustar** (ampliar y mover). Se guardan en `basilisco-data/manuals/`.
+Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo, buscar el **manual original escaneado en [Games Database](https://www.gamesdatabase.org)** (el PDF se descarga directamente) o quitarlo. La imagen del librito y la del interior de la caja se pueden **ajustar** (ampliar y mover). Se guardan en `basilisco-data/manuals/`.
 
 ## 📦 Formatos de caja
 

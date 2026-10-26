@@ -577,9 +577,9 @@ public partial class CustomizePanel : UserControl
     /// <summary>Vuelve a contar las páginas del manual (después de guardar o quitar el de Pinterest).</summary>
     public void RefreshManualInfo() => UpdateExtrasText();
 
-    void OnVimmClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.ManualPdf, ArtSource.Default);
+    void OnManualSearchClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.ManualPdf, ArtSource.Default);
 
-    /// <summary>Pone como manual un PDF descargado (de Vimm's Lair); se guarda al darle a Guardar.</summary>
+    /// <summary>Pone como manual un PDF descargado (de Games Database); se guarda al darle a Guardar.</summary>
     public void SetManualPdfFile(string path)
     {
         _manualPdf = new ImageChange(path, false);
