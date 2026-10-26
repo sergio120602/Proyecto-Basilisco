@@ -141,7 +141,120 @@ public static class GameAchievements
                 IconLocked = locked,
             });
         }
+        if (trophies.Any(t => t.Icon is null))
+            FindIcons(folder, trophies);
         return (title, trophies);
+    }
+
+    // ---- Imágenes sueltas en la carpeta del juego ----
+
+    static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"];
+
+    /// <summary>Carpetas que no tienen imágenes de logros y pueden tener miles de archivos (compilaciones, cachés, registros).</summary>
+    static readonly HashSet<string> SkippedFolders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "build", "target", "toolchain", "node_modules", ".git", "obj", "cache", "shader_cache", "shaders", "logs", "$systemupdate",
+    };
+
+    /// <summary>
+    /// A los logros sin icono (sin badges.bin, o con alguno que falte) se les busca su imagen en la carpeta del juego y en
+    /// todas las de dentro: una que se llame como el número del logro («26.png», «achievement_26.png», «trophy-26.jpg»…) o
+    /// como su título. La que acaba en «_lock», «_locked», «_gray» o «_grey» es la de cuando aún no lo tienes.
+    /// </summary>
+    static void FindIcons(string folder, List<OwnTrophy> trophies)
+    {
+        // La carpeta del juego: la de encima de «achievements» (y de «player», «user» o «save», si va dentro de una).
+        var root = Path.GetDirectoryName(folder.TrimEnd('\\'));
+        if (root is not null && Path.GetFileName(root).ToLowerInvariant() is "player" or "user" or "save" or "userdata")
+            root = Path.GetDirectoryName(root);
+        if (root is null || Path.GetPathRoot(root) == root)
+            return;
+
+        var normal = new Dictionary<string, string>();
+        var locked = new Dictionary<string, string>();
+        foreach (var image in Images(root))
+        {
+            var name = Path.GetFileNameWithoutExtension(image).ToLowerInvariant();
+            var isLocked = false;
+            foreach (var suffix in new[] { "_locked", "_lock", "_gray", "_grey", "-locked", "-lock", "-gray", "-grey" })
+            {
+                if (name.EndsWith(suffix, StringComparison.Ordinal))
+                {
+                    name = name[..^suffix.Length];
+                    isLocked = true;
+                    break;
+                }
+            }
+            var prefixed = false;
+            foreach (var prefix in new[] { "achievements", "achievement", "achiev", "ach", "trophies", "trophy", "trop", "badge", "logro", "trofeo" })
+            {
+                if (name.StartsWith(prefix, StringComparison.Ordinal) && name.Length > prefix.Length)
+                {
+                    name = name[prefix.Length..].TrimStart('_', '-', ' ');
+                    prefixed = true;
+                    break;
+                }
+            }
+            // Un «1.png» cualquiera puede ser una textura del juego: sin prefijo, solo si está en una carpeta de logros.
+            var relative = image[root.Length..].ToLowerInvariant();
+            if (!prefixed && !new[] { "achiev", "troph", "badge", "logro", "trofeo" }.Any(relative.Contains))
+                continue;
+            (isLocked ? locked : normal).TryAdd(Key(name), image);
+        }
+        if (normal.Count == 0 && locked.Count == 0)
+            return;
+
+        foreach (var trophy in trophies.Where(t => t.Icon is null))
+        {
+            var id = trophy.Id.StartsWith("game-", StringComparison.Ordinal) ? trophy.Id[5..] : trophy.Id;
+            foreach (var key in new[] { Key(id), Key(trophy.Title) })
+            {
+                if (key.Length == 0 || !normal.TryGetValue(key, out var icon) && !locked.TryGetValue(key, out icon))
+                    continue;
+                trophy.Icon = normal.GetValueOrDefault(key) ?? icon;
+                trophy.IconLocked ??= locked.GetValueOrDefault(key);
+                break;
+            }
+        }
+    }
+
+    /// <summary>Solo letras y números, en minúsculas («Look, Plumber's Crack!» → «lookplumberscrack»; «026» → «26»).</summary>
+    static string Key(string text)
+    {
+        var key = new string(text.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+        return key.All(char.IsDigit) && key.Length > 0 ? key.TrimStart('0') is { Length: > 0 } number ? number : "0" : key;
+    }
+
+    /// <summary>Las imágenes de la carpeta y de todas las de dentro (sin las pesadas de arriba), hasta 20 000 archivos mirados.</summary>
+    static IEnumerable<string> Images(string root)
+    {
+        var pending = new Stack<(string Dir, int Depth)>([(root, 0)]);
+        var seen = 0;
+        while (pending.Count > 0 && seen < 20_000)
+        {
+            var (dir, depth) = pending.Pop();
+            string[] files, dirs;
+            try
+            {
+                files = Directory.GetFiles(dir);
+                dirs = depth < 8 ? Directory.GetDirectories(dir) : [];
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            {
+                continue;
+            }
+            seen += files.Length;
+            foreach (var file in files)
+            {
+                if (ImageExtensions.Contains(Path.GetExtension(file).ToLowerInvariant()))
+                    yield return file;
+            }
+            foreach (var sub in dirs)
+            {
+                if (!SkippedFolders.Contains(Path.GetFileName(sub)))
+                    pending.Push((sub, depth + 1));
+            }
+        }
     }
 
     /// <summary>

@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.8.2] - 2026-10-26
+
+- **Imágenes de los logros del propio juego**: a los logros que no traen icono, Basilisco les busca su imagen en la carpeta del juego y en todas las de dentro.
+  - Vale una imagen que se llame como el número del logro («26.png», «achievement_26.png», «trophy-26.jpg»…) o como su título. La que acaba en «_lock», «_locked», «_gray» o «_grey» es la de cuando aún no lo tienes.
+  - Para no confundir texturas del juego con iconos, un nombre sin prefijo («26.png») solo vale si está en una carpeta de logros o trofeos.
+  - No se miran las carpetas pesadas que nunca tienen iconos (build, cachés, registros…).
+
 ## [0.8.1] - 2026-10-26
 
 - **Logros del propio juego**: Basilisco detecta los juegos que traen su propio sistema de logros en su carpeta, como el port de Ratchet & Clank (rac-rs, con los de RetroAchievements importados), y los pone en su perfil de trofeos.
