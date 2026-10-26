@@ -161,6 +161,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.7.0** — Cartuchos de Game Boy y Game Boy Advance, el cartucho se mete en la caja al jugar y pegatinas 92:43 de SteamGridDB
 - [x] **v0.8.0** — «Importación Juegos NO PC»: Epic Games, GOG, EA, Battle.net y 12 emuladores (DuckStation, PCSX2, RPCS3, shadPS4, KytyPS5, PPSSPP, Xemu, Xenia, RetroArch, Dolphin, Cemu y Eden); consolas PS4 y PS5
 - [x] **v0.8.1** — Logros del propio juego (como el port de Ratchet & Clank), que se actualizan al desbloquearlos
+- [x] **v0.8.2** — Los iconos de los logros del propio juego se buscan en toda su carpeta
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
