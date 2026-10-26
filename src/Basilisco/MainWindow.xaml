@@ -418,8 +418,10 @@
                                     ToolTip="Los logros del juego en RetroAchievements, con tu cuenta"/>
                             <Button Style="{StaticResource PillButton}" Content="RPCS3" Margin="0,0,10,8" Focusable="False" Click="OnRpcs3Click"
                                     ToolTip="Los trofeos de PS3 que guarda el emulador RPCS3"/>
-                            <Button Style="{StaticResource PillButton}" Content="PlayStation · PSN Profiles" Margin="0,0,24,8" Focusable="False" Click="OnPlayStationClick"
+                            <Button Style="{StaticResource PillButton}" Content="PlayStation · PSN Profiles" Margin="0,0,10,8" Focusable="False" Click="OnPlayStationClick"
                                     ToolTip="Tus trofeos de PlayStation Network (los mismos que enseña PSN Profiles)"/>
+                            <Button Style="{StaticResource PillButton}" Content="Logros del juego" Margin="0,0,24,8" Focusable="False" Click="OnGameAchievementsClick"
+                                    ToolTip="Los logros que trae el propio juego en su carpeta (como el port de Ratchet &amp; Clank); se actualizan al desbloquearlos"/>
                             <Button x:Name="TrophySyncButton" Style="{StaticResource PillButton}" Content="Actualizar" Margin="0,0,10,8" Focusable="False" Click="OnTrophySyncClick"/>
                             <Button x:Name="TrophyUnlinkButton" Style="{StaticResource PillButton}" Content="Desvincular" Margin="0,0,24,8" Focusable="False" Click="OnTrophyUnlinkClick"/>
                             <ToggleButton x:Name="ManualActivationToggle" Style="{StaticResource FilterToggle}" Content="Activación manual" Margin="0,0,0,8"

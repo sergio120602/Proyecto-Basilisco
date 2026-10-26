@@ -8,7 +8,7 @@ public enum TrophyTier { Bronze, Silver, Gold, Platinum }
 
 /// <summary>De dónde salen los trofeos de un juego que no es de Steam.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<TrophySource>))]
-public enum TrophySource { Manual, RetroAchievements, Rpcs3, PlayStation }
+public enum TrophySource { Manual, RetroAchievements, Rpcs3, PlayStation, GameFiles }
 
 /// <summary>Un trofeo del perfil de trofeos de un juego: creado por ti o leído de RetroAchievements, RPCS3 o PlayStation.</summary>
 public sealed class OwnTrophy
@@ -60,6 +60,9 @@ public sealed class TrophyProfile
 
     /// <summary>Con la activación manual encendida, un clic en un trofeo lo da por conseguido (o lo quita).</summary>
     public bool ManualActivation { get; set; } = true;
+
+    /// <summary>True si desvinculaste los logros que trae el propio juego: ya no se vuelven a vincular solos.</summary>
+    public bool IgnoreGameFiles { get; set; }
 
     public DateTime? Synced { get; set; }
     public List<OwnTrophy> Trophies { get; set; } = [];

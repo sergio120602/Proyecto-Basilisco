@@ -1902,6 +1902,8 @@ public partial class MainWindow : Window
         }
         process?.Dispose();
         BeginTracking(new PlaySession(game, DateTime.Now, GameProcesses.FolderOf(game), processId));
+        // Si el juego trae sus propios logros, los que desbloquees pasan a su perfil al momento.
+        WatchGameAchievements(game);
     }
 
     void BeginTracking(PlaySession session)
@@ -2010,6 +2012,9 @@ public partial class MainWindow : Window
         _playTimer.Stop();
         SavedSession.Clear();
         GameClosed(session.Game);
+        WatchGameAchievements(null);
+        if (session.Game.Trophies?.Source == TrophySource.GameFiles)
+            SyncGameAchievements(session.Game);
         var minutes = (int)Math.Max(0, elapsed.TotalMinutes);
         if (minutes < 1 || !Games.Contains(session.Game))
             return;
