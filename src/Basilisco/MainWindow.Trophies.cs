@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,21 +26,31 @@ public partial class MainWindow
         TrophySource.RetroAchievements => "RetroAchievements",
         TrophySource.Rpcs3 => "RPCS3",
         TrophySource.PlayStation => "PlayStation",
+        TrophySource.GameFiles => "el propio juego",
         _ => "creados por ti",
     };
+
+    /// <summary>«de RetroAchievements», «del propio juego»…</summary>
+    static string FromSource(TrophySource source) => source == TrophySource.GameFiles ? "del propio juego" : $"de {SourceName(source)}";
 
     // ---- La barra ----
 
     /// <summary>La barra de un juego sin logros de Steam: sus trofeos, o una invitación a crearlos.</summary>
     void ShowOwnTrophiesBar(Game game)
     {
+        CheckGameAchievements(game);
         var trophies = game.Trophies?.Trophies ?? [];
         if (trophies.Count == 0)
         {
             SetAchievementsMessage("Trofeos · pulsa aquí para crear los de este juego o traerlos de RetroAchievements, RPCS3 o PlayStation");
             return;
         }
-        var source = game.Trophies!.Source == TrophySource.Manual ? "Trofeos" : $"Trofeos · {SourceName(game.Trophies.Source)}";
+        var source = game.Trophies!.Source switch
+        {
+            TrophySource.Manual => "Trofeos",
+            TrophySource.GameFiles => "Logros del juego",
+            var other => $"Trofeos · {SourceName(other)}",
+        };
         SetAchievements(new AchievementProgress(trophies.Count(t => t.IsUnlocked), trophies.Count, DateTime.Now), source);
     }
 
@@ -74,7 +85,7 @@ public partial class MainWindow
         ManualActivationToggle.IsChecked = profile?.ManualActivation ?? true;
         var linked = profile is not null && profile.Source != TrophySource.Manual;
         TrophySyncButton.Visibility = TrophyUnlinkButton.Visibility = linked ? Visibility.Visible : Visibility.Collapsed;
-        TrophyUnlinkButton.Content = linked ? $"Desvincular {SourceName(profile!.Source)}" : "Desvincular";
+        TrophyUnlinkButton.Content = !linked ? "Desvincular" : profile!.Source == TrophySource.GameFiles ? "Desvincular los logros del juego" : $"Desvincular {SourceName(profile.Source)}";
 
         if (trophies.Count == 0)
         {
@@ -89,7 +100,7 @@ public partial class MainWindow
         FillTrophySections(game.Name, entries, "trofeos", byPercent: profile!.Source == TrophySource.RetroAchievements,
             onToggle: profile.ManualActivation ? ToggleTrophy : null);
         if (linked)
-            AchievementsPageSummary.Text += $"\nDe {SourceName(profile.Source)}" + (profile.SourceName is { Length: > 0 } name ? $": {name}" : "") +
+            AchievementsPageSummary.Text += $"\n{char.ToUpper(FromSource(profile.Source)[0])}{FromSource(profile.Source)[1..]}" + (profile.SourceName is { Length: > 0 } name ? $": {name}" : "") +
                                             (profile.Synced is { } synced ? $" · leído el {synced:dd/MM/yyyy HH:mm}" : "");
     }
 
@@ -609,6 +620,128 @@ public partial class MainWindow
         ShowTrophyEditor(form);
     }
 
+    // Logros del propio juego
+
+    readonly Dictionary<string, DateTime> _gameAchievementsScanned = [];
+    readonly HashSet<Game> _gameAchievementsSyncing = [];
+    FileSystemWatcher? _gameAchievementsWatcher;
+
+    /// <summary>
+    /// Los logros que trae el propio juego en su carpeta (como el port de Ratchet &amp; Clank): si un juego sin otros trofeos
+    /// vinculados los tiene, se vinculan solos; y si ya están vinculados, se vuelven a leer cuando han cambiado (al
+    /// desbloquear uno). La carpeta se mira como mucho una vez por minuto por juego.
+    /// </summary>
+    void CheckGameAchievements(Game game)
+    {
+        var profile = game.Trophies;
+        if (profile is { Source: TrophySource.GameFiles, SourceId: { } folder })
+        {
+            if (profile.Synced is null || GameAchievements.Changed(folder) > profile.Synced)
+                SyncGameAchievements(game);
+            return;
+        }
+        if (profile is { IgnoreGameFiles: true } || profile is not null && profile.Source != TrophySource.Manual)
+            return;
+        if (_gameAchievementsScanned.TryGetValue(game.Id, out var scanned) && DateTime.Now - scanned < TimeSpan.FromMinutes(1))
+            return;
+        _gameAchievementsScanned[game.Id] = DateTime.Now;
+        if (GameAchievements.Find(game) is { } found)
+            LinkGameAchievements(game, found);
+    }
+
+    void LinkGameAchievements(Game game, string folder)
+    {
+        var profile = game.Trophies ??= new TrophyProfile();
+        profile.Source = TrophySource.GameFiles;
+        profile.SourceId = folder;
+        profile.SourceName = null;
+        profile.SourceService = null;
+        profile.IgnoreGameFiles = false;
+        profile.Synced = null;
+        CloseTrophyEditor();
+        _ = SyncAndTranslateAsync(game);
+    }
+
+    /// <summary>Vuelve a leer los logros del juego (y traduce los nuevos), sin repetir si ya se está haciendo.</summary>
+    async void SyncGameAchievements(Game game, int delayMs = 0)
+    {
+        if (!_gameAchievementsSyncing.Add(game))
+            return;
+        try
+        {
+            // El juego escribe el archivo al desbloquear: se espera un momento a que termine.
+            if (delayMs > 0)
+                await Task.Delay(delayMs);
+            await SyncTrophiesAsync(game, quiet: true);
+            await TranslateProfileAsync(game);
+        }
+        finally
+        {
+            _gameAchievementsSyncing.Remove(game);
+        }
+    }
+
+    /// <summary>
+    /// Mientras juegas a un juego con sus propios logros, se vigila su archivo de conseguidos: cada logro que desbloqueas
+    /// pasa al momento a su perfil de trofeos. Con null se deja de vigilar.
+    /// </summary>
+    void WatchGameAchievements(Game? game)
+    {
+        _gameAchievementsWatcher?.Dispose();
+        _gameAchievementsWatcher = null;
+        if (game?.Trophies is not { Source: TrophySource.GameFiles, SourceId: { } folder } || !Directory.Exists(folder))
+            return;
+        try
+        {
+            var watcher = new FileSystemWatcher(folder, "unlocked.txt")
+            {
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+            };
+            void Changed(object? sender, FileSystemEventArgs e) => Dispatcher.BeginInvoke(() => SyncGameAchievements(game, delayMs: 500));
+            watcher.Changed += Changed;
+            watcher.Created += Changed;
+            watcher.EnableRaisingEvents = true;
+            _gameAchievementsWatcher = watcher;
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    void OnGameAchievementsClick(object sender, RoutedEventArgs e)
+    {
+        if (_trophyGame is not { } game)
+            return;
+        var form = new StackPanel();
+        form.Children.Add(new TextBlock { Text = "Logros del juego", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
+        var found = GameAchievements.Find(game);
+        form.Children.Add(Note(found is null
+            ? "Algunos juegos traen sus propios logros, como el port de Ratchet & Clank (con los de RetroAchievements importados). Basilisco los busca junto al juego, " +
+              "en una carpeta «achievements» (o «player\achievements»), y los vuelve a leer cada vez que desbloqueas uno. En la carpeta de este juego no hay: si los guarda en otro sitio, elige su carpeta."
+            : $"Este juego trae sus propios logros, en {found}. Se vuelven a leer cada vez que desbloqueas uno."));
+        void Choose()
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Elegir la carpeta de logros del juego" };
+            if (dialog.ShowDialog(this) != true)
+                return;
+            var folder = new[] { dialog.FolderName, Path.Combine(dialog.FolderName, "achievements"), Path.Combine(dialog.FolderName, "player", "achievements") }
+                .FirstOrDefault(GameAchievements.IsSet);
+            if (folder is null)
+            {
+                ShowToast("En esa carpeta no hay logros del juego (falta set.txt)");
+                return;
+            }
+            LinkGameAchievements(game, folder);
+        }
+        var buttons = new List<UIElement>();
+        if (found is not null)
+            buttons.Add(Pill("Usar estos logros", () => LinkGameAchievements(game, found), primary: true));
+        buttons.Add(Pill(found is null ? "Elegir carpeta…" : "Otra carpeta…", Choose, primary: found is null));
+        buttons.Add(Pill("Cerrar", CloseTrophyEditor));
+        form.Children.Add(Row([.. buttons]));
+        ShowTrophyEditor(form);
+    }
+
     // PlayStation
 
     void OnPlayStationClick(object sender, RoutedEventArgs e)
@@ -709,13 +842,16 @@ public partial class MainWindow
     {
         if (_trophyGame?.Trophies is not { } profile || profile.Source == TrophySource.Manual)
             return;
-        var source = SourceName(profile.Source);
+        var source = FromSource(profile.Source);
+        // Los del propio juego se vinculan solos: desvinculados, ya no.
+        if (profile.Source == TrophySource.GameFiles)
+            profile.IgnoreGameFiles = true;
         profile.Trophies.RemoveAll(t => !t.Custom);
         profile.Source = TrophySource.Manual;
         profile.SourceId = profile.SourceName = profile.SourceService = null;
         profile.Synced = null;
         TrophiesChanged();
-        ShowToast($"Desvinculado de {source}: quedan los trofeos que creaste tú");
+        ShowToast($"Desvinculado {source}: quedan los trofeos que creaste tú");
     }
 
     /// <summary>
@@ -727,7 +863,7 @@ public partial class MainWindow
         if (game.Trophies is not { Source: not TrophySource.Manual, SourceId: { } id } profile)
             return;
         if (!quiet && _trophyGame == game)
-            AchievementsPageSummary.Text = $"Leyendo los trofeos de {SourceName(profile.Source)}…";
+            AchievementsPageSummary.Text = $"Leyendo los trofeos {FromSource(profile.Source)}…";
 
         List<OwnTrophy> fetched;
         try
@@ -742,6 +878,13 @@ public partial class MainWindow
                     break;
                 case TrophySource.Rpcs3:
                     fetched = Rpcs3Trophies.Read(id)?.Trophies ?? throw new TrophyServiceException("No se encuentran los trofeos de RPCS3 de este juego.");
+                    break;
+                case TrophySource.GameFiles:
+                    var read = await Task.Run(() => GameAchievements.Read(id), cancellation)
+                               ?? throw new TrophyServiceException("No se encuentran los logros del juego (¿se ha movido su carpeta?).");
+                    fetched = read.Trophies;
+                    if (read.Title.Length > 0)
+                        profile.SourceName = read.Title;
                     break;
                 default:
                     if (!PlayStationTrophies.IsConnected)
@@ -767,7 +910,10 @@ public partial class MainWindow
             return;
         }
 
-        var previous = profile.Trophies.Where(t => !t.Custom).ToDictionary(t => t.Id);
+        var previous = profile.Trophies.Where(t => !t.Custom).GroupBy(t => t.Id).ToDictionary(g => g.Key, g => g.First());
+        // Los que acabas de conseguir (con su nombre ya traducido, el de antes).
+        var newly = previous.Count == 0 ? [] : fetched.Where(t => t.Unlocked && previous.TryGetValue(t.Id, out var before) && !before.Unlocked)
+            .Select(t => previous[t.Id].Title).ToList();
         foreach (var trophy in fetched)
         {
             if (previous.TryGetValue(trophy.Id, out var old) && old.ManualUnlocked && !trophy.Unlocked)
@@ -782,8 +928,10 @@ public partial class MainWindow
         FillTrophyProfileIfShown(game);
         if (_achievementsGame == game)
             ShowOwnTrophiesBar(game);
-        if (!quiet)
-            ShowToast($"{fetched.Count} trofeos de {SourceName(profile.Source)}");
+        if (newly.Count > 0)
+            ShowToast(newly.Count == 1 ? $"Logro desbloqueado en {game.Name}: «{newly[0]}»" : $"{newly.Count} logros nuevos en {game.Name}");
+        else if (!quiet)
+            ShowToast($"{fetched.Count} trofeos {FromSource(profile.Source)}");
     }
 
     void FillTrophyProfileIfShown(Game game)

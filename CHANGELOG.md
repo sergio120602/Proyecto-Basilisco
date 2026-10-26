@@ -3,6 +3,15 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.8.1] - 2026-10-26
+
+- **Logros del propio juego**: Basilisco detecta los juegos que traen su propio sistema de logros en su carpeta, como el port de Ratchet & Clank (rac-rs, con los de RetroAchievements importados), y los pone en su perfil de trofeos.
+  - Se vinculan solos al seleccionar el juego, si no tenía otros trofeos vinculados. También con el botón **«Logros del juego»** del perfil de trofeos, que deja elegir otra carpeta.
+  - **Se actualizan conforme los desbloqueas**: mientras juegas, Basilisco vigila el archivo de logros conseguidos del juego y cada logro pasa al momento a su perfil, con un aviso («Logro desbloqueado en…»). También se vuelven a leer al cerrar el juego y al seleccionarlo, si han cambiado.
+  - Cada logro lleva su icono (en gris mientras no lo tienes) y la fecha en que lo conseguiste. Se reparten en oro, plata y bronce según sus puntos, y se traducen al español como los de RetroAchievements.
+  - No se cuenta el aviso de «emulador desconocido» que RetroAchievements añade a los clientes que no conoce.
+  - Si los desvinculas, ya no se vuelven a vincular solos.
+
 ## [0.8.0] - 2026-10-25
 
 - El botón «Steam» pasa a ser **«Importación Juegos NO PC»** (o la tecla `S`): abre una franja como la de los filtros con todo lo que se puede importar, diciendo qué emuladores están en este PC y cuántos juegos tienes de cada uno.
