@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     readonly SteamGridDbProvider _steamGridDbManual = new(Models.CoverFormat.Portrait, manual: true);
     readonly SteamGridDbProvider _steamGridDbCartridge = new(cartridge: true);
     readonly LaunchBoxPlatformProvider _launchBoxPlatforms = new();
-    readonly VimmManualsProvider _vimm = new();
+    readonly GamesDatabaseManualsProvider _manuals = new();
     readonly TheGamesDbProvider _theGamesDb = new();
     readonly TheGamesDbProvider _theGamesDbBanners = new(banners: true);
     readonly LaunchBoxProvider _launchBoxFront = new(Face.Front);
@@ -2594,8 +2594,8 @@ public partial class MainWindow : Window
 
         if (target == ArtTarget.ManualPdf)
         {
-            _vimm.PlatformHint = platform;
-            ArtSearch.Open(_vimm, _settings, gameName, onChosen);
+            _manuals.PlatformHint = platform;
+            ArtSearch.Open(_manuals, _settings, gameName, onChosen);
             return;
         }
 

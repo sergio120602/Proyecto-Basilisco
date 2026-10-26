@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.8.4] - 2026-10-27
+
+- Los **manuales originales escaneados** se buscan ahora en **[Games Database](https://www.gamesdatabase.org)** en lugar de en Vimm's Lair: en Personalizar → Manual, «Buscar en Games Database».
+  - Busca entre sus más de 20 000 manuales, con la portada de la caja, la consola y el año de cada juego (primero los de su consola).
+  - **El PDF se descarga directamente**: ya no hace falta abrir el navegador ni pulsar nada en la web.
+
 ## [0.8.3] - 2026-10-26
 
 - **Iconos de los logros del propio juego en `achievements/badges`**: los ports que guardan cada icono suelto con el nombre de su insignia (una columna «badge» más en set.txt, como el de Dragon Ball Z Budokai Tenkaichi 3) ya enseñan el suyo en cada logro.
