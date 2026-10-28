@@ -12,7 +12,7 @@
             <DockPanel Margin="44,16,44,18">
                 <DockPanel DockPanel.Dock="Top" Margin="4,0,4,12">
                     <TextBlock x:Name="HintText" DockPanel.Dock="Right" FontSize="13" Foreground="#8C95A3" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TitleText" Text="FILTROS" FontSize="15" FontWeight="Bold" Foreground="#E8B923" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TitleText" Text="SAGAS" FontSize="15" FontWeight="Bold" Foreground="#E8B923" VerticalAlignment="Center"/>
                 </DockPanel>
                 <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
                               Focusable="False" PreviewMouseWheel="OnMouseWheel">

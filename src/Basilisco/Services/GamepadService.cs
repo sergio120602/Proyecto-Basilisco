@@ -16,6 +16,10 @@ public enum PadAction
     FullScreen,
     PageLeft,
     PageRight,
+    /// <summary>Pulsar el stick derecho (R3): el buscador.</summary>
+    Search,
+    /// <summary>Pulsar el stick izquierdo (L3): el orden.</summary>
+    Sort,
 }
 
 /// <summary>Familia del mando, para enseñar sus botones con los nombres y símbolos que trae impresos.</summary>
@@ -197,6 +201,8 @@ public sealed unsafe class GamepadService : IDisposable
                 PadAction.FullScreen => Button(pad, SDL_GamepadButton.SDL_GAMEPAD_BUTTON_START),
                 PadAction.PageLeft => Axis(pad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER) > StickThreshold,
                 PadAction.PageRight => Axis(pad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) > StickThreshold,
+                PadAction.Search => Button(pad, SDL_GamepadButton.SDL_GAMEPAD_BUTTON_RIGHT_STICK),
+                PadAction.Sort => Button(pad, SDL_GamepadButton.SDL_GAMEPAD_BUTTON_LEFT_STICK),
                 _ => false,
             };
             if (down)
@@ -306,6 +312,10 @@ public sealed unsafe class GamepadService : IDisposable
         (PadAction.FullScreen, _) => "Menu",
         (PadAction.PageLeft or PadAction.PageRight, PadStyle.PlayStation) => "L2 R2",
         (PadAction.PageLeft or PadAction.PageRight, PadStyle.Nintendo) => "ZL ZR",
+        (PadAction.Search, PadStyle.PlayStation) => "R3",
+        (PadAction.Search, _) => "RS",
+        (PadAction.Sort, PadStyle.PlayStation) => "L3",
+        (PadAction.Sort, _) => "LS",
         _ => "LT RT",
     };
 

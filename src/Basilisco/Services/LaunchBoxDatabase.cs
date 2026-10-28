@@ -382,6 +382,35 @@ public static class LaunchBoxDatabase
         return Search(name, platform, ArtKind.Front, max: 1).FirstOrDefault(game => Normalize(game.Name).StartsWith(query, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// El número máximo de jugadores de varios juegos a la vez, en una sola pasada por el archivo de fichas (que es grande
+    /// y no se tiene en memoria). En LaunchBox puede venir como «4» o «1-4»: se queda el mayor.
+    /// </summary>
+    public static Dictionary<int, int> MaxPlayers(IReadOnlyCollection<int> ids)
+    {
+        var found = new Dictionary<int, int>();
+        if (ids.Count == 0 || !File.Exists(DetailsPath))
+            return found;
+        var wanted = ids.ToHashSet();
+        using var file = File.OpenRead(DetailsPath);
+        using var gzip = new GZipStream(file, CompressionMode.Decompress);
+        using var reader = new StreamReader(gzip, Encoding.UTF8);
+        string? line;
+        while ((line = reader.ReadLine()) is not null && found.Count < wanted.Count)
+        {
+            var tab = line.IndexOf('\t');
+            if (tab <= 0 || !int.TryParse(line.AsSpan(0, tab), NumberStyles.None, CultureInfo.InvariantCulture, out var id) || !wanted.Contains(id))
+                continue;
+            var parts = line.Split('\t');
+            if (parts.Length < 5)
+                continue;
+            var numbers = System.Text.RegularExpressions.Regex.Matches(parts[4], @"\d+").Select(match => int.Parse(match.Value, CultureInfo.InvariantCulture)).ToList();
+            if (numbers.Count > 0 && numbers.Max() is > 0 and < 1000 and var max)
+                found[id] = max;
+        }
+        return found;
+    }
+
     /// <summary>La ficha de un juego (se busca en el archivo de fichas, que no se tiene en memoria). Null si no tiene.</summary>
     public static LaunchBoxDetails? Details(int id)
     {

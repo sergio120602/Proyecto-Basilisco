@@ -88,7 +88,7 @@ public partial class FolderImportPanel : UserControl
         _folderName = GameScanner.PrettifyName(new DirectoryInfo(folder).Name.TrimEnd(Path.DirectorySeparatorChar, ':'));
         FolderText.Text = folder;
         FolderText.ToolTip = folder;
-        ActiveFilterText.Text = activeFilterName is null ? "" : $"Los juegos también se añadirán a «{activeFilterName}», el filtro que tienes seleccionado.";
+        ActiveFilterText.Text = activeFilterName is null ? "" : $"Los juegos también se añadirán a «{activeFilterName}», lo que tienes seleccionado.";
         ActiveFilterText.Visibility = activeFilterName is null ? Visibility.Collapsed : Visibility.Visible;
         ScanStatusText.Text = "Buscando juegos…";
         ScanningView.Visibility = Visibility.Visible;
@@ -138,7 +138,7 @@ public partial class FolderImportPanel : UserControl
         ListBorder.Visibility = rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         SelectionButtons.Visibility = hasNew ? Visibility.Visible : Visibility.Collapsed;
         CreateFilterToggle.Visibility = hasNew ? Visibility.Visible : Visibility.Collapsed;
-        CreateFilterToggle.Content = $"Agruparlos en un filtro nuevo «{_folderName}»";
+        CreateFilterToggle.Content = $"Agruparlos en una saga nueva «{_folderName}»";
         CreateFilterToggle.IsChecked = false;
         ImportButton.Visibility = hasNew ? Visibility.Visible : Visibility.Collapsed;
     }

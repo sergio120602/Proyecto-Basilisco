@@ -76,6 +76,12 @@ public sealed class Game
     /// <summary>Fecha de lanzamiento (de LaunchBox o puesta a mano), para ordenar por ella. Null si no se sabe.</summary>
     public DateTime? ReleaseDate { get; set; }
 
+    /// <summary>Número máximo de jugadores (de LaunchBox o puesto a mano), para el grupo «Nº Jugadores». Null si no se sabe.</summary>
+    public int? Players { get; set; }
+
+    /// <summary>True si ya se buscó en LaunchBox (encontrado o no), para no volver a buscarlo cada vez.</summary>
+    public bool PlayersLooked { get; set; }
+
     /// <summary>Minutos jugados (se cuentan solos al jugar desde Basilisco, vienen de Steam o se ponen a mano).</summary>
     public int PlayMinutes { get; set; }
 
