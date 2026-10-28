@@ -30,6 +30,7 @@ public partial class MainWindow
     [
         [
             new(SearchField, "Ctrl+F", PadAction.Search, FocusSearch),
+            new(EditButton, "Ctrl+E", null, () => Press(EditButton)),
             new(ShortcutsButton, "F1", null, () => Press(ShortcutsButton)),
             new(UpdateButton, "U", null, () => Press(UpdateButton)),
             new(NightButton, "N", null, () => Press(NightButton)),

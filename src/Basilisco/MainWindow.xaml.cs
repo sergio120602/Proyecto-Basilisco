@@ -207,8 +207,9 @@ public partial class MainWindow : Window
         _playTimer.Tick += async (_, _) => await PollPlaySessionAsync();
         Loaded += async (_, _) =>
         {
-            // Las teclas (o botones del mando) en la esquina de los botones de arriba.
+            // Las teclas (o botones del mando) en la esquina de los botones de arriba, y lo que se movió de sitio.
             RefreshButtonBadges();
+            InitEditMode();
             await RepairMovedGamesAsync();
             await RestorePlaySessionAsync();
             await SyncSteamPlaytimeAsync(online: true);
@@ -240,7 +241,7 @@ public partial class MainWindow : Window
         FrameworkElement[] scaled =
         [
             HeaderBar, FooterBar, TitlePanel, CarouselControlsLeft, CarouselControlsRight, Toast, AchievementsPageContent,
-            FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
+            EditBanner, FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
             LauncherImporter,
         ];
         foreach (var element in scaled)
@@ -3464,8 +3465,17 @@ public partial class MainWindow : Window
         }
 
         keys:
+        // En el modo edición, Esc termina.
+        if (_editing && e.Key == Key.Escape)
+        {
+            SetEditMode(false);
+            e.Handled = true;
+            return;
+        }
+
         switch (e.Key)
         {
+            case Key.E when Keyboard.Modifiers == ModifierKeys.Control: SetEditMode(!_editing); break;
             case Key.Up: EnterBar(); break;
             case Key.D1 or Key.NumPad1: Press(AllTab); break;
             case Key.D2 or Key.NumPad2: Press(ConsolesTab); break;

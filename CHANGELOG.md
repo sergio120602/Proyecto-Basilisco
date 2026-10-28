@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.9.1] - 2026-10-29
+
+- **Modo edición**: el botón **«Editar»** (arriba a la derecha, o `Ctrl+E`) deja **mover por la pantalla, arrastrándolos con el ratón**, todos los botones de arriba, el buscador, «Basilisco», los controles del carrusel (alineación, altura, auto, descarga de metadatos y zoom), **el título del juego** y **sus datos** (los cilindros grises), y la barra de logros.
+  - Mientras se edita, cada cosa que se puede mover lleva un contorno dorado y los botones no hacen nada al pulsarlos: solo se mueven.
+  - Se guarda dónde dejas cada cosa y se ve igual al volver a abrir Basilisco.
+  - Clic derecho en uno lo devuelve a su sitio; «Restablecer todo», todos. «Listo» (o `Esc`) termina.
+
 ## [0.9.0] - 2026-10-29
 
 - **Barra de arriba nueva**, con el buscador (lo más importante) **arriba, en medio y entero**:

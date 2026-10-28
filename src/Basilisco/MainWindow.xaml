@@ -102,7 +102,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel x:Name="LogoPanel" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                 <TextBlock Text="Basilisco" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource UiText}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="VersionText" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="10,6,0,0" VerticalAlignment="Center"/>
             </StackPanel>
@@ -175,6 +175,14 @@
                 </Grid>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Editar: mover los botones, el título del juego y sus datos por la pantalla, arrastrándolos -->
+                <ToggleButton x:Name="EditButton" Style="{StaticResource HeaderTab}" Margin="0,0,14,0" VerticalAlignment="Center" Click="OnEditClick"
+                              ToolTip="Mover los botones, el buscador, el título del juego y sus datos a donde quieras, arrastrándolos (Ctrl+E)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE70F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Editar" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
                 <!-- Atajos de teclado: un menú con todas las teclas y los botones del mando -->
                 <ToggleButton x:Name="ShortcutsButton" Style="{StaticResource HeaderTab}" Content="Atajos  ▾" Margin="0,0,10,0"
                               VerticalAlignment="Center" Click="OnShortcutsClick"
@@ -257,10 +265,12 @@
                               VerticalAlignment="Center" Click="OnAlignClick"
                               ToolTip="Moderna: las bases de todas las cajas en línea recta. Clásica: las del fondo se ven más arriba, en curva"/>
                 <!-- Altura del carrusel: a mano o automática (las cajas bajan lo justo para no pisar el nombre del juego) -->
-                <TextBlock Style="{StaticResource HintText}" Text="Altura" Margin="0,0,10,0"/>
-                <Slider x:Name="ShiftSlider" Width="130" VerticalAlignment="Center" Focusable="False"
-                        Minimum="-0.4" Maximum="1.2" SmallChange="0.05" LargeChange="0.1" IsDirectionReversed="False"
-                        ValueChanged="OnShiftChanged" ToolTip="Sube o baja las cajas"/>
+                <StackPanel x:Name="ShiftGroup" Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent">
+                    <TextBlock Style="{StaticResource HintText}" Text="Altura" Margin="0,0,10,0"/>
+                    <Slider x:Name="ShiftSlider" Width="130" VerticalAlignment="Center" Focusable="False"
+                            Minimum="-0.4" Maximum="1.2" SmallChange="0.05" LargeChange="0.1" IsDirectionReversed="False"
+                            ValueChanged="OnShiftChanged" ToolTip="Sube o baja las cajas"/>
+                </StackPanel>
                 <ToggleButton x:Name="AutoShiftToggle" Style="{StaticResource FilterToggle}" Content="Auto" Margin="10,0,0,0"
                               VerticalAlignment="Center" Click="OnAutoShiftClick"
                               ToolTip="Automático: cuanto más zoom, más bajan las cajas, para que el nombre del juego nunca las pise"/>
@@ -273,11 +283,13 @@
                         VerticalAlignment="Center" Focusable="False" Click="OnMetadataClick"
                         ToolTip="Busca y pone sola la portada, contraportada, lomo, interior de la caja, disco y manual de los juegos a los que les falte"/>
                 <!-- Zoom del carrusel: también Ctrl + rueda, o + / − -->
-                <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
-                <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
-                        Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
-                        ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
-                <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,0,0"/>
+                <StackPanel x:Name="ZoomGroup" Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent">
+                    <TextBlock Style="{StaticResource HintText}" Text="Zoom" Margin="0,0,10,0"/>
+                    <Slider x:Name="ZoomSlider" Width="170" VerticalAlignment="Center" Focusable="False"
+                            Minimum="0.7" Maximum="1.8" SmallChange="0.05" LargeChange="0.1"
+                            ValueChanged="OnZoomChanged" ToolTip="Tamaño de las cajas (Ctrl + rueda, o + / −)"/>
+                    <TextBlock x:Name="ZoomText" Style="{StaticResource HintText}" Width="52" TextAlignment="Right" Margin="6,0,0,0"/>
+                </StackPanel>
         </StackPanel>
         </AdornerDecorator>
 
@@ -342,6 +354,24 @@
                 </StackPanel>
             </Border>
         </Popup>
+
+        <!-- Modo edición: se arrastran los botones, el título y sus datos; aquí se termina o se vuelve a como estaba -->
+        <Border x:Name="EditBanner" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,150" Visibility="Collapsed"
+                Background="#F0101318" CornerRadius="12" Padding="20,12" BorderBrush="#E8B923" BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.45"/>
+            </Border.Effect>
+            <StackPanel Orientation="Horizontal">
+                <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
+                    <TextBlock Text="MODO EDICIÓN" FontSize="13" FontWeight="Bold" Foreground="#E8B923"/>
+                    <TextBlock FontSize="13" Foreground="#C9D3E0" Margin="0,3,0,0"
+                               Text="Arrastra los botones, el buscador, el título del juego o sus datos a donde quieras. Clic derecho en uno: vuelve a su sitio."/>
+                </StackPanel>
+                <Button Style="{StaticResource PillButton}" Content="Restablecer todo" Margin="0,0,10,0" Click="OnEditResetClick"
+                        ToolTip="Todo vuelve a su sitio de siempre"/>
+                <Button Style="{StaticResource PrimaryButton}" Content="Listo" Click="OnEditDoneClick" ToolTip="Terminar (Esc)"/>
+            </StackPanel>
+        </Border>
 
         <!-- Avisos breves -->
         <Border x:Name="Toast" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100"

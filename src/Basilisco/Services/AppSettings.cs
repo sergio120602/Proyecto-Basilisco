@@ -36,6 +36,9 @@ public sealed class AppSettings
     /// <summary>Carpeta de RPCS3 (o directamente la de sus trofeos), para leer los trofeos de los juegos de PS3.</summary>
     public string? Rpcs3Folder { get; set; }
 
+    /// <summary>Lo que se ha movido de sitio en el modo edición (por su nombre): cuánto, en horizontal y en vertical.</summary>
+    public Dictionary<string, double[]> UiOffsets { get; set; } = [];
+
     /// <summary>El ejecutable de cada emulador (por su id), si lo ha elegido el usuario o se ha encontrado.</summary>
     public Dictionary<string, string> EmulatorPaths { get; set; } = [];
 
