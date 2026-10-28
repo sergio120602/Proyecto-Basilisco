@@ -51,14 +51,14 @@ public partial class FilterPanel : UserControl
         _removeImage = false;
         ErrorText.Visibility = Visibility.Collapsed;
 
-        HeaderText.Text = filter is null ? "Nuevo filtro" : "Editar filtro";
+        HeaderText.Text = filter is null ? "Nueva saga" : "Editar saga";
         SubtitleText.Text = filter is null
             ? "Agrupa tus juegos como quieras. Después, asígnalos desde Personalizar (E) en cada juego."
             : gameCount switch
             {
                 0 => "Aún no tiene juegos. Asígnalos desde Personalizar (E) en cada juego.",
-                1 => "1 juego en este filtro.",
-                _ => $"{gameCount} juegos en este filtro.",
+                1 => "1 juego en esta saga.",
+                _ => $"{gameCount} juegos en esta saga.",
             };
         DeleteButton.Visibility = filter is null ? Visibility.Collapsed : Visibility.Visible;
         NameBox.Text = name;
@@ -94,7 +94,7 @@ public partial class FilterPanel : UserControl
     void UpdatePreview()
     {
         var name = NameBox.Text.Trim();
-        PreviewLabel.Text = name.Length == 0 ? "Nuevo filtro" : name;
+        PreviewLabel.Text = name.Length == 0 ? "Nueva saga" : name;
 
         var path = CurrentImagePath;
         var preview = path is null ? null : CoverArt.LoadImage(path, 440);
@@ -115,7 +115,7 @@ public partial class FilterPanel : UserControl
         var name = NameBox.Text.Trim();
         if (name.Length == 0)
         {
-            ShowError("El filtro necesita un nombre.");
+            ShowError("La saga necesita un nombre.");
             NameBox.Focus();
             return;
         }
@@ -141,7 +141,7 @@ public partial class FilterPanel : UserControl
 
     void OnChooseImageClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Title = "Elegir imagen del filtro", Filter = ImageStore.FileFilter };
+        var dialog = new OpenFileDialog { Title = "Elegir imagen de la saga", Filter = ImageStore.FileFilter };
         if (dialog.ShowDialog(Window.GetWindow(this)) == true)
             SetImage(dialog.FileName);
     }

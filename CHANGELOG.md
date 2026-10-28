@@ -3,6 +3,18 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.9.0] - 2026-10-29
+
+- **Barra de arriba nueva**, con el buscador (lo más importante) **arriba, en medio y entero**:
+  - Arriba: «Basilisco», el buscador y, a la derecha, Atajos, el modo nocturno y Apariencia.
+  - Debajo, a la izquierda, las vistas: Todos los juegos, Consolas, **Sagas**, **Nº Jugadores**, Steam familiar y **Orden** (ya no pone cuál: se ve al abrirlo y en su ayuda). A la derecha, las acciones: **Formato** (donde antes estaba Importación), **Importación +** (antes «Importación Juegos NO PC»), Importar carpeta e Importar juego.
+- **Los filtros pasan a llamarse Sagas** (el menú, crear y editar, Personalizar y los avisos).
+- **Nº Jugadores**: los juegos según cuántos pueden jugar a la vez (1, 2, 3-4, 5 o más, o sin datos). El número sale de la base de datos de LaunchBox (la que ya se descarga, sin internet) y se puede poner o cambiar en Personalizar («Nº de jugadores»).
+- **Cada botón lleva en su esquina su tecla o su botón del mando**, y cambia al momento según uses el teclado, un mando de Xbox o un DualSense (con sus símbolos y colores: A verde, ✕ azul…).
+  - Teclas nuevas: `1`-`5` para las vistas, `O` el orden, `F1` los atajos, `L` la alineación y `M` la descarga de metadatos.
+- **Todos los botones de arriba se manejan con el mando**: ▲ sube del carrusel a la barra, ◀ ▶ recorren los botones (el elegido se rodea en dorado y enseña Ⓐ), ▲ ▼ cambian de fila, Ⓐ pulsa y Ⓑ (o ▼ desde la última fila) vuelve. También con las flechas del teclado.
+  - Atajos directos: **R3** (stick derecho) el buscador y **L3** (stick izquierdo) el orden.
+
 ## [0.8.4] - 2026-10-27
 
 - Los **manuales originales escaneados** se buscan ahora en **[Games Database](https://www.gamesdatabase.org)** en lugar de en Vimm's Lair: en Personalizar → Manual, «Buscar en Games Database».

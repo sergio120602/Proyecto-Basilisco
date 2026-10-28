@@ -31,16 +31,19 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Girar la caja (ver grosor y contraportada) | Arrastrar la caja central con el ratón |
 | Dar la vuelta a la caja | `R` |
 | Importar juego | `I`, botón «Importar juego» o arrastrar archivos a la ventana |
-| Importar de Steam, Epic Games, GOG, EA, Battle.net o un emulador | `S` o botón «Importación Juegos NO PC» |
+| Importar de Steam, Epic Games, GOG, EA, Battle.net o un emulador | `S` o botón «Importación +» |
 | Importar una carpeta entera | `C`, botón «Importar carpeta» o arrastrar la carpeta a la ventana |
-| Personalizar (nombre, portada, contraportada, lomo, disco, manual en PDF, consola, filtros, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
+| Personalizar (nombre, portada, contraportada, lomo, disco, manual en PDF, consola, sagas, nº de jugadores, fondo, color de letras y tiempo de juego) | `E` o clic derecho sobre la caja |
 | Cambiar el formato (cuadrada / rectangular) de uno, varios o todos | `F` o botón «Formato» |
 | Encuadrar portada, contraportada o lomo | «Ajustar…» en Personalizar: rueda para ampliar, arrastrar para mover |
-| Cambiar de filtro o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** y **Filtros** de arriba |
-| Ordenar los juegos (personalizado, alfabético, lanzamiento, adición) | Menú **Orden** de arriba |
+| Buscar un juego | `Ctrl+F` o el buscador de arriba en medio |
+| Cambiar de saga o de consola | `Tab` / `Shift+Tab`, o los menús **Consolas** (`2`) y **Sagas** (`3`) de arriba |
+| Ver los juegos por número de jugadores | Menú **Nº Jugadores** (`4`) |
+| Ordenar los juegos (personalizado, alfabético, lanzamiento, adición) | Menú **Orden** (`O`) |
+| Moverse por los botones de arriba | `↑` sube a ellos, `← →` los recorren, `Enter` pulsa, `Esc` o `↓` vuelven |
 | Colocar los juegos a tu gusto | «Orden → Personalizado» abre la estantería: `↑` coger, `← →` mover, `↓` soltar, `Esc` terminar |
-| Crear filtro | Menú **Filtros** → «+ Nuevo filtro…» |
-| Editar o eliminar filtro | Menú **Filtros** → «Editar filtro», o clic derecho en Filtros |
+| Crear saga | Menú **Sagas** → «+ Nueva saga» |
+| Editar o eliminar saga | Menú **Sagas** → «Editar saga», o clic derecho en Sagas |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
 | Fondo y color de las letras para todos los juegos | `A` o botón «Apariencia» |
 | Modo nocturno (claro, nocturno o como Windows) | `N`, botón de la luna arriba a la derecha, o «Apariencia → Modo» |
@@ -48,6 +51,9 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Alineación de las cajas (clásica, giradas hacia el fondo, o moderna, de frente en una fila recta) | Botón «Alineación moderna» abajo a la derecha |
 | Subir o bajar las cajas | Barra «Altura» abajo a la derecha; «Auto» las baja solo lo justo para que el nombre del juego no las pise |
 | Pantalla completa | `F11` (`Esc` para salir) |
+| Ver todos los atajos | `F1` o «Atajos» arriba a la derecha |
+
+Cada botón de arriba lleva en su esquina su tecla o, con el mando, su botón (con los símbolos del mando que uses).
 | Actualizar a la versión nueva (cuando la hay) | `U` o botón «Actualizar a …» arriba a la derecha |
 
 ### 🕹️ Con mando
@@ -62,7 +68,10 @@ Funcionan los mandos de **Xbox One / Series / 360**, **PS5 (DualSense)** y **Nin
 | Dar la vuelta a la caja | X | □ | Y |
 | Personalizar | Y | △ | X |
 | Girar la caja | Stick derecho | Stick derecho | Stick derecho |
-| Cambiar de filtro | LB / RB | L1 / R1 | L / R |
+| Cambiar de saga o consola | LB / RB | L1 / R1 | L / R |
+| Botones de arriba (subir, recorrer, pulsar) | ▲, ◀ ▶, A | ▲, ◀ ▶, ✕ | ▲, ◀ ▶, A |
+| Buscar | RS (pulsar stick derecho) | R3 | RS |
+| Orden | LS (pulsar stick izquierdo) | L3 | LS |
 | Saltar de 5 en 5 | LT / RT | L2 / R2 | ZL / ZR |
 | Formato | View | Create | − |
 | Pantalla completa | Menu | Options | + |
@@ -164,6 +173,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.8.2** — Los iconos de los logros del propio juego se buscan en toda su carpeta
 - [x] **v0.8.3** — Iconos de los logros del propio juego desde achievements/badges (Budokai Tenkaichi 3)
 - [x] **v0.8.4** — Manuales originales de Games Database (descarga directa del PDF) en lugar de Vimm's Lair
+- [x] **v0.9.0** — Barra de arriba nueva con el buscador en medio, Sagas, Nº Jugadores y todos los botones con el mando (con su tecla o botón en la esquina)
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

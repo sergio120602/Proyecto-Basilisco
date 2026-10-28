@@ -48,7 +48,8 @@ public partial class MainWindow : Window
     FamilyMember? _activeMember;
 
     /// <summary>Nombre de lo que se está viendo, para los textos («PS2», «RPG»…), o null en «Todos los juegos».</summary>
-    string? ActiveViewName => _activeFilter?.Name ?? Platforms.Find(_activePlatform)?.Name ?? _activeMember?.Name;
+    string? ActiveViewName => _activeFilter?.Name ?? Platforms.Find(_activePlatform)?.Name ?? _activeMember?.Name ??
+                              (_activePlayers is { } players ? PlayersName(players) : null);
 
     /// <summary>Juegos que se ven en el carrusel con el filtro actual, en el mismo orden.</summary>
     List<Game> _visibleGames = [];
@@ -206,6 +207,8 @@ public partial class MainWindow : Window
         _playTimer.Tick += async (_, _) => await PollPlaySessionAsync();
         Loaded += async (_, _) =>
         {
+            // Las teclas (o botones del mando) en la esquina de los botones de arriba.
+            RefreshButtonBadges();
             await RepairMovedGamesAsync();
             await RestorePlaySessionAsync();
             await SyncSteamPlaytimeAsync(online: true);
@@ -236,7 +239,7 @@ public partial class MainWindow : Window
         _uiScale.Freeze();
         FrameworkElement[] scaled =
         [
-            HeaderBar, FooterBar, TitlePanel, ShortcutsButton, CarouselControlsLeft, CarouselControlsRight, Toast, AchievementsPageContent,
+            HeaderBar, FooterBar, TitlePanel, CarouselControlsLeft, CarouselControlsRight, Toast, AchievementsPageContent,
             FilterStrip, ConsoleEditor, CaseView, ManualReader, Customizer, ArtSearch, FilterEditor, FolderImporter, PlatformPicker, FormatEditor, SteamImporter, ThemeEditor,
             LauncherImporter,
         ];
@@ -410,7 +413,7 @@ public partial class MainWindow : Window
         if (report.Large.Count > 0)
             lines.Add($"• Reducir {report.Large.Count} imágenes más grandes de lo que se llega a ver ({Mb(report.LargeBytes)} ahora). Se quedan con el mismo nombre y formato; no se nota en pantalla.");
         if (report.Orphans.Count > 0)
-            lines.Add($"• Borrar {report.Orphans.Count} archivos que ya no usa ningún juego, filtro ni consola ({Mb(report.OrphanBytes)}).");
+            lines.Add($"• Borrar {report.Orphans.Count} archivos que ya no usa ningún juego, saga ni consola ({Mb(report.OrphanBytes)}).");
         var answer = MessageBox.Show(this, "Se puede aligerar basilisco-data:\n\n" + string.Join("\n", lines) + "\n\n¿Optimizar ahora?",
             "Optimizar datos", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes)
@@ -721,7 +724,8 @@ public partial class MainWindow : Window
     bool BelongsToActiveFilter(Game game) =>
         (_activePlatform is null || game.Platform == _activePlatform) &&
         (_activeFilter is null || game.FilterIds.Contains(_activeFilter.Id)) &&
-        (_activeMember is null || _activeMember.Owns(game));
+        (_activeMember is null || _activeMember.Owns(game)) &&
+        (_activePlayers is null || PlayersGroup(game) == _activePlayers);
 
     int CountGames(GameFilter filter) => Games.Count(game => game.FilterIds.Contains(filter.Id));
 
@@ -751,7 +755,7 @@ public partial class MainWindow : Window
     void RefreshFilterTabs()
     {
         AllTab.Content = $"Todos los juegos ({Games.Count})";
-        AllTab.IsChecked = _activeFilter is null && _activePlatform is null && _activeMember is null;
+        AllTab.IsChecked = _activeFilter is null && _activePlatform is null && _activeMember is null && _activePlayers is null;
 
         ConsolesTab.Content = Platforms.Find(_activePlatform) is { } platform ? $"{platform.Name} ({CountGames(platform)})  ▾" : "Consolas  ▾";
         ConsolesTab.IsChecked = _activePlatform is not null;
@@ -776,8 +780,8 @@ public partial class MainWindow : Window
         }
         else
         {
-            FiltersTab.Content = "Filtros  ▾";
-            FiltersTab.ToolTip = "Ver solo los juegos de un filtro, crear filtros nuevos o editarlos";
+            FiltersTab.Content = "Sagas  ▾";
+            FiltersTab.ToolTip = "Ver solo los juegos de una saga, crear sagas nuevas o editarlas";
         }
         FiltersTab.IsChecked = _activeFilter is not null;
 
@@ -787,7 +791,12 @@ public partial class MainWindow : Window
             : "Ver los juegos de cada miembro de tu familia de Steam";
         FamilyTab.IsChecked = _activeMember is not null;
 
-        SortTab.Content = $"Orden: {SortModes.Short(_settings.SortMode)}  ▾";
+        PlayersTab.Content = _activePlayers is { } players ? $"{PlayersName(players)} ({Games.Count(game => PlayersGroup(game) == players)})  ▾" : "Nº Jugadores  ▾";
+        PlayersTab.IsChecked = _activePlayers is not null;
+
+        // Solo «Orden» (cuál está elegido se ve en el menú y en su ayuda), para que el buscador quepa entero.
+        SortTab.Content = "Orden  ▾";
+        SortTab.ToolTip = $"Cambiar el orden de los juegos · ahora: {SortModes.Short(_settings.SortMode)}";
         SortTab.IsChecked = false;
     }
 
@@ -812,7 +821,7 @@ public partial class MainWindow : Window
 
     void OnAllTabClick(object sender, RoutedEventArgs e)
     {
-        if (_activeFilter is not null || _activePlatform is not null || _activeMember is not null)
+        if (_activeFilter is not null || _activePlatform is not null || _activeMember is not null || _activePlayers is not null)
             SelectView(null, null);
         else
             RefreshFilterTabs();
@@ -866,7 +875,7 @@ public partial class MainWindow : Window
 
         var tiles = new List<FilterTile>
         {
-            new("Todos los filtros", null, Games(this.Games.Count), _activeFilter is null, () => SelectView(_activePlatform, null)),
+            new("Todas las sagas", null, Games(this.Games.Count), _activeFilter is null, () => SelectView(_activePlatform, null)),
         };
         foreach (var filter in Filters)
         {
@@ -874,15 +883,15 @@ public partial class MainWindow : Window
             tiles.Add(new FilterTile(filter.Name, ImageStore.GetFilterImagePath(filter), $"{filter.Name} · {Games(CountGames(filter))}",
                 filter == _activeFilter, () => SelectView(null, chosen), Edit: () => OpenFilterEditor(chosen)));
         }
-        tiles.Add(new FilterTile("+  Nuevo filtro", null, "Crear un filtro", false, () => OpenFilterEditor(null), IsAction: true));
+        tiles.Add(new FilterTile("+  Nueva saga", null, "Crear una saga", false, () => OpenFilterEditor(null), IsAction: true));
         if (Filters.Count > 0)
-            tiles.Add(new FilterTile("Editar filtro", null, "Cambiar el nombre, el logotipo o los juegos", false, () => FilterStrip.StartEditing(),
+            tiles.Add(new FilterTile("Editar saga", null, "Cambiar el nombre, el logotipo o los juegos", false, () => FilterStrip.StartEditing(),
                 IsAction: true, KeepOpen: true));
 
         // Justo debajo de la barra de arriba (en las unidades del panel, que va escalado como el resto).
         var scale = _uiScale.ScaleX;
         var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
-        FilterStrip.Open(tiles, top, _padMode);
+        FilterStrip.Open(tiles, top, _padMode, "SAGAS", "ELIGE LA SAGA QUE QUIERES EDITAR");
     }
 
     // ---- Steam familiar ----
@@ -1215,11 +1224,12 @@ public partial class MainWindow : Window
 
     void SelectFilter(GameFilter? filter) => SelectView(null, filter);
 
-    void SelectView(string? platform, GameFilter? filter, FamilyMember? member = null)
+    void SelectView(string? platform, GameFilter? filter, FamilyMember? member = null, int? players = null)
     {
         _activePlatform = platform;
         _activeFilter = filter;
         _activeMember = member;
+        _activePlayers = players;
         RefreshFilterTabs();
         RefreshCarousel(0, jump: true);
 
@@ -2126,7 +2136,7 @@ public partial class MainWindow : Window
         if (_settings.CarouselAutoShift)
         {
             // Ni el título ni los controles de los lados (alineación, altura, zoom) pisan las cajas.
-            var controlsBottom = HeaderBar.Margin.Top + (HeaderBar.ActualHeight + 8 + ShortcutsButton.ActualHeight +
+            var controlsBottom = HeaderBar.Margin.Top + (HeaderBar.ActualHeight + 12 +
                                                          Math.Max(CarouselControlsLeft.ActualHeight, CarouselControlsRight.ActualHeight) + 16) * scale;
             FitBelowTitle(Math.Max(TitlePanel.Margin.Top + TitlePanel.ActualHeight * scale + 22 * scale, controlsBottom));
         }
@@ -2135,11 +2145,8 @@ public partial class MainWindow : Window
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));
         Floor.Margin = new Thickness(0, Math.Max(0, horizon.Y - 40), 0, 0);
 
-        // «Atajos de teclado», justo debajo de «Basilisco».
-        ShortcutsButton.Margin = new Thickness(HeaderBar.Margin.Left - 14 * scale, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 2 * scale, 0, 0);
-
-        // Los controles del carrusel, debajo: la alineación y la altura a la izquierda, la descarga y el zoom a la derecha.
-        var controlsTop = ShortcutsButton.Margin.Top + ShortcutsButton.ActualHeight * scale + 6 * scale;
+        // Los controles del carrusel, debajo de la cabecera: la alineación y la altura a la izquierda, la descarga y el zoom a la derecha.
+        var controlsTop = HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 12 * scale;
         CarouselControlsLeft.Margin = new Thickness(HeaderBar.Margin.Left, controlsTop, 0, 0);
         CarouselControlsRight.Margin = new Thickness(0, controlsTop, HeaderBar.Margin.Right, 0);
     }
@@ -2464,6 +2471,12 @@ public partial class MainWindow : Window
 
         game.Name = result.Name;
         game.ReleaseDate = result.ReleaseDate;
+        // A mano manda; en blanco se vuelve a buscar en LaunchBox la próxima vez.
+        if (result.Players != game.Players)
+        {
+            game.Players = result.Players;
+            game.PlayersLooked = result.Players is not null;
+        }
         game.TextColor = result.TextColor;
         game.PlayMinutes = result.PlayMinutes;
         game.ManualFrame = result.ManualFrame;
@@ -2863,7 +2876,7 @@ public partial class MainWindow : Window
         var filter = result.Filter ?? new GameFilter();
         filter.Name = result.Name;
 
-        var message = isNew ? $"Filtro «{filter.Name}» creado" : "Filtro guardado";
+        var message = isNew ? $"Saga «{filter.Name}» creada" : "Saga guardada";
         try
         {
             if (result.NewImagePath is { } image)
@@ -2889,8 +2902,8 @@ public partial class MainWindow : Window
 
     void DeleteFilter(GameFilter filter)
     {
-        var answer = MessageBox.Show(this, $"¿Eliminar el filtro «{filter.Name}»?\n\nLos juegos que tenga no se borran: siguen en «Todos los juegos».",
-            "Eliminar filtro", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var answer = MessageBox.Show(this, $"¿Eliminar la saga «{filter.Name}»?\n\nLos juegos que tenga no se borran: siguen en «Todos los juegos».",
+            "Eliminar saga", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes)
             return;
 
@@ -2904,7 +2917,7 @@ public partial class MainWindow : Window
             SelectView(null, null);
         else
             RefreshFilterTabs();
-        ShowToast($"Filtro «{filter.Name}» eliminado");
+        ShowToast($"Saga «{filter.Name}» eliminada");
     }
 
     void Save()
@@ -3051,8 +3064,23 @@ public partial class MainWindow : Window
             return;
         }
 
+        // En la barra de arriba: Ⓐ pulsa el botón elegido y Ⓑ vuelve al carrusel; cualquier otro botón vuelve y hace lo suyo.
+        if (InBar)
+        {
+            if (action == PadAction.Confirm)
+            {
+                ActivateBar();
+                return;
+            }
+            ExitBar();
+            if (action == PadAction.Back)
+                return;
+        }
+
         switch (action)
         {
+            case PadAction.Search: FocusSearch(); break;
+            case PadAction.Sort: Press(SortTab); break;
             case PadAction.Confirm: Activate(_flow.SelectedIndex); break;
             case PadAction.Back when _fullScreen: ToggleFullScreen(); break;
             case PadAction.Rotate: _flow.FlipSelected(); break;
@@ -3089,7 +3117,9 @@ public partial class MainWindow : Window
         }
         if (IsPanelOpen)
             return;
-        if (_flow.ShelfMode)
+        if (InBar)
+            MoveBar(direction);
+        else if (_flow.ShelfMode)
             ShelfMove(direction);
         else
             _flow.MoveBy(direction);
@@ -3110,6 +3140,15 @@ public partial class MainWindow : Window
         if (CaseView.IsOpen && !Customizer.IsOpen && !ManualReader.IsOpen)
         {
             InjectKey(KeyForDirection(direction, vertical: true));
+            return;
+        }
+        if (!IsPanelOpen && !_flow.ShelfMode)
+        {
+            // Arriba sube a la barra de arriba (y de fila en fila); abajo baja hasta volver al carrusel.
+            if (InBar)
+                MoveBarRow(direction);
+            else if (direction < 0)
+                EnterBar();
             return;
         }
         if (IsPanelOpen || !_flow.ShelfMode)
@@ -3166,8 +3205,10 @@ public partial class MainWindow : Window
         FormatKey.Text = pad ? GamepadService.Label(PadAction.Format, style) : "F";
         FilterKey.Text = pad ? GamepadService.Label(PadAction.NextFilter, style) : "Tab";
         FullScreenKey.Text = pad ? GamepadService.Label(PadAction.FullScreen, style) : "F11";
+        BarKey.Text = pad ? "▲" : "↑";
         RemoveHint.Visibility = ImportHints.Visibility = KeyboardHints.Visibility = pad ? Visibility.Collapsed : Visibility.Visible;
         UpdateShelfHints();
+        RefreshButtonBadges();
     }
 
     /// <summary>Acerca o aleja las cajas; el título y el suelo se recolocan solos.</summary>
@@ -3403,8 +3444,38 @@ public partial class MainWindow : Window
             return;
         }
 
+        // En la barra de arriba, las flechas se mueven por ella, Enter pulsa y Esc vuelve.
+        if (InBar)
+        {
+            switch (e.Key)
+            {
+                case Key.Left: MoveBar(-1); break;
+                case Key.Right: MoveBar(1); break;
+                case Key.Up: MoveBarRow(-1); break;
+                case Key.Down: MoveBarRow(1); break;
+                case Key.Enter or Key.Space: ActivateBar(); break;
+                case Key.Escape: ExitBar(); break;
+                default:
+                    ExitBar();
+                    goto keys;
+            }
+            e.Handled = true;
+            return;
+        }
+
+        keys:
         switch (e.Key)
         {
+            case Key.Up: EnterBar(); break;
+            case Key.D1 or Key.NumPad1: Press(AllTab); break;
+            case Key.D2 or Key.NumPad2: Press(ConsolesTab); break;
+            case Key.D3 or Key.NumPad3: Press(FiltersTab); break;
+            case Key.D4 or Key.NumPad4: Press(PlayersTab); break;
+            case Key.D5 or Key.NumPad5 when FamilyTab.IsVisible: Press(FamilyTab); break;
+            case Key.O: Press(SortTab); break;
+            case Key.F1: Press(ShortcutsButton); break;
+            case Key.L: Press(AlignToggle); break;
+            case Key.M: Press(MetadataButton); break;
             case Key.Left: _flow.MoveBy(-1); break;
             case Key.Right: _flow.MoveBy(1); break;
             case Key.Home: _flow.Select(0); break;

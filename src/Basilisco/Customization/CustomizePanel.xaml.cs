@@ -60,7 +60,7 @@ public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
     ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf,
-    ImageChange Inside, ImageFrame? ManualFrame, ImageFrame? InsideFrame, ImageFrame? DiscFrame = null);
+    ImageChange Inside, ImageFrame? ManualFrame, ImageFrame? InsideFrame, ImageFrame? DiscFrame = null, int? Players = null);
 
 /// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco, el manual o el fondo.</summary>
 public enum ArtTarget { Front, Back, Spine, Disc, Manual, Background, Inside, ManualPdf }
@@ -169,6 +169,7 @@ public partial class CustomizePanel : UserControl
             ? "Son las horas que llevas en Steam y se ponen al día solas."
             : "Se cuenta solo mientras juegas desde Basilisco. Se ve debajo del juego en el carrusel.";
         UpdateBackgroundPreview();
+        PlayersBox.Text = game.Players?.ToString() ?? "";
         ReleaseBox.Text = game.ReleaseDate is { } released
             ? released is { Month: 1, Day: 1 } ? released.Year.ToString() : released.ToString("dd/MM/yyyy")
             : "";
@@ -802,6 +803,18 @@ public partial class CustomizePanel : UserControl
             return;
         }
 
+        int? players = null;
+        if (PlayersBox.Text.Trim() is { Length: > 0 } playersText)
+        {
+            if (!int.TryParse(playersText, out var count) || count is < 1 or > 999)
+            {
+                ShowError("El número de jugadores tiene que ser un número (1, 2, 4…), o dejarlo en blanco.");
+                PlayersBox.Focus();
+                return;
+            }
+            players = count;
+        }
+
         var filterIds = FilterToggles.Children
             .OfType<ToggleButton>()
             .Where(toggle => toggle.IsChecked == true)
@@ -817,7 +830,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside, _manualFrame, _insideFrame, _discFrame);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside, _manualFrame, _insideFrame, _discFrame, players);
         Close();
         Saved?.Invoke(result);
     }
