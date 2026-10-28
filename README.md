@@ -52,6 +52,7 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Subir o bajar las cajas | Barra «Altura» abajo a la derecha; «Auto» las baja solo lo justo para que el nombre del juego no las pise |
 | Pantalla completa | `F11` (`Esc` para salir) |
 | Ver todos los atajos | `F1` o «Atajos» arriba a la derecha |
+| Mover los botones, el título del juego y sus datos por la pantalla | `Ctrl+E` o «Editar» arriba a la derecha: se arrastran con el ratón (clic derecho en uno: vuelve a su sitio) |
 
 Cada botón de arriba lleva en su esquina su tecla o, con el mando, su botón (con los símbolos del mando que uses).
 | Actualizar a la versión nueva (cuando la hay) | `U` o botón «Actualizar a …» arriba a la derecha |
@@ -174,6 +175,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.8.3** — Iconos de los logros del propio juego desde achievements/badges (Budokai Tenkaichi 3)
 - [x] **v0.8.4** — Manuales originales de Games Database (descarga directa del PDF) en lugar de Vimm's Lair
 - [x] **v0.9.0** — Barra de arriba nueva con el buscador en medio, Sagas, Nº Jugadores y todos los botones con el mando (con su tecla o botón en la esquina)
+- [x] **v0.9.1** — Modo edición: mover los botones, el título del juego y sus datos por la pantalla
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
