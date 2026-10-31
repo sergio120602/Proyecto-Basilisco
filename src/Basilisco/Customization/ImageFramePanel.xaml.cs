@@ -19,6 +19,7 @@ public partial class ImageFramePanel : UserControl
     Action<ImageFrame>? _onAccept;
     ImageFrame _frame = ImageFrame.Default;
     double _fillZoom = 1;
+    double? _generalOpacity;
     bool _renderPending;
     bool _syncingSlider;
 
@@ -36,11 +37,17 @@ public partial class ImageFramePanel : UserControl
     /// <param name="render">Pinta la cara con un encuadre dado.</param>
     /// <param name="fillZoom">Zoom con el que la imagen llena la cara entera (botón «Llenar»).</param>
     /// <param name="adaptable">True para la contraportada: enseña el interruptor «Adaptada».</param>
+    /// <param name="generalOpacity">
+    /// Para el interior de la caja: la opacidad general (Apariencia). Enseña la barra de opacidad de este juego, que
+    /// empieza en la general si aún no tiene la suya.
+    /// </param>
     public void Open(string title, ImageFrame frame, double fillZoom, Func<ImageFrame, BitmapSource> render, Action<ImageFrame> onAccept,
-                     bool adaptable = false)
+                     bool adaptable = false, double? generalOpacity = null)
     {
         TitleText.Text = title;
         AdaptedToggle.Visibility = adaptable ? Visibility.Visible : Visibility.Collapsed;
+        _generalOpacity = generalOpacity;
+        OpacityRow.Visibility = generalOpacity is null ? Visibility.Collapsed : Visibility.Visible;
         _render = render;
         _onAccept = onAccept;
         _fillZoom = fillZoom;
@@ -57,6 +64,13 @@ public partial class ImageFramePanel : UserControl
 
         _syncingSlider = true;
         ZoomSlider.Value = ZoomToSlider(_frame.Zoom);
+        if (_generalOpacity is { } general)
+        {
+            var opacity = _frame.Opacity ?? general;
+            OpacitySlider.Value = opacity;
+            OpacityText.Text = _frame.Opacity is null ? $"{opacity * 100:0} % (general)" : $"{opacity * 100:0} %";
+            GeneralOpacityButton.IsEnabled = _frame.Opacity is not null;
+        }
         _syncingSlider = false;
 
         // Se vuelve a pintar una vez por fotograma como mucho, aunque el ratón mande muchos movimientos.
@@ -137,10 +151,19 @@ public partial class ImageFramePanel : UserControl
             SetFrame(_frame with { Zoom = SliderToZoom(e.NewValue) });
     }
 
-    // «Entera» y «Llenar» no cambian si está adaptada; adaptada ya llena la cara justa, sin recortar.
-    void OnFitClick(object sender, RoutedEventArgs e) => SetFrame(ImageFrame.Default with { Adapted = _frame.Adapted });
+    void OnOpacitySliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!_syncingSlider)
+            SetFrame(_frame with { Opacity = Math.Round(e.NewValue, 2) });
+    }
 
-    void OnFillClick(object sender, RoutedEventArgs e) => SetFrame(new ImageFrame(_frame.Adapted ? 1 : _fillZoom, Adapted: _frame.Adapted));
+    void OnGeneralOpacityClick(object sender, RoutedEventArgs e) => SetFrame(_frame with { Opacity = null });
+
+    // «Entera» y «Llenar» no cambian si está adaptada; adaptada ya llena la cara justa, sin recortar. La opacidad se queda.
+    void OnFitClick(object sender, RoutedEventArgs e) => SetFrame(ImageFrame.Default with { Adapted = _frame.Adapted, Opacity = _frame.Opacity });
+
+    void OnFillClick(object sender, RoutedEventArgs e) =>
+        SetFrame(new ImageFrame(_frame.Adapted ? 1 : _fillZoom, Adapted: _frame.Adapted, Opacity: _frame.Opacity));
 
     void OnAdaptedClick(object sender, RoutedEventArgs e) => SetFrame(_frame with { Adapted = AdaptedToggle.IsChecked == true });
 

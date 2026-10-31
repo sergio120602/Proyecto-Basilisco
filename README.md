@@ -176,6 +176,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.8.4** — Manuales originales de Games Database (descarga directa del PDF) en lugar de Vimm's Lair
 - [x] **v0.9.0** — Barra de arriba nueva con el buscador en medio, Sagas, Nº Jugadores y todos los botones con el mando (con su tecla o botón en la esquina)
 - [x] **v0.9.1** — Modo edición: mover los botones, el título del juego y sus datos por la pantalla
+- [x] **v0.9.2** — Opacidad del interior de la caja (por juego y general), el disco se para antes y varios manuales en PDF por juego
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -217,13 +218,13 @@ Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Stea
 
 Al darle a un juego se abre su caja: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha, en su bandeja. Al darle a **Jugar**, el disco gira, se inicia el juego y la caja se cierra sola.
 
-En Nintendo 64, Nintendo DS y Nintendo Switch, en lugar del disco va su cartucho, que sale de la caja al darle a Jugar. El interior de la caja es de plástico translúcido del color de su consola. En Personalizar («Interior de la caja») puedes poner una imagen tuya o de SteamGridDB, que se ve nítida a través del plástico, de lado a lado de la caja abierta.
+En Nintendo 64, Nintendo DS y Nintendo Switch, en lugar del disco va su cartucho, que sale de la caja al darle a Jugar. El interior de la caja es de plástico translúcido del color de su consola. En Personalizar («Interior de la caja») puedes poner una imagen tuya o de SteamGridDB, que se ve nítida a través del plástico, de lado a lado de la caja abierta. Con «Ajustar…» eliges también su **opacidad** (cuánto se funde con el plástico); en Apariencia está la opacidad general para todos los juegos que no tengan la suya.
 
 El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco de Steam Game Covers o de LaunchBox, o para el manual un póster, un fondo o la pantalla de título de LaunchBox. Si no tienen imagen, el disco se dibuja con la portada y el manual es un librito con el nombre del juego.
 
 ## 📖 Manuales
 
-Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo, buscar el **manual original escaneado en [Games Database](https://www.gamesdatabase.org)** (el PDF se descarga directamente) o quitarlo. La imagen del librito y la del interior de la caja se pueden **ajustar** (ampliar y mover). Se guardan en `basilisco-data/manuals/`.
+Cada juego puede tener su **manual en PDF**. Desde la caja abierta, **Leer el manual** (`M`, X en el mando o un clic en el librito) lo abre en un lector como un librito, que se pasa con las flechas, la rueda o el mando. Si aún no tiene, Basilisco lo escribe en ese momento con la información de la tienda de **Steam** (en español: descripción, ficha, requisitos, idiomas y capturas) y, para los juegos que no están en Steam, de **LaunchBox**. En Personalizar también puedes crearlo, poner un PDF tuyo, buscar el **manual original escaneado en [Games Database](https://www.gamesdatabase.org)** (el PDF se descarga directamente) o quitarlo. Un juego puede tener **varios manuales en PDF**: cada uno que añades se guarda con los demás y, desde la caja abierta, **Elegir el manual** te deja escoger cuál leer. La imagen del librito y la del interior de la caja se pueden **ajustar** (ampliar y mover). Se guardan en `basilisco-data/manuals/`.
 
 ## 📦 Formatos de caja
 

@@ -107,6 +107,8 @@ public static class DataOptimizer
             Add(AppInfo.CoversDirectory, game.Inside);
             Add(AppInfo.BackgroundsDirectory, game.Background);
             Add(AppInfo.ManualsDirectory, game.ManualPdf);
+            foreach (var manual in game.OtherManualPdfs ?? [])
+                Add(AppInfo.ManualsDirectory, manual.File);
             Add(AppInfo.CoversDirectory, game.Soundtrack?.Disc);
         }
         foreach (var filter in filters)

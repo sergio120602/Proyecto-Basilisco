@@ -75,6 +75,7 @@ public partial class MainWindow : Window
     {
         ThemeManager.Apply(_settings.Theme);
         InitializeComponent();
+        OpenCaseArt.InsideOpacity = Math.Clamp(_settings.InsideOpacity, 0, 1);
         SourceInitialized += (_, _) => ThemeManager.SetTitleBar(this, ThemeManager.IsDark);
         ThemeManager.Changed += OnThemeChanged;
         // «Como Windows»: si cambias el modo de Windows con Basilisco abierto, cambia también.
@@ -122,11 +123,26 @@ public partial class MainWindow : Window
             RefreshFilterTabs();
             if (!IsPanelOpen)
                 Focus();
+            else if (CaseView.IsOpen && !Customizer.IsOpen)
+                CaseView.Focus(); // La franja de los manuales se abre encima de la caja abierta.
         };
         CaseView.ManualRequested += game => _ = OpenManualAsync(game);
         Customizer.ManualReadRequested += (path, game, title) => ManualReader.Open(path, game, title, _padMode);
         Customizer.ImageManualReadRequested += OpenImageManual;
         Customizer.SoundtrackChanged += _ => Save();
+        Customizer.ManualPdfAdded += async (game, pdf, name) =>
+        {
+            try
+            {
+                await StoreManualAsync(game, pdf, name);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                ShowToast($"No se ha podido guardar el manual: {ex.Message}");
+            }
+            Customizer.RefreshManualInfo();
+        };
+        Customizer.ManualPdfsChanged += _ => Save();
         CaseView.Volume = _settings.SoundtrackVolume;
         CaseView.YouTubeKey = _settings.YouTubeApiKey;
         CaseView.YouTubeKeyChanged += key =>
@@ -434,6 +450,12 @@ public partial class MainWindow : Window
     /// </summary>
     async Task OpenManualAsync(Game game)
     {
+        // Con varios manuales (el de Pinterest y los PDF guardados), se elige cuál leer en la franja negra.
+        if (game.ManualCount > 1)
+        {
+            OpenManualStrip(game);
+            return;
+        }
         // El de Pinterest (imágenes) va antes que el PDF.
         if (game.ManualPages is { Count: > 0 })
         {
@@ -451,7 +473,7 @@ public partial class MainWindow : Window
         {
             var pdf = await ManualBuilder.CreateAsync(game, FaceImage(game, Face.Front), FaceImage(game, Face.Back),
                 new Progress<string>(text => { if (CaseView.Game == game) CaseView.SetManualBusy(text); }), CancellationToken.None);
-            await StoreManualAsync(game, pdf);
+            await StoreManualAsync(game, pdf, ManualBuilder.ManualName);
             if (CaseView.Game == game)
                 CaseView.RefreshManual();
             if (ImageStore.GetManualPdfPath(game) is { } created && CaseView.IsOpen && CaseView.Game == game)
@@ -466,10 +488,38 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Guarda el PDF como manual del juego y, si no tenía imagen de manual, pone su portada.</summary>
-    async Task StoreManualAsync(Game game, string pdf, bool coverAsImage = true)
+    /// <summary>
+    /// Los manuales del juego en la franja negra, para elegir cuál leer: el de Pinterest y los PDF guardados (el último
+    /// que se leyó, marcado). El PDF elegido pasa a ser el que se lee.
+    /// </summary>
+    void OpenManualStrip(Game game)
     {
-        ImageStore.SetManualPdf(game, pdf);
+        var tiles = new List<FilterTile>();
+        if (game.ManualPages is { Count: > 0 } pages)
+            tiles.Add(new FilterTile("Manual de Pinterest", null, $"{pages.Count} {(pages.Count == 1 ? "página" : "páginas")}", false,
+                () => OpenImageManual(game)));
+        if (ImageStore.GetManualPdfPath(game) is { } current)
+            tiles.Add(new FilterTile(ImageStore.ManualPdfName(game), null, "PDF · el último que leíste", true,
+                () => ManualReader.Open(current, game, game.Name, _padMode)));
+        foreach (var manual in game.OtherManualPdfs ?? [])
+        {
+            tiles.Add(new FilterTile(manual.Name, null, "PDF", false, () =>
+            {
+                ImageStore.SelectManualPdf(game, manual);
+                Save();
+                if (ImageStore.GetManualPdfPath(game) is { } chosen)
+                    ManualReader.Open(chosen, game, game.Name, _padMode);
+            }));
+        }
+        var scale = _uiScale.ScaleX;
+        var top = (HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale) / scale + 6;
+        FilterStrip.Open(tiles, top, _padMode, "MANUALES");
+    }
+
+    /// <summary>Guarda el PDF como un manual más del juego (el que se lee) y, si no tenía imagen de manual, pone su portada.</summary>
+    async Task StoreManualAsync(Game game, string pdf, string name, bool coverAsImage = true)
+    {
+        ImageStore.AddManualPdf(game, pdf, name);
         if (coverAsImage && game.Manual is null && ImageStore.GetManualPdfPath(game) is { } stored && await PdfRenderer.SaveCoverAsync(stored) is { } cover)
         {
             ImageStore.SetExtra(game, GameExtra.Manual, cover);
@@ -2506,16 +2556,6 @@ public partial class MainWindow : Window
             {
             }
         }
-        try
-        {
-            if (result.ManualPdf.NewPath is { } manualPdf)
-                _ = StoreManualAsync(game, manualPdf, coverAsImage: result.Manual.NewPath is null);
-            else if (result.ManualPdf.Remove)
-                ImageStore.RemoveManualPdf(game);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-        }
         _lookBackground = "\0"; // Fuerza a recargar el fondo aunque el archivo se llame igual.
         game.Platform = result.Platform;
         game.Format = result.Format;
@@ -3616,7 +3656,8 @@ public partial class MainWindow : Window
     }
 
     void OpenThemeEditorCore() => ThemeEditor.Open(ImageStore.GetGlobalBackgroundPath(_settings), _settings.TextColor,
-        Games.Count(game => game.Background is not null || game.TextColor is not null), _settings.Theme);
+        Games.Count(game => game.Background is not null || game.TextColor is not null), _settings.Theme, OpenCaseArt.InsideOpacity,
+        Games.Count(game => game.InsideFrame?.Opacity is not null));
 
     /// <summary>Apariencia general: fondo y color de las letras para todos los juegos.</summary>
     void ApplyTheme(ThemeResult result)
@@ -3633,6 +3674,7 @@ public partial class MainWindow : Window
             ShowToast("No se pudo copiar el fondo");
         }
         _settings.TextColor = result.TextColor;
+        _settings.InsideOpacity = OpenCaseArt.InsideOpacity = Math.Clamp(result.InsideOpacity, 0, 1);
         _settings.Save();
 
         if (result.ClearOwn)
@@ -3642,6 +3684,12 @@ public partial class MainWindow : Window
                 ImageStore.RemoveBackground(game);
                 game.TextColor = null;
             }
+            Save();
+        }
+        if (result.ClearOwnOpacity)
+        {
+            foreach (var game in Games.Where(game => game.InsideFrame?.Opacity is not null))
+                game.InsideFrame = game.InsideFrame! with { Opacity = null };
             Save();
         }
 

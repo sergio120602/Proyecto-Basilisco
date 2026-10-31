@@ -11,7 +11,10 @@ namespace Basilisco.Models;
 /// Solo para la contraportada: true (por defecto) para estirarla justo al tamaño de la cara, el mismo que la portada
 /// (600 × 900 en las cajas de PC); false para verla con su proporción original. La imagen guardada no cambia.
 /// </param>
-public sealed record ImageFrame(double Zoom = 1, double X = 0, double Y = 0, bool Adapted = true)
+/// <param name="Opacity">
+/// Solo para la imagen del interior de la caja: cuánto se ve (de 0 a 1). Null: la general de Apariencia.
+/// </param>
+public sealed record ImageFrame(double Zoom = 1, double X = 0, double Y = 0, bool Adapted = true, double? Opacity = null)
 {
     public const double MinZoom = 0.5;
     public const double MaxZoom = 12;

@@ -485,8 +485,9 @@
             </DockPanel>
         </Grid>
 
-        <customization:FilterStripPanel x:Name="FilterStrip"/>
         <customization:OpenCasePanel x:Name="CaseView"/>
+        <!-- Encima de la caja abierta: desde ella se abre la franja para elegir el manual -->
+        <customization:FilterStripPanel x:Name="FilterStrip"/>
         <customization:CustomizePanel x:Name="Customizer"/>
         <customization:FilterPanel x:Name="FilterEditor"/>
         <customization:FolderImportPanel x:Name="FolderImporter"/>

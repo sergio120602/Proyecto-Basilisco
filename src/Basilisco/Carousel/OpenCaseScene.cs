@@ -210,7 +210,7 @@ public sealed class OpenCaseScene
     bool _stopping;
     double _stopTime;
     Action? _stopped;
-    const double StopSeconds = 2.4;
+    const double StopSeconds = 1.1;
 
     /// <summary>
     /// Pasa la hoja de plástico donde está el disco (hacia la izquierda, para ver la banda sonora) o la devuelve a su
@@ -351,12 +351,12 @@ public sealed class OpenCaseScene
         else if (_spinning)
         {
             _spinTime += dt;
-            // Al frenar, de la velocidad que llevaba a cero, cada vez más despacio.
+            // Al frenar, de la velocidad que llevaba a cero: frena desde el primer momento y se para suave, sin golpe.
             var brake = 1.0;
             if (_stopping)
             {
                 _stopTime += dt;
-                brake = 1 - Ease(Math.Min(1, _stopTime / StopSeconds));
+                brake = Math.Pow(1 - Math.Min(1, _stopTime / StopSeconds), 2);
             }
             _spin = SpinSpeed * Math.Min(1, _spinTime / SpinRamp) * brake;
             _disc.Angle = (_disc.Angle - _spin * 360 * dt) % 360;

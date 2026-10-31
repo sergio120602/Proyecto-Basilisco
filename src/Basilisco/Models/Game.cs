@@ -112,6 +112,12 @@ public sealed class Game
     /// <summary>El manual para leer, en PDF (dentro de basilisco-data/manuals). Null: aún no tiene.</summary>
     public string? ManualPdf { get; set; }
 
+    /// <summary>Nombre del manual en PDF que se lee (null en bibliotecas anteriores a la 0.9.2: «Manual en PDF»).</summary>
+    public string? ManualPdfName { get; set; }
+
+    /// <summary>Los demás manuales en PDF guardados del juego, para elegir otro al abrir el manual.</summary>
+    public List<SavedManual>? OtherManualPdfs { get; set; }
+
     public DateTime AddedAt { get; set; }
     public DateTime? LastPlayed { get; set; }
     public int PlayCount { get; set; }
@@ -122,6 +128,10 @@ public sealed class Game
     /// <summary>Imágenes del formato que se está usando.</summary>
     [JsonIgnore]
     public FaceSet CurrentFaces => Faces(Format);
+
+    /// <summary>Cuántos manuales tiene para leer: el de Pinterest y los PDF.</summary>
+    [JsonIgnore]
+    public int ManualCount => (ManualPages is { Count: > 0 } ? 1 : 0) + (ManualPdf is null ? 0 : 1) + (OtherManualPdfs?.Count ?? 0);
 
     // Bibliotecas de versiones anteriores a la 0.1.3: las imágenes estaban sueltas en el juego.
     // Al leerlas pasan a la caja cuadrada; al guardar ya no se escriben.

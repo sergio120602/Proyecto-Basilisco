@@ -52,14 +52,14 @@ public sealed class PendingFaces
 /// <param name="PlayMinutes">Tiempo de juego en minutos.</param>
 /// <param name="Disc">Cambio de la imagen del disco (caja abierta).</param>
 /// <param name="Manual">Cambio de la imagen que hace de manual (caja abierta).</param>
-/// <param name="ManualPdf">Cambio del manual en PDF.</param>
 /// <param name="Inside">Cambio de la imagen del interior de la caja.</param>
 /// <param name="ManualFrame">Encuadre de la imagen del manual (null: llena el librito).</param>
-/// <param name="InsideFrame">Encuadre de la imagen del interior (null: llena la caja abierta).</param>
+/// <param name="InsideFrame">Encuadre (y opacidad) de la imagen del interior (null: llena la caja abierta, con la opacidad general).</param>
+/// <remarks>Los manuales en PDF no van aquí: se guardan al momento.</remarks>
 public sealed record CustomizeResult(
     Game Game, string Name, string? NewPath, CoverFormat Format, IReadOnlyDictionary<CoverFormat, PendingFaces> Faces,
     string? Platform, List<string> FilterIds, DateTime? ReleaseDate,
-    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual, ImageChange ManualPdf,
+    ImageChange Background, string? TextColor, int PlayMinutes, ImageChange Disc, ImageChange Manual,
     ImageChange Inside, ImageFrame? ManualFrame, ImageFrame? InsideFrame, ImageFrame? DiscFrame = null, int? Players = null);
 
 /// <summary>Para qué se busca una imagen en internet: una cara de la caja, el disco, el manual o el fondo.</summary>
@@ -90,7 +90,6 @@ public partial class CustomizePanel : UserControl
     ImageChange _background = ImageChange.None;
     ImageChange _disc = ImageChange.None;
     ImageChange _manual = ImageChange.None;
-    ImageChange _manualPdf = ImageChange.None;
     ImageChange _inside = ImageChange.None;
     ImageFrame? _manualFrame, _insideFrame, _discFrame;
     CancellationTokenSource? _manualWork;
@@ -147,7 +146,6 @@ public partial class CustomizePanel : UserControl
         _background = ImageChange.None;
         _disc = ImageChange.None;
         _manual = ImageChange.None;
-        _manualPdf = ImageChange.None;
         _inside = ImageChange.None;
         _manualFrame = game.ManualFrame;
         _insideFrame = game.InsideFrame;
@@ -403,7 +401,7 @@ public partial class CustomizePanel : UserControl
             FrameEditor.Open("Ajustar el interior de la caja", _insideFrame ?? OpenCaseArt.FillFrame(inside, spread),
                 CoverArt.FillZoom(new Size(inside.Width, inside.Height), spread, rotateWide: false),
                 frame => OpenCaseArt.RenderSpread(plastic, shape, manualPath, name, inside, _manualFrame, frame, content),
-                frame => _insideFrame = frame);
+                frame => _insideFrame = frame, generalOpacity: OpenCaseArt.InsideOpacity);
         }
         else
         {
@@ -485,21 +483,61 @@ public partial class CustomizePanel : UserControl
         RemoveManualButton.IsEnabled = CurrentExtra(GameExtra.Manual) is not null;
         var pdf = CurrentManualPdf();
         var pages = _game?.ManualPages?.Count ?? 0;
-        ManualPdfText.Text = (pages > 0 ? $"Manual de Pinterest: {pages} {(pages == 1 ? "página" : "páginas")} (es el que se lee). " : "") + (pdf is null
+        var pdfs = (pdf is null ? 0 : 1) + (_game?.OtherManualPdfs?.Count ?? 0);
+        ManualPdfText.Text = (pages > 0 ? $"Manual de Pinterest: {pages} {(pages == 1 ? "página" : "páginas")}. " : "") + (pdf is null
             ? pages > 0 ? "" : "Sin manual en PDF: se creará al abrirlo desde la caja abierta."
-            : _manualPdf.NewPath is not null ? "Manual en PDF nuevo (se guarda al darle a Guardar)." : "Tiene manual en PDF.");
+            : pdfs == 1 ? "Tiene un manual en PDF." : $"Tiene {pdfs} manuales en PDF: el marcado es el que se lee aquí; desde la caja abierta eliges cuál leer.") +
+            (pdfs > 0 || pages > 0 ? " Los manuales se guardan al momento." : "");
         ReadManualButton.IsEnabled = pdf is not null || pages > 0;
         RemoveManualPdfButton.IsEnabled = pdf is not null;
         RemovePinterestButton.Visibility = pages > 0 ? Visibility.Visible : Visibility.Collapsed;
+        BuildManualPdfList();
     }
 
-    /// <summary>El PDF que tendrá el juego como manual si se guarda ahora.</summary>
-    string? CurrentManualPdf()
+    /// <summary>Una casilla por cada manual en PDF guardado; al darle, pasa a ser el que se lee.</summary>
+    void BuildManualPdfList()
     {
-        if (_manualPdf.NewPath is not null || _manualPdf.Remove || _game is null)
-            return _manualPdf.NewPath;
-        return ImageStore.GetManualPdfPath(_game);
+        ManualPdfList.Children.Clear();
+        if (_game is not { ManualPdf: not null } game || game.OtherManualPdfs is not { Count: > 0 } others)
+        {
+            ManualPdfList.Visibility = Visibility.Collapsed;
+            return;
+        }
+        ManualPdfList.Visibility = Visibility.Visible;
+        ManualPdfList.Children.Add(ManualToggle(ImageStore.ManualPdfName(game), null));
+        foreach (var manual in others)
+            ManualPdfList.Children.Add(ManualToggle(manual.Name, manual));
+
+        ToggleButton ManualToggle(string name, SavedManual? manual)
+        {
+            var toggle = new ToggleButton
+            {
+                Content = name,
+                IsChecked = manual is null,
+                Style = (Style)FindResource("FilterToggle"),
+                ToolTip = manual is null ? "El que se lee ahora" : "Leer este manual a partir de ahora",
+            };
+            toggle.Click += (_, _) =>
+            {
+                if (manual is not null)
+                {
+                    ImageStore.SelectManualPdf(game, manual);
+                    ManualPdfsChanged?.Invoke(game);
+                }
+                UpdateExtrasText();
+            };
+            return toggle;
+        }
     }
+
+    /// <summary>El PDF que se lee ahora como manual.</summary>
+    string? CurrentManualPdf() => _game is null ? null : ImageStore.GetManualPdfPath(_game);
+
+    /// <summary>Hay que guardar este PDF como un manual más del juego (juego, ruta del PDF y su nombre).</summary>
+    public event Action<Game, string, string>? ManualPdfAdded;
+
+    /// <summary>Se ha elegido otro manual en PDF o se ha quitado uno (ya está hecho: solo falta guardar la biblioteca).</summary>
+    public event Action<Game>? ManualPdfsChanged;
 
     /// <summary>Hay que leer este PDF (lo abre la ventana principal, encima de este menú).</summary>
     public event Action<string, Game?, string>? ManualReadRequested;
@@ -519,8 +557,7 @@ public partial class CustomizePanel : UserControl
                 new Progress<string>(text => { if (!work.IsCancellationRequested) ManualPdfText.Text = text; }), work.Token);
             if (work.IsCancellationRequested)
                 return;
-            _manualPdf = new ImageChange(path, false);
-            UpdateExtrasText();
+            ManualPdfAdded?.Invoke(game, path, ManualBuilder.ManualName);
         }
         catch (OperationCanceledException)
         {
@@ -539,11 +576,10 @@ public partial class CustomizePanel : UserControl
 
     void OnChooseManualPdfClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Title = "Elegir el manual en PDF", Filter = "Manuales en PDF (*.pdf)|*.pdf" };
-        if (dialog.ShowDialog(Window.GetWindow(this)) != true)
+        var dialog = new OpenFileDialog { Title = "Añadir un manual en PDF", Filter = "Manuales en PDF (*.pdf)|*.pdf" };
+        if (_game is not { } game || dialog.ShowDialog(Window.GetWindow(this)) != true)
             return;
-        _manualPdf = new ImageChange(dialog.FileName, false);
-        UpdateExtrasText();
+        ManualPdfAdded?.Invoke(game, dialog.FileName, Path.GetFileNameWithoutExtension(dialog.FileName));
     }
 
     void OnReadManualClick(object sender, RoutedEventArgs e)
@@ -580,16 +616,20 @@ public partial class CustomizePanel : UserControl
 
     void OnManualSearchClick(object sender, RoutedEventArgs e) => RequestSearch(ArtTarget.ManualPdf, ArtSource.Default);
 
-    /// <summary>Pone como manual un PDF descargado (de Games Database); se guarda al darle a Guardar.</summary>
+    /// <summary>Añade como manual un PDF descargado (de Games Database); se guarda al momento.</summary>
     public void SetManualPdfFile(string path)
     {
-        _manualPdf = new ImageChange(path, false);
-        UpdateExtrasText();
+        if (_game is { } game)
+            ManualPdfAdded?.Invoke(game, path, "Manual original (Games Database)");
     }
 
+    /// <summary>Quita el manual en PDF marcado (el que se lee); si hay más, pasa a leerse el siguiente.</summary>
     void OnRemoveManualPdfClick(object sender, RoutedEventArgs e)
     {
-        _manualPdf = new ImageChange(null, true);
+        if (_game is not { } game)
+            return;
+        ImageStore.RemoveManualPdf(game);
+        ManualPdfsChanged?.Invoke(game);
         UpdateExtrasText();
     }
 
@@ -830,7 +870,7 @@ public partial class CustomizePanel : UserControl
         }
 
         var result = new CustomizeResult(_game, name, _newPath, _format, _pending, _platform, filterIds, releaseDate,
-            _background, _textColor, hours * 60 + minutes, _disc, _manual, _manualPdf, _inside, _manualFrame, _insideFrame, _discFrame, players);
+            _background, _textColor, hours * 60 + minutes, _disc, _manual, _inside, _manualFrame, _insideFrame, _discFrame, players);
         Close();
         Saved?.Invoke(result);
     }
