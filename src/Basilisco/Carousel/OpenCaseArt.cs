@@ -177,8 +177,18 @@ public static class OpenCaseArt
     }
 
     /// <summary>
+    /// Opacidad general de la imagen del interior (Apariencia), para los juegos que no tienen la suya: de 0 (no se ve,
+    /// solo el plástico) a 1 (nítida).
+    /// </summary>
+    public static double InsideOpacity { get; set; } = 1;
+
+    /// <summary>Lo que se ve la imagen del interior con ese encuadre: la suya o, si no tiene, la general.</summary>
+    public static double OpacityOf(ImageFrame? frame) => Math.Clamp(frame?.Opacity ?? InsideOpacity, 0, 1);
+
+    /// <summary>
     /// Plástico translúcido. Si hay imagen del interior, se ve nítida debajo, ocupando las dos mitades de la caja abierta
     /// (la tapa a la izquierda y la bandeja a la derecha), y el plástico solo le da un velo de su color y un brillo.
+    /// Con menos opacidad, la imagen se funde con el color del plástico.
     /// </summary>
     static void DrawPlastic(DrawingContext dc, Color plastic, BitmapSource? inside, Rect area, double angle, bool rightHalf, ImageFrame? frame)
     {
@@ -187,8 +197,10 @@ public static class OpenCaseArt
             // La imagen se encuadra en la caja abierta entera (el doble de ancho) y cada mitad pinta su parte.
             var spread = new Rect(rightHalf ? area.X - area.Width : area.X, area.Y, area.Width * 2, area.Height);
             dc.PushClip(new RectangleGeometry(area));
-            dc.DrawRectangle(new SolidColorBrush(plastic), null, area);
+            dc.DrawRectangle(new LinearGradientBrush(Shade(plastic, 1.25), plastic, angle), null, area);
+            dc.PushOpacity(OpacityOf(frame));
             CoverArt.DrawFramed(dc, inside, spread, frame ?? FillFrame(inside, spread.Size));
+            dc.Pop();
             dc.Pop();
             dc.DrawRectangle(new LinearGradientBrush(WithAlpha(plastic, 110), WithAlpha(Shade(plastic, 1.25), 80), angle), null, area);
         }

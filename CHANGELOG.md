@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.9.2] - 2026-10-31
+
+- **Opacidad de la imagen del interior de la caja**:
+  - En Personalizar → Interior de la caja → **«Ajustar…»** hay una barra **«Opacidad»** para elegir cuánto se ve la imagen de ese juego: a la izquierda se funde con el plástico de la consola y a la derecha se ve nítida. «Usar la general» lo devuelve a la de Apariencia.
+  - En **Apariencia** está la misma barra («Opacidad del interior de la caja») **para todos los juegos** que no tengan la suya, y «Quitar las de cada juego» para que todos usen la general.
+- **El disco se para antes al terminar de jugar**: sigue frenando poco a poco hasta pararse, pero la transición dura algo más de un segundo (antes, casi dos segundos y medio, y la primera mitad apenas frenaba).
+- **Varios manuales en PDF por juego**:
+  - En Personalizar → Manual, «Añadir PDF…», «Buscar en Games Database» y «Crear manual en PDF» **añaden** el manual a los que ya tenga, en lugar de cambiarlo. Con más de uno, aparece una casilla por manual: la marcada es la que se lee. «Quitar PDF» borra la marcada.
+  - En la caja abierta, con más de un manual (contando el de Pinterest), el botón pasa a **«Elegir el manual»** y abre la franja negra con todos para escoger cuál leer en ese momento (con el ratón, las flechas o el mando). Se recuerda el último PDF elegido.
+  - Los manuales en PDF se guardan al momento, sin tener que darle a Guardar.
+
 ## [0.9.1] - 2026-10-29
 
 - **Modo edición**: el botón **«Editar»** (arriba a la derecha, o `Ctrl+E`) deja **mover por la pantalla, arrastrándolos con el ratón**, todos los botones de arriba, el buscador, «Basilisco», los controles del carrusel (alineación, altura, auto, descarga de metadatos y zoom), **el título del juego** y **sus datos** (los cilindros grises), y la barra de logros.

@@ -16,7 +16,9 @@ namespace Basilisco.Customization;
 /// <param name="Background">Cambio del fondo general (imagen o vídeo).</param>
 /// <param name="TextColor">Color general de las letras, o null para el de siempre.</param>
 /// <param name="ClearOwn">Quitar el fondo y el color propios de cada juego, para que todos usen los generales.</param>
-public sealed record ThemeResult(ImageChange Background, string? TextColor, bool ClearOwn);
+/// <param name="InsideOpacity">Opacidad general de la imagen del interior de la caja (de 0 a 1).</param>
+/// <param name="ClearOwnOpacity">Quitar la opacidad del interior propia de cada juego, para que todos usen la general.</param>
+public sealed record ThemeResult(ImageChange Background, string? TextColor, bool ClearOwn, double InsideOpacity, bool ClearOwnOpacity);
 
 /// <summary>Apariencia general de Basilisco: fondo (estático o dinámico) y color de las letras para todos los juegos.</summary>
 public partial class ThemePanel : UserControl
@@ -86,7 +88,9 @@ public partial class ThemePanel : UserControl
 
     /// <param name="savedBackground">Ruta del fondo general actual, si hay.</param>
     /// <param name="ownCount">Juegos que tienen fondo o color propios.</param>
-    public void Open(string? savedBackground, string? textColor, int ownCount, ColorMode mode)
+    /// <param name="insideOpacity">Opacidad general de la imagen del interior de la caja.</param>
+    /// <param name="ownOpacityCount">Juegos que tienen su propia opacidad del interior.</param>
+    public void Open(string? savedBackground, string? textColor, int ownCount, ColorMode mode, double insideOpacity, int ownOpacityCount)
     {
         SyncMode(mode);
         _background = ImageChange.None;
@@ -94,8 +98,12 @@ public partial class ThemePanel : UserControl
         _textColor = textColor;
         _clearOwn = false;
         _ownCount = ownCount;
+        _clearOwnOpacity = false;
+        _ownOpacityCount = ownOpacityCount;
+        InsideOpacitySlider.Value = insideOpacity;
         SyncColor();
         UpdateOwn();
+        UpdateOpacity();
         UpdatePreview();
         Visibility = Visibility.Visible;
         _ = Dispatcher.BeginInvoke(() => Focus(), DispatcherPriority.Input);
@@ -242,6 +250,31 @@ public partial class ThemePanel : UserControl
         UpdateOwn();
     }
 
+    bool _clearOwnOpacity;
+    int _ownOpacityCount;
+
+    void UpdateOpacity()
+    {
+        InsideOpacityText.Text = $"{InsideOpacitySlider.Value * 100:0} %";
+        OwnOpacityText.Text = _clearOwnOpacity ? "Se quitarán al guardar: todos usarán esta."
+            : _ownOpacityCount == 0 ? "Todos los juegos usan esta."
+            : _ownOpacityCount == 1 ? "1 juego tiene la suya (Personalizar → Interior → Ajustar…)."
+            : $"{_ownOpacityCount} juegos tienen la suya (Personalizar → Interior → Ajustar…).";
+        ClearOwnOpacityButton.IsEnabled = _ownOpacityCount > 0 && !_clearOwnOpacity;
+    }
+
+    void OnInsideOpacityChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (OwnOpacityText is not null) // Al crear el panel, la barra se carga antes que el texto.
+            UpdateOpacity();
+    }
+
+    void OnClearOwnOpacityClick(object sender, RoutedEventArgs e)
+    {
+        _clearOwnOpacity = true;
+        UpdateOpacity();
+    }
+
     void OnPreviewVideoEnded(object sender, RoutedEventArgs e)
     {
         PreviewVideo.Position = TimeSpan.Zero;
@@ -250,7 +283,7 @@ public partial class ThemePanel : UserControl
 
     void Save()
     {
-        var result = new ThemeResult(_background, _textColor, _clearOwn);
+        var result = new ThemeResult(_background, _textColor, _clearOwn, Math.Round(InsideOpacitySlider.Value, 2), _clearOwnOpacity);
         Close();
         Saved?.Invoke(result);
     }

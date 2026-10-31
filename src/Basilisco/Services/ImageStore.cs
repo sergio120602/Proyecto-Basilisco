@@ -169,24 +169,61 @@ public static class ImageStore
 
     public static string? GetManualPdfPath(Game game) => Resolve(AppInfo.ManualsDirectory, game.ManualPdf);
 
-    /// <summary>Copia el PDF como manual del juego y borra el anterior.</summary>
-    public static void SetManualPdf(Game game, string sourcePath)
+    /// <summary>Nombre del manual en PDF que se lee ahora.</summary>
+    public static string ManualPdfName(Game game) => game.ManualPdfName ?? "Manual en PDF";
+
+    /// <summary>
+    /// Copia el PDF como un manual más del juego y pasa a ser el que se lee; el que se leía se queda guardado con los
+    /// demás, para poder volver a elegirlo.
+    /// </summary>
+    public static void AddManualPdf(Game game, string sourcePath, string name)
     {
         var fileName = Import(sourcePath, AppInfo.ManualsDirectory, $"{game.Id}-manual");
-        RemoveManualPdf(game);
+        if (game.ManualPdf is not null)
+            (game.OtherManualPdfs ??= []).Insert(0, new SavedManual(game.ManualPdf, ManualPdfName(game), game.ManualPdfRotations));
         game.ManualPdf = fileName;
+        game.ManualPdfName = name;
+        game.ManualPdfRotations = null;
     }
 
+    /// <summary>Pasa a leerse ese manual guardado; el que se leía se queda con los demás.</summary>
+    public static void SelectManualPdf(Game game, SavedManual manual)
+    {
+        if (game.OtherManualPdfs is not { } others || !others.Remove(manual))
+            return;
+        if (game.ManualPdf is not null)
+            others.Insert(0, new SavedManual(game.ManualPdf, ManualPdfName(game), game.ManualPdfRotations));
+        game.ManualPdf = manual.File;
+        game.ManualPdfName = manual.Name;
+        game.ManualPdfRotations = manual.Rotations;
+        if (others.Count == 0)
+            game.OtherManualPdfs = null;
+    }
+
+    /// <summary>Borra el manual en PDF que se lee; si hay más guardados, pasa a leerse el siguiente.</summary>
     public static void RemoveManualPdf(Game game)
     {
         Delete(AppInfo.ManualsDirectory, game.ManualPdf);
         game.ManualPdf = null;
+        game.ManualPdfName = null;
+        game.ManualPdfRotations = null;
+        if (game.OtherManualPdfs is [var next, ..])
+            SelectManualPdf(game, next);
+    }
+
+    /// <summary>Borra todos los manuales en PDF del juego.</summary>
+    public static void RemoveAllManualPdfs(Game game)
+    {
+        foreach (var manual in game.OtherManualPdfs ?? [])
+            Delete(AppInfo.ManualsDirectory, manual.File);
+        game.OtherManualPdfs = null;
+        RemoveManualPdf(game);
     }
 
     /// <summary>Borra todas las imágenes del juego, de todos los formatos (al quitarlo de la biblioteca).</summary>
     public static void RemoveAll(Game game)
     {
-        RemoveManualPdf(game);
+        RemoveAllManualPdfs(game);
         RemoveBackground(game);
         RemoveExtra(game, GameExtra.Disc);
         RemoveExtra(game, GameExtra.Manual);
@@ -223,7 +260,11 @@ public static class ImageStore
         Directory.CreateDirectory(directory);
 
         // Un nombre nuevo en cada cambio evita pisar un archivo que aún esté en uso.
-        var fileName = $"{ownerId}-{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(sourcePath).ToLowerInvariant()}";
+        var extension = Path.GetExtension(sourcePath).ToLowerInvariant();
+        var fileName = $"{ownerId}-{DateTime.Now:yyyyMMddHHmmss}{extension}";
+        // Dos en el mismo segundo (dos manuales del mismo juego) no se pisan: el segundo lleva un número.
+        for (var i = 2; File.Exists(Path.Combine(directory, fileName)); i++)
+            fileName = $"{ownerId}-{DateTime.Now:yyyyMMddHHmmss}-{i}{extension}";
         File.Copy(sourcePath, Path.Combine(directory, fileName), overwrite: true);
         return fileName;
     }

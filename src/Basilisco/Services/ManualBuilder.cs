@@ -23,6 +23,9 @@ public static class ManualBuilder
     static readonly Color Night = Color.FromRgb(0x12, 0x15, 0x1B);
     static readonly Color Line = Color.FromRgb(0xD5, 0xD0, 0xC4);
 
+    /// <summary>Cómo se llama en los menús el manual que escribe Basilisco.</summary>
+    public const string ManualName = "Manual de Basilisco";
+
     /// <param name="frontPath">La portada del juego (de su caja en Basilisco), para la portada del manual.</param>
     /// <param name="backPath">La contraportada, para la última página.</param>
     /// <returns>La ruta del PDF, en la carpeta temporal.</returns>

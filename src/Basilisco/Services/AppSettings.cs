@@ -59,6 +59,12 @@ public sealed class AppSettings
     /// <summary>Color general de las letras (#RRGGBB). Null: el de siempre.</summary>
     public string? TextColor { get; set; }
 
+    /// <summary>
+    /// Opacidad general de la imagen del interior de la caja abierta (de 0 a 1), para los juegos que no tienen la suya
+    /// (Personalizar → Interior de la caja → Ajustar…).
+    /// </summary>
+    public double InsideOpacity { get; set; } = 1;
+
     /// <summary>Modo claro, nocturno o el mismo que Windows.</summary>
     public ColorMode Theme { get; set; } = ColorMode.System;
 

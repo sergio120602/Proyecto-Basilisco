@@ -64,7 +64,7 @@ public partial class OpenCasePanel : UserControl
         _padMode = padMode;
         ShowGameHint();
         LeaveSoundtrack(immediate: true);
-        ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
+        ManualButton.Content = ManualLabel(game);
         ManualButton.IsEnabled = true;
 
         var shape = BoxShape.Of(item);
@@ -92,9 +92,18 @@ public partial class OpenCasePanel : UserControl
         var shape = BoxShape.Of(item);
         _scene.SetInside(OpenCaseArt.RenderInside(PlatformArt.Plastic(game.Platform), shape.Width / shape.Height,
             ImageStore.GetExtraPath(game, GameExtra.Manual), game.Name, _inside, game.ManualFrame, game.InsideFrame));
-        ManualButton.Content = game.ManualPdf is null ? "Crear el manual" : "Leer el manual";
+        ManualButton.Content = ManualLabel(game);
         ManualButton.IsEnabled = true;
     }
+
+    /// <summary>«Crear», «Leer» o, con varios manuales (PDF o de Pinterest), «Elegir» el manual.</summary>
+    static string ManualLabel(Game game) =>
+        game.ManualCount switch
+        {
+            0 => "Crear el manual",
+            1 => "Leer el manual",
+            _ => "Elegir el manual",
+        };
 
     /// <summary>Mientras se crea el manual, el botón lo dice.</summary>
     public void SetManualBusy(string text)

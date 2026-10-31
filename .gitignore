@@ -7,3 +7,7 @@ basilisco-data/
 
 # Copia local del .exe para probar
 /Basilisco-v*.exe
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json

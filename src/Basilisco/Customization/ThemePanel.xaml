@@ -65,6 +65,21 @@
                         <TextBox x:Name="ColorBox" Style="{StaticResource FieldTextBox}" FontSize="14" TextChanged="OnColorBoxChanged"/>
                     </DockPanel>
 
+                    <!-- Cuánto se ve la imagen del interior de la caja abierta, en todos los juegos que no tengan la suya -->
+                    <TextBlock Text="OPACIDAD DEL INTERIOR DE LA CAJA" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
+                    <DockPanel>
+                        <TextBlock x:Name="InsideOpacityText" DockPanel.Dock="Right" Width="52" FontSize="14" Foreground="{DynamicResource TextBrush}"
+                                   VerticalAlignment="Center" TextAlignment="Right"/>
+                        <Slider x:Name="InsideOpacitySlider" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" VerticalAlignment="Center"
+                                ValueChanged="OnInsideOpacityChanged"
+                                ToolTip="A la izquierda la imagen del interior se funde con el plástico de la consola; a la derecha se ve nítida"/>
+                    </DockPanel>
+                    <DockPanel Margin="0,6,0,0">
+                        <Button x:Name="ClearOwnOpacityButton" DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Quitar las de cada juego"
+                                Margin="10,0,0,0" Click="OnClearOwnOpacityClick"/>
+                        <TextBlock x:Name="OwnOpacityText" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </DockPanel>
+
                     <!-- Rendimiento: menos calidad o sin reflejos, menos memoria; y limpiar la carpeta de datos -->
                     <TextBlock Text="RENDIMIENTO" Style="{StaticResource FieldLabel}" Margin="2,18,0,8"/>
                     <WrapPanel>
