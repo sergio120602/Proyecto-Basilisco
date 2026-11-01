@@ -178,6 +178,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.9.1** — Modo edición: mover los botones, el título del juego y sus datos por la pantalla
 - [x] **v0.9.2** — Opacidad del interior de la caja (por juego y general), el disco se para antes y varios manuales en PDF por juego
 - [x] **v0.9.3** — Logotipo de Steam en la franja y el lomo de las cajas cuadradas de Steam
+- [x] **v0.9.4** — Filtros por consola y por tienda en el menú «Formato», y logotipos de Epic Games, GOG, EA y Battle.net en sus cajas cuadradas
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -191,7 +192,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 
 Cada vez que importas juegos, Basilisco te pregunta de qué consola son: **PS1, PS2, PS3, PS4, PS5, PSP, Xbox, Xbox 360, NES, Super Nintendo, Nintendo 64, GameCube, Wii, Wii U, Nintendo Switch, Game Boy, Game Boy Advance, Nintendo DS, Arcade o PC**. La caja de cada juego lleva la franja y el color de plástico de su consola, y las consolas con juegos aparecen como pestañas arriba. Puedes mover un juego de consola en Personalizar (`E`).
 
-Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gb.png` (Game Boy), `gba.png` (Game Boy Advance), `n64.png`, `gc.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Para las cajas cuadradas de Steam: `steam-cuadrada.png` (el logotipo de la franja de la portada) y `steam-icono.png` (el recuadro de arriba del lomo). Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
+Para usar las franjas oficiales, pon una imagen de cada franja en `basilisco-data/borders/` junto al `.exe`, con el nombre de su consola: `ps1.png`, `ps2.png`, `ps3.png`, `psp.png`, `gb.png` (Game Boy), `gba.png` (Game Boy Advance), `n64.png`, `gc.png`, `nds.png`, `wii.png`, `wiiu.png`, `xbox.png`, `x360.png` y `pc.png`. Para las cajas cuadradas de las tiendas: `steam-cuadrada.png`, `epic-cuadrada.png`, `gog-cuadrada.png`, `ea-cuadrada.png` y `battlenet-cuadrada.png` (el logotipo de la franja de la portada) y `steam-icono.png`, `epic-icono.png`, `gog-icono.png`, `ea-icono.png` y `battlenet-icono.png` (el recuadro de arriba del lomo). Si falta alguna, Basilisco dibuja la suya. Las franjas oficiales no se incluyen en este repositorio porque llevan logotipos de sus marcas.
 
 ## 📥 Importación Juegos NO PC
 

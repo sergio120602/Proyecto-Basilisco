@@ -797,7 +797,8 @@ public partial class MainWindow : Window
         new(game.Name, IsAddCard: false,
             ImageStore.GetPath(game, game.Format, Face.Front), ImageStore.GetPath(game, game.Format, Face.Back), game.Platform,
             ImageStore.GetPath(game, game.Format, Face.Spine), game.CurrentFaces.BackFrame, game.CurrentFaces.SpineFrame,
-            game.Format, game.CurrentFaces.FrontFrame, Steam: game.SteamAppId is not null);
+            game.Format, game.CurrentFaces.FrontFrame, Steam: game.SteamAppId is not null,
+            Store: game.SteamAppId is not null ? "steam" : game.Store);
 
     /// <summary>
     /// Barra de arriba: «Todos los juegos», el grupo de consolas, el de filtros y el orden. Cada botón dice lo que
@@ -2841,7 +2842,7 @@ public partial class MainWindow : Window
 
     void OnMetadataClick(object sender, RoutedEventArgs e) => _ = DownloadMissingMetadataAsync();
 
-    void OpenFormatEditor() => FormatEditor.Open(_visibleGames, SelectedGame);
+    void OpenFormatEditor() => FormatEditor.Open(Games, SelectedGame);
 
     /// <summary>Cambia el formato de los juegos y, si se ha pedido, pone imágenes por defecto donde falten.</summary>
     async void ApplyFormat(FormatResult result)

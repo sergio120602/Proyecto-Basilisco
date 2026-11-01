@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.9.4] - 2026-11-01
+
+- **Filtros en el menú «Formato»**: ahora se abre con **toda la biblioteca** y tiene una sección **«Filtros»** para ver en la lista solo los juegos de **una consola** («Todas» y cada consola que tenga juegos) o de **una tienda**: **Steam, Epic Games, GOG, EA (Origin) y Battle.net**. Cada filtro dice cuántos juegos tiene. «Marcar todos», «Desmarcar todos» y «Aplicar» actúan solo sobre los juegos que se ven.
+- **Cajas cuadradas de Epic Games, GOG, EA (Origin) y Battle.net con su logotipo**, como las de Steam: en la portada, la franja de la tienda en lugar de la de la consola, y arriba del lomo, un recuadro con su icono.
+  - Las imágenes van en `basilisco-data/borders/`: `epic-cuadrada.png`, `gog-cuadrada.png`, `ea-cuadrada.png` y `battlenet-cuadrada.png` (la franja) y `epic-icono.png`, `gog-icono.png`, `ea-icono.png` y `battlenet-icono.png` (el lomo). Los logotipos apaisados van de pie a lo largo de la franja, llenando su ancho; los verticales, derechos y centrados. No van en este repositorio porque son de sus marcas: sin ellas, Basilisco dibuja la franja con el color y el nombre de la tienda.
+
 ## [0.9.3] - 2026-11-01
 
 - **Cajas cuadradas de los juegos de Steam con su logotipo**: en la portada, donde va la franja de cada consola, ahora va **el logotipo de Steam**, de pie a lo largo de la franja; y **arriba del lomo, un recuadro con el icono de Steam**.

@@ -395,6 +395,100 @@ public static class PlatformArt
         }
     }
 
+    /// <summary>Color y nombre de cada tienda, para la franja y el recuadro dibujados si no está su imagen en borders.</summary>
+    static (Color Back, Color Fore, string Name, string Short) StoreLook(string store) => store switch
+    {
+        "epic" => (Color.FromRgb(0x12, 0x12, 0x12), Colors.White, "EPIC GAMES", "EPIC"),
+        "gog" => (Color.FromRgb(0x4A, 0x0A, 0x7A), Colors.White, "GOG GALAXY", "GOG"),
+        "ea" => (Color.FromRgb(0xF5, 0x6C, 0x2D), Colors.White, "ORIGIN", "EA"),
+        "battlenet" => (Color.FromRgb(0x0B, 0x2C, 0x84), Color.FromRgb(0x4F, 0xB4, 0xFF), "BATTLE.NET", "B.NET"),
+        _ => (SteamNavy, Colors.White, store.ToUpperInvariant(), store.ToUpperInvariant()),
+    };
+
+    /// <summary>
+    /// La franja de la portada cuadrada de los juegos de una tienda (donde va la de cada consola): el logotipo de
+    /// basilisco-data/borders/&lt;tienda&gt;-cuadrada.png (steam, epic, gog, ea o battlenet). Si es apaisado va de pie a lo
+    /// largo de la franja (se lee de abajo arriba) y llena su ancho, y sus bordes se alargan hasta los extremos para que no
+    /// se note el corte; si es vertical, derecho y centrado sobre su color de fondo. Sin imagen, el nombre de la tienda.
+    /// </summary>
+    public static void DrawStoreSquareBand(DrawingContext dc, Rect band, string store)
+    {
+        if (store == "steam")
+        {
+            DrawSteamSquareBand(dc, band);
+            return;
+        }
+        var image = BandImage(store + "-cuadrada");
+        var look = StoreLook(store);
+        Fill(dc, band, image is null ? look.Back : Backdrop(image));
+        var center = new Point(band.X + band.Width / 2, band.Y + band.Height / 2);
+        if (image is not null && image.Height > image.Width)
+        {
+            var pad = band.Width * 0.1;
+            var scale = Math.Min((band.Width - pad * 2) / image.Width, (band.Height - pad * 2) / image.Height);
+            double w = image.Width * scale, h = image.Height * scale;
+            dc.DrawImage(image, new Rect(center.X - w / 2, center.Y - h / 2, w, h));
+        }
+        else
+        {
+            dc.PushTransform(new RotateTransform(-90, center.X, center.Y));
+            var turned = new Rect(center.X - band.Height / 2, center.Y - band.Width / 2, band.Height, band.Width);
+            if (image is not null)
+            {
+                var scale = Math.Min(turned.Height / image.Height, turned.Width * 0.9 / image.Width);
+                double w = image.Width * scale, h = image.Height * scale;
+                var logo = new Rect(center.X - w / 2, center.Y - h / 2, w, h);
+                // La primera y la última columna de la imagen, estiradas hasta los extremos de la franja.
+                dc.DrawImage(new CroppedBitmap(image, new Int32Rect(0, 0, 1, image.PixelHeight)), new Rect(turned.X, logo.Y, logo.X - turned.X + 1, h));
+                dc.DrawImage(new CroppedBitmap(image, new Int32Rect(image.PixelWidth - 1, 0, 1, image.PixelHeight)),
+                    new Rect(logo.Right - 1, logo.Y, turned.Right - logo.Right + 1, h));
+                dc.DrawImage(image, logo);
+            }
+            else
+            {
+                var label = Text(look.Name, turned.Height * 0.36, new SolidColorBrush(look.Fore), Face("Segoe UI", FontWeights.Bold));
+                dc.DrawText(label, new Point(center.X - label.Width / 2, center.Y - label.Height / 2));
+            }
+            dc.Pop();
+        }
+        Separator(dc, band, Color.FromRgb(0x2A, 0x2D, 0x36));
+    }
+
+    /// <summary>
+    /// El recuadro de arriba del lomo de las cajas cuadradas de una tienda: el icono de basilisco-data/borders/&lt;tienda&gt;-icono.png.
+    /// Si es casi cuadrado llena el recuadro; si no, va centrado sobre su color de fondo. Sin imagen, el nombre corto de la tienda.
+    /// </summary>
+    public static void DrawStoreSpineBox(DrawingContext dc, Rect box, string store)
+    {
+        if (store == "steam")
+        {
+            DrawSteamSpineBox(dc, box);
+            return;
+        }
+        var image = BandImage(store + "-icono");
+        var look = StoreLook(store);
+        Fill(dc, box, image is null ? look.Back : Backdrop(image));
+        if (image is not null)
+        {
+            var ratio = image.Width / image.Height;
+            var cover = ratio is > 0.8 and < 1.25;
+            var pad = cover ? 0 : box.Width * 0.1;
+            var scale = cover
+                ? Math.Max(box.Width / image.Width, box.Height / image.Height)
+                : Math.Min((box.Width - pad * 2) / image.Width, (box.Height - pad * 2) / image.Height);
+            double w = image.Width * scale, h = image.Height * scale;
+            dc.PushClip(new RectangleGeometry(box));
+            dc.DrawImage(image, new Rect(box.X + (box.Width - w) / 2, box.Y + (box.Height - h) / 2, w, h));
+            dc.Pop();
+        }
+        else
+        {
+            var label = Text(look.Short, box.Width * 0.26, new SolidColorBrush(look.Fore), Face("Segoe UI", FontWeights.Bold));
+            dc.DrawText(label, new Point(box.X + (box.Width - label.Width) / 2, box.Y + (box.Height - label.Height) / 2));
+        }
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2A, 0x2D, 0x36)), null, new Rect(box.X, box.Bottom - 2, box.Width, 2));
+    }
+
     /// <summary>
     /// La franja de la portada cuadrada de los juegos de Steam (donde va la de cada consola): el logotipo de Steam de
     /// basilisco-data/borders/steam-cuadrada.png, de pie a lo largo de la franja (se lee de abajo arriba), sobre su mismo
