@@ -17,6 +17,10 @@
                 <ToggleButton x:Name="SinglePageToggle" Style="{StaticResource FilterToggle}" Content="Una sola página" Focusable="False"
                               VerticalAlignment="Center" Margin="0,0,10,0" Click="OnSinglePageClick"
                               ToolTip="Encendido: de página en página, cada una con su forma (las horizontales se ven enteras). Apagado: el libro abierto, en modo libreta (P)"/>
+                <!-- Las hojas dobles del PDF (dos páginas escaneadas juntas), partidas por la mitad -->
+                <ToggleButton x:Name="SplitToggle" Style="{StaticResource FilterToggle}" Content="Partir hojas dobles" Focusable="False"
+                              VerticalAlignment="Center" Margin="0,0,10,0" Click="OnSplitClick"
+                              ToolTip="Encendido: las hojas con dos páginas juntas se parten y se leen como páginas sueltas (se detecta solo; aquí lo puedes cambiar) (D)"/>
                 <Button x:Name="PinterestButton" Style="{StaticResource PillButton}" Content="Hacer con Pinterest" Margin="0,0,10,0" Focusable="False"
                         Click="OnPinterestClick" ToolTip="Elige en Pinterest las imágenes del manual (las que ya tiene salen elegidas, para cambiarlas)"/>
                 <Button x:Name="ExternalButton" Style="{StaticResource PillButton}" Content="Abrir en el visor de PDF" Click="OnOpenExternalClick"

@@ -52,6 +52,12 @@ public sealed class Game
     /// <summary>Giro de las páginas del manual en PDF (número de página → grados), en el modo de una sola página.</summary>
     public Dictionary<int, int>? ManualPdfRotations { get; set; }
 
+    /// <summary>
+    /// Partir las hojas dobles de cada manual en PDF (nombre del archivo → sí o no), si se ha elegido a mano en el lector.
+    /// Los que no están aquí se detectan solos.
+    /// </summary>
+    public Dictionary<string, bool>? ManualPdfSplit { get; set; }
+
     /// <summary>Última vez que se abrió el manual (para soltar antes los que menos se leen si se pasa el tope de espacio).</summary>
     public DateTime? ManualOpened { get; set; }
 

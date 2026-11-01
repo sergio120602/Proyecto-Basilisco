@@ -55,12 +55,20 @@ public partial class ManualReaderPanel : UserControl
         Visibility = Visibility.Collapsed;
     }
 
-    public void Open(string path, Game? game, string title, bool padMode) =>
-        Open(new PdfManual(path, game is null ? [] : game.ManualPdfRotations ??= []), game, title, padMode);
+    public void Open(string path, Game? game, string title, bool padMode) => Open(Pdf(path, game), game, title, padMode);
 
-    public async void Open(ManualSource source, Game? game, string title, bool padMode)
+    /// <summary>El PDF, partiendo sus hojas dobles como se eligió para ese manual (o detectándolas, si no se eligió).</summary>
+    static PdfManual Pdf(string path, Game? game) =>
+        new(path, game is null ? [] : game.ManualPdfRotations ??= [],
+            game?.ManualPdfSplit is { } choices && choices.TryGetValue(System.IO.Path.GetFileName(path), out var split) ? split : null);
+
+    bool _padMode;
+
+    /// <param name="startSheet">Hoja del PDF por la que abrirlo (al partir o juntar las hojas dobles, para no perder el sitio).</param>
+    public async void Open(ManualSource source, Game? game, string title, bool padMode, int startSheet = 0)
     {
         var version = ++_version;
+        _padMode = padMode;
         _source = source;
         Game = game;
         _pages.Clear();
@@ -70,7 +78,7 @@ public partial class ManualReaderPanel : UserControl
         TitleText.Text = title;
         HintText.Text = padMode
             ? "← →  Pasar página     ·     B  Cerrar"
-            : "← →  Pasar página     ·     Ctrl + rueda o + −  Zoom (arrastra para moverte)     ·     P  Una página / libreta     ·     Esc  Cerrar";
+            : "← →  Pasar página     ·     Ctrl + rueda o + −  Zoom (arrastra para moverte)     ·     P  Una página / libreta     ·     D  Partir hojas dobles     ·     Esc  Cerrar";
         SetZoom(1);
         ExternalButton.Visibility = source.PdfPath is null ? Visibility.Collapsed : Visibility.Visible;
         PinterestButton.Visibility = game is null ? Visibility.Collapsed : Visibility.Visible;
@@ -78,6 +86,8 @@ public partial class ManualReaderPanel : UserControl
         Book.SinglePage = Single;
         RotateButton.Visibility = Single ? Visibility.Visible : Visibility.Collapsed;
         RotateButton.IsEnabled = false;
+        SplitToggle.Visibility = source is PdfManual ? Visibility.Visible : Visibility.Collapsed;
+        SplitToggle.IsEnabled = false;
         Book.Show(null, null);
         LoadingText.Text = "Abriendo el manual…";
         LoadingText.Visibility = Visibility.Visible;
@@ -99,6 +109,13 @@ public partial class ManualReaderPanel : UserControl
             return;
         LoadingText.Visibility = Visibility.Collapsed;
         BuildViews();
+        if (source is PdfManual pdf)
+        {
+            SplitToggle.IsChecked = pdf.HasSplitSheets;
+            SplitToggle.IsEnabled = true;
+            if (startSheet > 0)
+                _view = ViewOf(pdf.PageOfSheet(startSheet));
+        }
         RotateButton.IsEnabled = true;
         await ShowViewAsync(direction: 0);
     }
@@ -306,6 +323,22 @@ public partial class ManualReaderPanel : UserControl
 
     void OnRotateClick(object sender, RoutedEventArgs e) => Rotate();
 
+    /// <summary>Parte o junta las hojas dobles del PDF (se recuerda para ese manual), sin perder por dónde ibas.</summary>
+    void ToggleSplit()
+    {
+        if (_source is not PdfManual pdf || pdf.PdfPath is not { } path || !SplitToggle.IsEnabled)
+            return;
+        var split = SplitToggle.IsChecked == true;
+        if (Game is { } game)
+        {
+            (game.ManualPdfSplit ??= [])[System.IO.Path.GetFileName(path)] = split;
+            Edited?.Invoke();
+        }
+        Open(new PdfManual(path, Game is null ? [] : Game.ManualPdfRotations ??= [], split), Game, TitleText.Text, _padMode, pdf.SheetOf(CurrentPage));
+    }
+
+    void OnSplitClick(object sender, RoutedEventArgs e) => ToggleSplit();
+
     void OnPinterestClick(object sender, RoutedEventArgs e)
     {
         if (Game is { } game)
@@ -341,6 +374,7 @@ public partial class ManualReaderPanel : UserControl
             case Key.End: Flip(_views.Count); break;
             case Key.P: SinglePageToggle.IsChecked = !Single; ToggleSinglePage(); break;
             case Key.R: Rotate(); break;
+            case Key.D when SplitToggle.IsVisible && SplitToggle.IsEnabled: SplitToggle.IsChecked = SplitToggle.IsChecked != true; ToggleSplit(); break;
             case Key.Escape or Key.Back: Close(); break;
             default: return;
         }

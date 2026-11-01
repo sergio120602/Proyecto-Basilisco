@@ -3,6 +3,13 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.9.5] - 2026-11-01
+
+- **Hojas dobles de los manuales en PDF, partidas por la mitad**: muchos manuales (los de Games Database, por ejemplo) vienen escaneados con dos páginas del librito en cada hoja apaisada. Basilisco lo detecta al abrir el manual y parte esas hojas en dos páginas, la izquierda primero, así que se leen como el librito de verdad (en el modo libreta y en el de una sola página).
+  - Cómo lo detecta: si el manual tiene también hojas verticales, son dobles las apaisadas que miden como dos de ellas juntas. Si todas son apaisadas (puede ser un manual apaisado de verdad, como los de Super Nintendo europeos), solo las parte si en la mayoría se ve el pliegue del centro: una franja vertical lisa, sin texto que la cruce, o la sombra del doblez.
+  - En el lector, el botón **«Partir hojas dobles»** (o la tecla `D`) lo enciende o lo apaga a mano si la detección se equivoca, sin perder la página por la que vas. Se recuerda para ese manual.
+  - Al añadir un manual cuya primera hoja es doble, la imagen del librito de la caja abierta es su mitad derecha (donde va la portada), en lugar de la hoja entera aplastada.
+
 ## [0.9.4] - 2026-11-01
 
 - **Filtros en el menú «Formato»**: ahora se abre con **toda la biblioteca** y tiene una sección **«Filtros»** para ver en la lista solo los juegos de **una consola** («Todas» y cada consola que tenga juegos) o de **una tienda**: **Steam, Epic Games, GOG, EA (Origin) y Battle.net**. Cada filtro dice cuántos juegos tiene. «Marcar todos», «Desmarcar todos» y «Aplicar» actúan solo sobre los juegos que se ven.

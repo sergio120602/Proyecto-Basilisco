@@ -24,10 +24,26 @@ public abstract class ManualSource
     public abstract void SetRotation(int index, int degrees);
 }
 
-/// <summary>Un PDF; los giros de sus páginas se guardan en <paramref name="rotations"/> (los del juego, o unos de usar y tirar).</summary>
-public sealed class PdfManual(string path, Dictionary<int, int> rotations) : ManualSource
+/// <summary>
+/// Un PDF; los giros de sus páginas se guardan en <paramref name="rotations"/> (los del juego, o unos de usar y tirar).
+/// Las hojas dobles (dos páginas escaneadas juntas) se parten por la mitad y se leen como dos páginas, la izquierda primero.
+/// <paramref name="split"/>: null para detectarlas solo, true para partir todas las apaisadas, false para no partir.
+/// </summary>
+public sealed class PdfManual(string path, Dictionary<int, int> rotations, bool? split = null) : ManualSource
 {
+    // Cada página del libro: la hoja del PDF y cuál de sus mitades (0 entera, −1 la izquierda, 1 la derecha).
+    List<(int Sheet, int Half)> _layout = [];
+
     public override string? PdfPath => path;
+
+    /// <summary>True si alguna hoja se ha partido (tras <see cref="CountAsync"/>).</summary>
+    public bool HasSplitSheets => _layout.Any(page => page.Half != 0);
+
+    /// <summary>La hoja del PDF de esa página del libro.</summary>
+    public int SheetOf(int index) => index >= 0 && index < _layout.Count ? _layout[index].Sheet : 0;
+
+    /// <summary>La primera página del libro que sale de esa hoja del PDF.</summary>
+    public int PageOfSheet(int sheet) => Math.Max(0, _layout.FindIndex(page => page.Sheet == sheet));
 
     public override int Rotation(int index) => rotations.GetValueOrDefault(index);
 
@@ -39,12 +55,31 @@ public sealed class PdfManual(string path, Dictionary<int, int> rotations) : Man
             rotations[index] = degrees % 360;
     }
 
-    public override Task<int> CountAsync() => PdfRenderer.PageCountAsync(path);
+    public override async Task<int> CountAsync()
+    {
+        var sheets = await PdfRenderer.PageCountAsync(path);
+        var spreads = split == false || sheets == 0 ? [] : await ManualSpreads.DetectAsync(path, all: split == true);
+        var layout = new List<(int Sheet, int Half)>();
+        for (var sheet = 0; sheet < sheets; sheet++)
+        {
+            if (spreads.Contains(sheet))
+                layout.AddRange([(sheet, -1), (sheet, 1)]);
+            else
+                layout.Add((sheet, 0));
+        }
+        _layout = layout;
+        return layout.Count;
+    }
 
     public override async Task<BitmapSource?> PageAsync(int index, int height, CancellationToken cancellation)
     {
-        var pages = await PdfRenderer.RenderAsync(path, height, [index], cancellation);
-        return pages.Count > 0 ? pages[0] : null;
+        if (index < 0 || index >= _layout.Count)
+            return null;
+        var (sheet, half) = _layout[index];
+        var pages = await PdfRenderer.RenderAsync(path, height, [sheet], cancellation);
+        if (pages.Count == 0)
+            return null;
+        return half == 0 ? pages[0] : ManualSpreads.Half(pages[0], half);
     }
 }
 

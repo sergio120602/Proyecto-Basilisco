@@ -23,6 +23,25 @@ public static class PdfRenderer
         }
     }
 
+    /// <summary>El ancho y el alto de cada página (sin dibujarlas), o una lista vacía si el PDF no se puede abrir.</summary>
+    public static async Task<List<System.Windows.Size>> PageSizesAsync(string path)
+    {
+        var sizes = new List<System.Windows.Size>();
+        try
+        {
+            var document = await PdfDocument.LoadFromFileAsync(await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path)));
+            for (uint index = 0; index < document.PageCount; index++)
+            {
+                using var page = document.GetPage(index);
+                sizes.Add(new System.Windows.Size(page.Size.Width, page.Size.Height));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Runtime.InteropServices.COMException)
+        {
+        }
+        return sizes;
+    }
+
     /// <summary>Las páginas pedidas como imágenes de ese alto en píxeles (ya congeladas: se pueden usar en cualquier hilo).</summary>
     public static async Task<List<BitmapSource>> RenderAsync(string path, int height, IEnumerable<int>? pages = null, CancellationToken cancellation = default)
     {
@@ -76,11 +95,13 @@ public static class PdfRenderer
         var pages = await RenderAsync(pdfPath, height, [0]);
         if (pages.Count == 0)
             return null;
+        // Si la primera hoja es doble, su mitad derecha (cuando es la contraportada con la portada, la portada).
+        var cover = (await ManualSpreads.DetectAsync(pdfPath)).Contains(0) ? ManualSpreads.Half(pages[0], 1) : pages[0];
         var folder = Path.Combine(Path.GetTempPath(), "Basilisco");
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, $"{Guid.NewGuid():N}.png");
         var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(pages[0]));
+        encoder.Frames.Add(BitmapFrame.Create(cover));
         await using var output = File.Create(path);
         encoder.Save(output);
         return path;
