@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.9.3] - 2026-11-01
+
+- **Cajas cuadradas de los juegos de Steam con su logotipo**: en la portada, donde va la franja de cada consola, ahora va **el logotipo de Steam**, de pie a lo largo de la franja; y **arriba del lomo, un recuadro con el icono de Steam**.
+  - Las imágenes son las de `basilisco-data/borders/steam-cuadrada.png` (el logotipo) y `steam-icono.png` (el icono), como las franjas oficiales de las consolas: no van en este repositorio porque son de su marca. Sin ellas, Basilisco dibuja las suyas.
+
 ## [0.9.2] - 2026-10-31
 
 - **Opacidad de la imagen del interior de la caja**:

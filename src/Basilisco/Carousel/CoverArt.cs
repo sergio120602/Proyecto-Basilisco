@@ -87,7 +87,7 @@ public static class CoverArt
             var steamBand = BoxShape.IsSteamCase(item.Format, item.Platform, item.Steam) ? SteamBandHeight(size) : 0;
             return Rasterize((int)size.Width, (int)size.Height, dc => DrawPortraitCase(dc, size, item.Title, image, item.Platform, frame, steamBand));
         }
-        return Rasterize(Width, Height, dc => DrawCase(dc, item.Title, image, item.Platform, frame));
+        return Rasterize(Width, Height, dc => DrawCase(dc, item.Title, image, item.Platform, frame, item.Steam));
     }
 
     public static BitmapSource RenderBack(CarouselItem item)
@@ -107,12 +107,15 @@ public static class CoverArt
         var image = item.SpineImagePath is null || item.IsAddCard ? null : LoadImage(item.SpineImagePath, SpineDecodeWidth);
         var scale = image is null ? 1 : 2;
         var size = item.IsAddCard ? SpineSize(CoverFormat.Square, null) : SpineSize(item.Format, item.Platform, item.Steam);
-        // En las cajas de Steam, el lomo lleva arriba la franja de Steam a la misma altura que la de la portada.
-        var steamBand = !item.IsAddCard && BoxShape.IsSteamCase(item.Format, item.Platform, item.Steam) ? SteamBandHeight(FaceSize(item)) : 0;
+        // En las cajas de Steam, el lomo lleva arriba la franja de Steam a la misma altura que la de la portada; en las
+        // cuadradas de Steam, un recuadro con el icono de Steam (tan alto como ancho es el lomo).
+        var squareSteam = !item.IsAddCard && item.Steam && item.Format == CoverFormat.Square;
+        var steamBand = !item.IsAddCard && BoxShape.IsSteamCase(item.Format, item.Platform, item.Steam) ? SteamBandHeight(FaceSize(item))
+            : squareSteam ? size.Width : 0;
         return Rasterize((int)size.Width * scale, (int)size.Height * scale, dc =>
         {
             dc.PushTransform(new ScaleTransform(scale, scale));
-            DrawSpine(dc, size, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default, steamBand);
+            DrawSpine(dc, size, item.IsAddCard ? "" : item.Title, item.Platform, image, item.SpineFrame ?? ImageFrame.Default, steamBand, squareSteam);
             dc.Pop();
         });
     }
@@ -213,7 +216,8 @@ public static class CoverArt
         return image;
     }
 
-    static void DrawCase(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame)
+    /// <param name="steam">Juego de Steam: en lugar de la franja de la consola, la de Steam (su logotipo, de pie).</param>
+    static void DrawCase(DrawingContext dc, string title, BitmapSource? image, string? platform, ImageFrame frame, bool steam = false)
     {
         var bounds = new Rect(0, 0, Width, Height);
 
@@ -221,7 +225,7 @@ public static class CoverArt
 
         // Franja oficial de la consola si está en basilisco-data/borders; su ancho sale de su propia proporción
         // para no deformarla. Si no, la dibujada por Basilisco, de ancho fijo.
-        var bandImage = PlatformArt.BandImage(platform);
+        var bandImage = steam ? null : PlatformArt.BandImage(platform);
         var bandWidth = bandImage is null
             ? Spine + 2
             : Math.Clamp(Height * bandImage.Width / bandImage.Height, 40, Width * 0.3);
@@ -234,7 +238,9 @@ public static class CoverArt
             DrawFramed(dc, image, area, frame);
         }
 
-        if (bandImage is not null)
+        if (steam)
+            PlatformArt.DrawSteamSquareBand(dc, new Rect(0, 0, Spine, Height));
+        else if (bandImage is not null)
             dc.DrawImage(bandImage, new Rect(0, 0, bandWidth, Height));
         else
             PlatformArt.DrawBand(dc, platform, new Rect(0, 0, Spine, Height));
@@ -317,7 +323,9 @@ public static class CoverArt
     }
 
     /// <param name="steamBand">Alto de la franja de Steam de arriba (0 si no es una caja de Steam): la imagen y el nombre van debajo.</param>
-    static void DrawSpine(DrawingContext dc, Size size, string title, string? platform, BitmapSource? image, ImageFrame frame, double steamBand = 0)
+    /// <param name="squareSteam">Caja cuadrada de Steam: lo de arriba es el recuadro con el icono de Steam.</param>
+    static void DrawSpine(DrawingContext dc, Size size, string title, string? platform, BitmapSource? image, ImageFrame frame, double steamBand = 0,
+                          bool squareSteam = false)
     {
         double SpineWidth = size.Width, Height = size.Height;
         // El lomo es del plástico de la consola (verde en Xbox 360, blanco en Wii…).
@@ -332,7 +340,9 @@ public static class CoverArt
             dc.DrawRectangle(Brushes.Black, null, content);
             DrawFramed(dc, image, content, frame, rotateWide: true);
         }
-        if (steamBand > 0)
+        if (squareSteam)
+            PlatformArt.DrawSteamSpineBox(dc, new Rect(0, 0, SpineWidth, steamBand));
+        else if (steamBand > 0)
             PlatformArt.DrawSteamBand(dc, new Rect(0, 0, SpineWidth, steamBand), spine: true);
         dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0x3C, 0x3F, 0x47)), 3), new Rect(1.5, 1.5, SpineWidth - 3, Height - 3));
 

@@ -378,6 +378,77 @@ public static class PlatformArt
         dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2A, 0x2B, 0x30)), null, new Rect(band.X, band.Bottom - 2, band.Width, 2));
     }
 
+    static readonly Color SteamNavy = Color.FromRgb(0x17, 0x1A, 0x21);
+
+    /// <summary>El color del fondo de una imagen (el de su esquina de arriba a la izquierda), para rellenar alrededor sin que se note.</summary>
+    static Color Backdrop(BitmapSource image)
+    {
+        try
+        {
+            var pixel = new byte[4];
+            new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0).CopyPixels(new Int32Rect(1, 1, 1, 1), pixel, 4, 0);
+            return Color.FromRgb(pixel[2], pixel[1], pixel[0]);
+        }
+        catch (ArgumentException)
+        {
+            return SteamNavy;
+        }
+    }
+
+    /// <summary>
+    /// La franja de la portada cuadrada de los juegos de Steam (donde va la de cada consola): el logotipo de Steam de
+    /// basilisco-data/borders/steam-cuadrada.png, de pie a lo largo de la franja (se lee de abajo arriba), sobre su mismo
+    /// color de fondo. Sin esa imagen, una dibujada por Basilisco (la marca y «STEAM»).
+    /// </summary>
+    public static void DrawSteamSquareBand(DrawingContext dc, Rect band)
+    {
+        var image = BandImage("steam-cuadrada");
+        Fill(dc, band, image is null ? SteamNavy : Backdrop(image));
+        var center = new Point(band.X + band.Width / 2, band.Y + band.Height / 2);
+        dc.PushTransform(new RotateTransform(-90, center.X, center.Y));
+        // Girada, la franja tiene el ancho por alto: se dibuja como si fuera horizontal.
+        var turned = new Rect(center.X - band.Height / 2, center.Y - band.Width / 2, band.Height, band.Width);
+        if (image is not null)
+        {
+            var pad = band.Width * 0.06;
+            var scale = Math.Min((turned.Width - pad * 4) / image.Width, (turned.Height - pad * 2) / image.Height);
+            double w = image.Width * scale, h = image.Height * scale;
+            dc.DrawImage(image, new Rect(turned.X + (turned.Width - w) / 2, turned.Y + (turned.Height - h) / 2, w, h));
+        }
+        else
+        {
+            var radius = turned.Height * 0.32;
+            var mark = new Point(turned.X + turned.Width * 0.18, center.Y);
+            DrawSteamMark(dc, mark, radius, shaded: true);
+            var label = Text("STEAM", turned.Height * 0.42, White, Face("Segoe UI", FontWeights.Bold));
+            dc.DrawText(label, new Point(mark.X + radius * 1.5, center.Y - label.Height / 2));
+        }
+        dc.Pop();
+        Separator(dc, band, Color.FromRgb(0x2A, 0x2D, 0x36));
+    }
+
+    /// <summary>
+    /// El recuadro de arriba del lomo de las cajas cuadradas de Steam: el icono de basilisco-data/borders/steam-icono.png
+    /// (o la marca dibujada por Basilisco), centrado sobre su color de fondo, con un filo debajo.
+    /// </summary>
+    public static void DrawSteamSpineBox(DrawingContext dc, Rect box)
+    {
+        var image = BandImage("steam-icono");
+        Fill(dc, box, image is null ? SteamNavy : Backdrop(image));
+        if (image is not null)
+        {
+            var pad = box.Width * 0.1;
+            var scale = Math.Min((box.Width - pad * 2) / image.Width, (box.Height - pad * 2) / image.Height);
+            double w = image.Width * scale, h = image.Height * scale;
+            dc.DrawImage(image, new Rect(box.X + (box.Width - w) / 2, box.Y + (box.Height - h) / 2, w, h));
+        }
+        else
+        {
+            DrawSteamMark(dc, new Point(box.X + box.Width / 2, box.Y + box.Height / 2), box.Width * 0.36, shaded: true);
+        }
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2A, 0x2D, 0x36)), null, new Rect(box.X, box.Bottom - 2, box.Width, 2));
+    }
+
     /// <summary>
     /// Marca de inspiración Steam: un círculo con el «pistón» en negro (la rueda grande arriba a la derecha, la pequeña
     /// abajo a la izquierda y el brazo que las une).
