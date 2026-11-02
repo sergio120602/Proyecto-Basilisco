@@ -3,6 +3,17 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.10.0] - 2026-11-02
+
+- **Capturas y tráiler en la caja abierta**: una tercera doble página, a la derecha de la banda sonora. Se llega con el botón **«Capturas y tráiler ▶»**, con `Av Pág` (o `V`) o con **RB** en el mando, y la hoja pasa doblándose sobre el lomo, como un libro. Se vuelve con «◀ Banda sonora», `Re Pág`, `Esc`, **LB** o **B**.
+  - **A la izquierda, las capturas de pantalla**: la elegida en grande, como una foto, y debajo todas en pequeño para elegir. Se pasan con `←` `→`, con los botones ‹ › o con un clic en la pequeña. Con `Z` o un clic en la foto se ve **a toda pantalla**.
+  - **A la derecha, el tráiler**: su imagen con ▶; con `Enter` (Ⓐ) o un clic se pone ahí mismo, con sus controles. La música de la banda sonora se para mientras.
+  - **De dónde salen**:
+    - **Steam**: las capturas y el tráiler destacado del juego. Si es de PC y no viene de Steam, del juego de la tienda que se llame igual. Los tráileres nuevos de Steam solo están en streaming (HLS) y se ven con hls.js.
+    - **LaunchBox**: sus capturas de juego y de la pantalla de título, y el tráiler de YouTube que enlaza, en el reproductor oficial de YouTube, a la vista. Si un vídeo no deja verse fuera de YouTube, «Ver en YouTube» lo abre en el navegador.
+  - Se buscan la primera vez que se abre la página y se guardan en el juego; se vuelven a buscar al mes, o a los 3 días si no se encontró nada. Las capturas se descargan a `basilisco-data/media` al verlas y se borran al quitar el juego.
+  - La base de datos de LaunchBox pasa a la versión 4, con los tráileres: la primera vez se vuelve a descargar sola. Mientras, lo de Steam ya se ve.
+
 ## [0.9.5] - 2026-11-01
 
 - **Hojas dobles de los manuales en PDF, partidas por la mitad**: muchos manuales (los de Games Database, por ejemplo) vienen escaneados con dos páginas del librito en cada hoja apaisada. Basilisco lo detecta al abrir el manual y parte esas hojas en dos páginas, la izquierda primero, así que se leen como el librito de verdad (en el modo libreta y en el de una sola página).

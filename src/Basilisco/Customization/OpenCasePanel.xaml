@@ -130,6 +130,98 @@
                 </Grid>
             </Border>
 
+            <!-- Capturas y tráiler: la tercera doble página, a la derecha de la banda sonora (se coloca igual que ella). A la
+                 izquierda las capturas de pantalla, como fotos; a la derecha el tráiler -->
+            <Border x:Name="MediaView" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top"
+                    CornerRadius="10" BorderThickness="7" BorderBrush="#202227" ClipToBounds="True">
+                <Border.Background>
+                    <ImageBrush x:Name="MediaBackground" Stretch="UniformToFill"/>
+                </Border.Background>
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Direction="270" Opacity="0.6"/>
+                </Border.Effect>
+                <Grid>
+                    <Border x:Name="MediaPlastic" Opacity="0.38"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Izquierda: la captura grande, como una foto, y debajo todas en pequeño -->
+                        <DockPanel Margin="26,20,22,20">
+                            <Border DockPanel.Dock="Top" Background="#B80B0D11" CornerRadius="8" Padding="14,5" HorizontalAlignment="Center">
+                                <TextBlock x:Name="ShotsTitle" Text="Capturas" FontSize="17" FontWeight="SemiBold" Foreground="White"/>
+                            </Border>
+                            <Border DockPanel.Dock="Bottom" Background="#B80B0D11" CornerRadius="8" Padding="8,6" Margin="0,12,0,0">
+                                <ScrollViewer x:Name="ShotThumbsScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Focusable="False">
+                                    <StackPanel x:Name="ShotThumbs" Orientation="Horizontal"/>
+                                </ScrollViewer>
+                            </Border>
+                            <Grid>
+                                <Border x:Name="ShotFrame" Background="#F4F1EA" Padding="8,8,8,30" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Cursor="Hand" MouseLeftButtonUp="OnShotClick" ToolTip="Clic: verla en grande (Z)" Margin="0,12,0,0" RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform>
+                                        <RotateTransform Angle="-1.2"/>
+                                    </Border.RenderTransform>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="18" ShadowDepth="5" Direction="270" Opacity="0.55"/>
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Image x:Name="ShotImage" Stretch="Uniform"/>
+                                        <TextBlock x:Name="ShotCounter" FontSize="13" Foreground="#5C544B" FontFamily="Georgia" FontStyle="Italic"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,2,-25"/>
+                                    </Grid>
+                                </Border>
+                                <TextBlock x:Name="ShotStatus" FontSize="15" Foreground="White" TextWrapping="Wrap" TextAlignment="Center"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0" Visibility="Collapsed"/>
+                                <Button x:Name="ShotPrevious" Style="{StaticResource PillButton}" Content="‹" FontSize="22" Padding="12,2" Focusable="False"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center" Click="OnShotPreviousClick" ToolTip="Captura anterior (←)"/>
+                                <Button x:Name="ShotNext" Style="{StaticResource PillButton}" Content="›" FontSize="22" Padding="12,2" Focusable="False"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Click="OnShotNextClick" ToolTip="Captura siguiente (→)"/>
+                            </Grid>
+                        </DockPanel>
+
+                        <!-- El lomo de la caja, en medio -->
+                        <Border Grid.Column="1" Width="10" Background="#202227">
+                            <Border Width="2" HorizontalAlignment="Center" Background="#40FFFFFF"/>
+                        </Border>
+
+                        <!-- Derecha: el tráiler (su imagen con ▶; al darle, el reproductor en su sitio) -->
+                        <DockPanel Grid.Column="2" Margin="22,20,26,20">
+                            <Border DockPanel.Dock="Top" Background="#B80B0D11" CornerRadius="8" Padding="14,5" HorizontalAlignment="Center">
+                                <TextBlock Text="Tráiler" FontSize="17" FontWeight="SemiBold" Foreground="White"/>
+                            </Border>
+                            <Border DockPanel.Dock="Bottom" Background="#B80B0D11" CornerRadius="8" Padding="14,8" Margin="0,12,0,0">
+                                <DockPanel>
+                                    <Button x:Name="TrailerExternal" DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Ver en YouTube" FontSize="12"
+                                            Padding="10,3" Margin="10,0,0,0" Focusable="False" Click="OnTrailerExternalClick" Visibility="Collapsed"
+                                            ToolTip="Abre el tráiler en tu navegador (si no se puede poner aquí)"/>
+                                    <TextBlock x:Name="TrailerInfo" FontSize="13" Foreground="#C9D3E0" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                            <Border x:Name="TrailerFrame" Background="Black" CornerRadius="6" ClipToBounds="True" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="18" ShadowDepth="5" Direction="270" Opacity="0.55"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Image x:Name="TrailerPoster" Stretch="UniformToFill"/>
+                                    <Border x:Name="TrailerPlayButton" Width="84" Height="84" CornerRadius="42" Background="#CC0B0D11" BorderBrush="#E6FFFFFF"
+                                            BorderThickness="2" Cursor="Hand" MouseLeftButtonUp="OnTrailerPlayClick" ToolTip="Ver el tráiler (Enter)">
+                                        <TextBlock Text="▶" FontSize="34" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,0,0,4"/>
+                                    </Border>
+                                    <wv2:WebView2 x:Name="TrailerPlayer" Visibility="Collapsed"/>
+                                </Grid>
+                            </Border>
+                        </DockPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- La hoja que pasa entre la banda sonora y las capturas (se dibuja con las dos páginas mientras pasa) -->
+            <Canvas x:Name="PageTurnLayer" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent"/>
+
             <!-- Elegir el vídeo de YouTube de una canción: su búsqueda de YouTube, y al abrir un vídeo se queda ese -->
             <Grid x:Name="YouTubePicker" Visibility="Collapsed" Background="#F20B0D11">
                 <DockPanel Margin="20,6,20,6">
@@ -167,9 +259,19 @@
             </StackPanel>
             <StackPanel x:Name="SoundtrackButtons" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed">
                 <Button Style="{StaticResource PillButton}" FontSize="17" Content="◀  Volver al juego" Click="OnBackToGameClick"/>
+                <Button Style="{StaticResource PillButton}" FontSize="17" Margin="16,0,0,0" Content="Capturas y tráiler  ▶" Click="OnMediaClick"
+                        ToolTip="Pasa la hoja: las capturas de pantalla y el tráiler del juego (Av Pág o V)"/>
+            </StackPanel>
+            <StackPanel x:Name="MediaButtons" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed">
+                <Button Style="{StaticResource PillButton}" FontSize="17" Content="◀  Banda sonora" Click="OnBackToSoundtrackClick"/>
             </StackPanel>
             <TextBlock x:Name="HintText" FontSize="14" Foreground="#8C95A3" HorizontalAlignment="Center" Margin="0,14,0,0"
                        Text="Enter  Jugar     ·     M  Manual     ·     Esc  Volver"/>
         </StackPanel>
+
+        <!-- Una captura en grande, encima de todo; un clic (o Esc) la cierra -->
+        <Grid x:Name="ShotZoom" Grid.RowSpan="3" Visibility="Collapsed" Background="#F2000000" Cursor="Hand" MouseLeftButtonUp="OnShotZoomClick">
+            <Image x:Name="ShotZoomImage" Stretch="Uniform" Margin="40"/>
+        </Grid>
     </Grid>
 </UserControl>

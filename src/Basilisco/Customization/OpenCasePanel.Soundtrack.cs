@@ -103,8 +103,8 @@ public partial class OpenCasePanel
         GameButtons.Visibility = Visibility.Collapsed;
         SoundtrackButtons.Visibility = Visibility.Visible;
         HintText.Text = _padMode
-            ? "↑ ↓  Canción     ·     A  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     B  Volver al juego"
-            : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     S  Buscar banda sonora     ·     Esc  Volver al juego";
+            ? "↑ ↓  Canción     ·     A  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     RB  Capturas y tráiler     ·     B  Volver al juego"
+            : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     S  Buscar banda sonora     ·     Av Pág  Capturas y tráiler     ·     Esc  Volver al juego";
     }
 
     /// <summary>
@@ -113,6 +113,8 @@ public partial class OpenCasePanel
     /// </summary>
     void LeaveSoundtrack(bool immediate = false)
     {
+        if (immediate)
+            LeaveMedia(immediate: true);
         ClosePicker();
         if (_youTube)
             StopMusic();
@@ -184,6 +186,7 @@ public partial class OpenCasePanel
         var video = YouTubeHost.Visibility == Visibility.Visible ? YouTubeHost.Height + 12 : 0;
         var disc = Math.Max(140, Math.Min(half * 0.62, bounds.Height - 150 - video - 40));
         SoundtrackDiscHost.Width = SoundtrackDiscHost.Height = disc;
+        PlaceMedia(bounds);
     }
 
     void FillSoundtrack(Game game)

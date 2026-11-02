@@ -40,6 +40,9 @@ public sealed class Game
     /// <summary>Encuadre de la imagen del disco del juego en la caja abierta (null: lo llena).</summary>
     public ImageFrame? DiscFrame { get; set; }
 
+    /// <summary>Capturas de pantalla y tráiler (de Steam y LaunchBox), para la tercera página de la caja abierta.</summary>
+    public GameMedia? Media { get; set; }
+
     /// <summary>Banda sonora: la lista de canciones (de MusicBrainz) y la música importada para cada una.</summary>
     public Soundtrack? Soundtrack { get; set; }
 

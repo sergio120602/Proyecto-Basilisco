@@ -151,6 +151,7 @@ public partial class MainWindow : Window
             _settings.Save();
         };
         CaseView.SoundtrackEdited += _ => Save();
+        CaseView.MediaFound += _ => Save();
         CaseView.VolumeChanged += volume => _settings.SoundtrackVolume = volume;
         CaseView.Closed += () => _settings.Save();
         Customizer.ImageManualRemoveRequested += RemoveImageManual;
@@ -3095,6 +3096,12 @@ public partial class MainWindow : Window
         if (CaseView.IsOpen && !Customizer.IsOpen && action == PadAction.Rotate)
         {
             CaseView.RequestManual();
+            return;
+        }
+        // RB y LB: pasar de la banda sonora a las capturas y el tráiler, y volver.
+        if (CaseView.IsOpen && !Customizer.IsOpen && action is PadAction.PageRight or PadAction.PageLeft)
+        {
+            InjectKey(action == PadAction.PageRight ? Key.PageDown : Key.PageUp);
             return;
         }
         if (IsPanelOpen)

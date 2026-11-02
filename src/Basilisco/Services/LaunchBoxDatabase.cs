@@ -44,6 +44,9 @@ public sealed class LaunchBoxGame(int id, string name, string platform, string? 
         : null;
     public List<string> AlternateNames { get; } = [];
     public List<LaunchBoxImage> Images { get; } = [];
+
+    /// <summary>El tráiler del juego (un vídeo de YouTube), si LaunchBox lo tiene.</summary>
+    public string? VideoUrl { get; set; }
 }
 
 /// <summary>
@@ -62,9 +65,9 @@ public static class LaunchBoxDatabase
     // Fichas de los juegos (descripción, desarrolladora…), para los manuales. Solo se lee cuando hace falta.
     static readonly string DetailsPath = Path.Combine(Folder, "details.tsv.gz");
 
-    // Versión del índice: la 2 añade los discos y las imágenes para el manual, y la 3 las fichas y las capturas.
-    // Uno más viejo se rehace al buscar.
-    const int IndexVersion = 3;
+    // Versión del índice: la 2 añade los discos y las imágenes para el manual, la 3 las fichas y las capturas, y la 4
+    // los tráileres. Uno más viejo se rehace al buscar.
+    const int IndexVersion = 4;
     static int _loadedVersion;
     static readonly SemaphoreSlim Lock = new(1, 1);
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(20) };
@@ -123,7 +126,7 @@ public static class LaunchBoxDatabase
             }
             if (upgrade && _loadedVersion < IndexVersion)
             {
-                status?.Report("La base de datos de LaunchBox se actualiza para traer también los discos…");
+                status?.Report("La base de datos de LaunchBox se actualiza para traer también los discos, las capturas y los tráileres…");
                 await DownloadAndIndexAsync(status, cancellation);
                 status?.Report("Cargando la base de datos de LaunchBox…");
                 await Task.Run(Load, cancellation);
@@ -341,6 +344,8 @@ public static class LaunchBoxDatabase
                         var year = fields.GetValueOrDefault("ReleaseDate") is { Length: >= 10 } date ? date[..10]
                                  : fields.GetValueOrDefault("ReleaseYear") ?? "";
                         writer.WriteLine($"G\t{id}\t{Clean(fields.GetValueOrDefault("Platform"))}\t{year}\t{Clean(name)}");
+                        if (fields.GetValueOrDefault("VideoURL") is { Length: > 0 } video)
+                            writer.WriteLine($"Y\t{id}\t{Clean(video)}");
                         if (fields.GetValueOrDefault("Overview") is { Length: > 0 } overview)
                         {
                             // Los saltos de párrafo se guardan como \n para que cada juego ocupe una línea.
@@ -518,6 +523,9 @@ public static class LaunchBoxDatabase
                         break;
                     case "A" when games.TryGetValue(id, out var game):
                         game.AlternateNames.Add(parts[2]);
+                        break;
+                    case "Y" when games.TryGetValue(id, out var game):
+                        game.VideoUrl = parts[2];
                         break;
                     case "I" when parts.Length >= 5 && games.TryGetValue(id, out var game):
                         var (kind, detail) = parts[2] switch

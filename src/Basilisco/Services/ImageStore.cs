@@ -228,6 +228,7 @@ public static class ImageStore
         RemoveExtra(game, GameExtra.Disc);
         RemoveExtra(game, GameExtra.Manual);
         RemoveExtra(game, GameExtra.Inside);
+        GameMediaFinder.Remove(game);
         foreach (var format in Enum.GetValues<CoverFormat>())
         {
             if (format == CoverFormat.Portrait && game.Portrait is null)

@@ -160,6 +160,7 @@ public partial class OpenCasePanel : UserControl
         if (!IsOpen || _closing)
             return;
         _closing = true;
+        LeaveMedia(immediate: true);
         StopMusic();
         SoundtrackView.Visibility = Visibility.Collapsed;
         BackButton.IsEnabled = PlayButton.IsEnabled = false;
@@ -192,6 +193,13 @@ public partial class OpenCasePanel : UserControl
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // En las capturas y el tráiler (o mientras pasa la hoja hacia ellas o desde ellas), sus teclas.
+        if (_mediaShown || _turning && MediaView.Visibility == Visibility.Visible)
+        {
+            if (_turning || HandleMediaKey(e.Key))
+                e.Handled = true;
+            return;
+        }
         if (_soundtrackShown)
         {
             // Eligiendo el vídeo de YouTube (o escribiendo la clave), las teclas son para YouTube; Esc cancela.
@@ -209,6 +217,7 @@ public partial class OpenCasePanel : UserControl
                 case Key.Up: SelectTrack(-1); break;
                 case Key.Down: SelectTrack(1); break;
                 case Key.S: SearchSoundtrack(); break;
+                case Key.PageDown or Key.V: ShowMedia(); break;
                 case Key.Enter or Key.Space: ToggleMusic(); break;
                 case Key.Right: Seek(10); break;
                 case Key.Left: Seek(-10); break;
