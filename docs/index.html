@@ -9,6 +9,9 @@
   <meta property="og:description" content="Launcher de videojuegos portable para Windows: Steam, Epic, GOG, EA, Battle.net, emuladores y carpetas, en un carrusel de cajas en 3D.">
   <meta property="og:image" content="https://sergio120602.github.io/Proyecto-Basilisco/logo.png">
   <meta name="theme-color" content="#C9A86E">
+  <!-- Siempre de día. La página dice que ya tiene modo nocturno (que es igual que el de día): así el modo oscuro
+       del navegador del móvil (Chrome, Samsung Internet) no la oscurece por su cuenta ni vuelve negras las nubes -->
+  <meta name="color-scheme" content="light dark">
   <link rel="icon" href="logo.png">
   <link rel="preload" as="image" href="fondo.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
+      color-scheme: light dark;
       --ink: #27233a;          /* el texto de las nubes */
       --ink-soft: #4a4157;
       --blue: #1f3d6d;         /* el azul de la túnica del ángel, para los títulos */
@@ -49,6 +53,11 @@
     main { position: relative; isolation: isolate; overflow-x: clip; }
     .rail { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
     .painting { position: absolute; top: 0; left: 0; right: 0; height: var(--H); will-change: transform; }
+    /* En el móvil, una copia del cuadro por delante del texto, solo de arriba hasta debajo del basilisco (--band, lo pone
+       el script): las nubes pasan por detrás del basilisco y se funden al llegar a él, en vez de taparlo */
+    .rail.front { z-index: 3; display: none; pointer-events: none;
+      -webkit-mask-image: linear-gradient(#000 calc(var(--band, 0px) - 50px), transparent var(--band, 0px));
+              mask-image: linear-gradient(#000 calc(var(--band, 0px) - 50px), transparent var(--band, 0px)); }
     /* Si la pantalla es más ancha que el cuadro, los lados se rellenan con el mismo cuadro desenfocado */
     .painting .fill { position: absolute; inset: 0; background: url(fondo.jpg) center / 100% 100%; filter: blur(22px) saturate(0.9); transform: scale(1.06); }
     .painting .sharp { position: absolute; top: 0; left: 50%; height: 100%; width: auto; max-width: none; transform: translateX(-50%);
@@ -157,7 +166,10 @@
       .sides { grid-template-columns: minmax(0, 1fr); row-gap: 110px; }
       .sides > .left, .sides > .right, .flock > :nth-child(n) { grid-column: 1; transform: none; }
       .sides > * { justify-self: center; width: min(100%, 560px); }
-      .hero { padding-top: calc(var(--H) * 0.345); row-gap: 70px; }
+      /* El querubín de la portada va debajo del basilisco, que acaba al 57 % del cuadro */
+      .hero { padding-top: calc(var(--H) * 0.585); row-gap: 70px; }
+      .rail.front { display: block; }
+      .village { padding-top: 160px; }
       .hero .frente { width: min(100%, 420px); margin-top: 0; }
       .info .row + .row, .info .row + .flock, .info .flock + .row { margin-top: 120px; }
       .village .left, .village .right { gap: 110px; }
@@ -175,6 +187,11 @@
       .steps .cloud { padding: 32px 22px 28px 80px; }
       .steps .num { left: 22px; top: 32px; }
       .button { width: 100%; justify-content: center; }
+    }
+    /* El modo nocturno es el mismo que el de día */
+    @media (prefers-color-scheme: dark) {
+      body { color: var(--ink); background: var(--sand); }
+      a { color: var(--gold-deep); }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -211,6 +228,12 @@
 
   <main>
     <div class="rail" aria-hidden="true">
+      <div class="painting">
+        <div class="fill"></div>
+        <img class="sharp" src="fondo.jpg" width="1568" height="2624" alt="">
+      </div>
+    </div>
+    <div class="rail front" aria-hidden="true">
       <div class="painting">
         <div class="fill"></div>
         <img class="sharp" src="fondo.jpg" width="1568" height="2624" alt="">
@@ -520,19 +543,27 @@
 
     // El viaje del cuadro: baja con la página hasta el basilisco, espera mientras pasan las nubes de información
     // (hasta que la última llega a media pantalla), baja hasta el pueblo y ahí se queda.
+    // En el móvil, donde va todo en una columna, se para con el basilisco arriba de la pantalla en vez de en medio.
     (() => {
-      const painting = document.querySelector('.painting');
+      const paintings = document.querySelectorAll('.painting');
+      const front = document.querySelector('.rail.front');
       const info = document.querySelector('.info');
+      const column = matchMedia('(max-width: 980px)');
+      // Dónde están el basilisco y su cabeza, en fracción del alto del cuadro
+      const DRAGON_TOP = 0.34, DRAGON_CENTER = 0.455, DRAGON_BOTTOM = 0.568;
       function place() {
-        const height = painting.offsetHeight, screen = innerHeight, y = scrollY;
-        const pin = Math.max(0, height * 0.455 - screen / 2);                     // el basilisco en el centro
+        const height = paintings[0].offsetHeight, screen = innerHeight, y = scrollY;
+        const pin = Math.min(Math.max(0, height - screen),
+          Math.max(0, column.matches ? height * DRAGON_TOP - 12 : height * DRAGON_CENTER - screen / 2));
         const release = Math.max(pin, info.offsetTop + info.offsetHeight - screen / 2);
         const travel = Math.max(0, height - screen - pin);                         // del basilisco al pueblo
         const offset = y < release ? Math.min(y, pin) : pin + Math.min(y - release, travel);
-        painting.style.transform = `translate3d(0, ${-offset}px, 0)`;
+        for (const painting of paintings) painting.style.transform = `translate3d(0, ${-offset}px, 0)`;
+        front.style.setProperty('--band', `${Math.max(0, height * DRAGON_BOTTOM - offset)}px`);
       }
       addEventListener('scroll', place, { passive: true });
       addEventListener('resize', place);
+      column.addEventListener('change', place);
       new ResizeObserver(place).observe(info);
       place();
     })();
