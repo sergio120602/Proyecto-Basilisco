@@ -93,7 +93,7 @@
     .lee h2 { font-size: 4.3cqw; line-height: 1.12; }
 
     /* ---------- Estructura y letra ---------- */
-    .wrap { max-width: 1320px; margin: 0 auto; padding-inline: 28px; }
+    .wrap { max-width: 1440px; margin: 0 auto; padding-inline: 28px; }
     h1, h2, h3 { font-family: Cinzel, Georgia, serif; color: var(--blue); margin: 0; }
     h2 { font-size: clamp(25px, 2.6vw, 32px); line-height: 1.2; font-weight: 700; }
     h3 { font-size: 19px; line-height: 1.3; font-weight: 700; }
@@ -106,7 +106,8 @@
     nav.links a:hover { color: var(--blue); text-decoration: underline; }
 
     /* ---------- Las tres columnas: lo de en medio (el ángel, el basilisco, el pueblo) queda siempre a la vista ---------- */
-    .sides { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 30%) minmax(0, 1fr); column-gap: 24px; }
+    /* El hueco de en medio es ancho (40 %) para que el ángel, el basilisco y el pueblo se vean bien */
+    .sides { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 40%) minmax(0, 1fr); column-gap: 24px; }
     .sides > .left { grid-column: 1; }
     .sides > .right { grid-column: 3; }
 
@@ -130,11 +131,14 @@
     /* En medio: el basilisco quieto y las nubes de información pasando a sus lados */
     .info { padding-bottom: 40px; }
     .info .row { align-items: center; row-gap: 60px; }
-    .info .row + .row, .info .row + .flock, .info .flock + .row { margin-top: 150px; }
-    .info .lee { width: 520px; max-width: 120%; justify-self: center; }
-    .flock { row-gap: 120px; }
+    .info .row + .row, .info .row + .flock, .info .flock + .row { margin-top: 230px; }
+    /* Los querubines que leen, pegados al borde de fuera para no meterse en el centro */
+    .info .lee { width: 460px; max-width: 118%; }
+    .info .lee.left { justify-self: start; }
+    .info .lee.right { justify-self: end; }
+    .flock { row-gap: 190px; }
     .flock > :nth-child(odd) { grid-column: 1; }
-    .flock > :nth-child(even) { grid-column: 3; transform: translateY(140px); }
+    .flock > :nth-child(even) { grid-column: 3; transform: translateY(200px); }
     .flock .cloud { padding: 36px 46px 32px; }
     .flock .cloud p { margin-top: 6px; font-size: 16.5px; color: var(--ink-soft); }
     .glyph { width: 26px; height: 26px; color: var(--gold); margin-bottom: 6px; }
@@ -151,13 +155,13 @@
        media pantalla), para que estas nubes lleguen cuando el pueblo ya está quieto. */
     .village { padding-top: calc(var(--H) * 0.545 - 30vh); padding-bottom: 60px; }
     .village .sides { align-items: end; }
-    .village .left, .village .right { display: flex; flex-direction: column; gap: 90px; }
+    .village .left, .village .right { display: flex; flex-direction: column; gap: 140px; }
     .village ul { margin: 12px 0 0; padding-left: 20px; }
     .village li { margin: 8px 0; color: var(--ink-soft); }
     .village li strong { color: var(--ink); font-weight: 600; }
     .village .frente { width: min(100%, 340px); align-self: center; }
     .village .download p { color: var(--ink-soft); }
-    footer { display: flex; justify-content: center; margin-top: 70px; }
+    footer { display: flex; justify-content: center; margin-top: 110px; }
     footer .cloud { padding: 20px 32px; text-align: center; font-size: 15.5px; color: var(--ink-soft); }
     footer .cloud a { margin-inline: 6px; }
 
