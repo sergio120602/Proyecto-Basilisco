@@ -8,270 +8,266 @@
   <meta property="og:title" content="Basilisco: todos tus juegos, en su caja">
   <meta property="og:description" content="Launcher de videojuegos portable para Windows: Steam, Epic, GOG, EA, Battle.net, emuladores y carpetas, en un carrusel de cajas en 3D.">
   <meta property="og:image" content="https://sergio120602.github.io/Proyecto-Basilisco/logo.png">
-  <meta name="theme-color" content="#1C4A8A">
+  <meta name="theme-color" content="#C9A86E">
   <link rel="icon" href="logo.png">
+  <link rel="preload" as="image" href="fondo-angel.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --sky-high: #1c4a8a;
-      --sky-mid: #4f86cf;
-      --mist: #bbd3f1;
-      --sun: #ffd86b;
+      --ink: #27233a;          /* el texto de las nubes */
+      --ink-soft: #4a4157;
+      --blue: #1f3d6d;         /* el azul de la túnica del ángel, para los títulos */
       --gold: #b8862a;
-      --gold-deep: #8a6114;
-      --ink: #1a2747;
-      --ink-soft: #3b4a6b;
-      --cloud: #fffdf6;
-      --cloud-shade: #e6eefa;
+      --gold-deep: #7a5212;
+      --sun: #ffd86b;
+      --scroll-ink: #3b2411;   /* la tinta de los pergaminos */
+      --paper: #f8eed9;
+      --sand: #cdb48a;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
       color: var(--ink);
-      background: var(--sky-high);
-      font: 18px/1.7 Spectral, Georgia, serif;
+      background: var(--sand);
+      font: 18px/1.65 Spectral, Georgia, serif;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
     }
     a { color: var(--gold-deep); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-    a:hover { color: var(--ink); }
-    :focus-visible { outline: 3px solid var(--sun); outline-offset: 4px; border-radius: 6px; }
+    a:hover { color: var(--blue); }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: 6px; }
 
-    /* ---------- El cielo: fijo detrás de todo ---------- */
-    .sky { position: fixed; inset: 0; z-index: -2; overflow: hidden;
-      background: linear-gradient(180deg, var(--sky-high) 0%, #2f66b0 30%, var(--sky-mid) 52%, #8fb6e6 74%, #e9dcae 92%, #f7d98c 100%); }
-    /* La luz que baja desde lo alto, como en el logo */
-    .sky::before { content: ""; position: absolute; left: 50%; top: -30vh; width: 260vmax; height: 260vmax; transform: translateX(-50%);
-      background: repeating-conic-gradient(from 0deg at 50% 0%, rgba(255, 228, 150, 0.16) 0deg 3deg, transparent 3deg 9deg);
-      -webkit-mask-image: radial-gradient(circle at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 22%, transparent 48%);
-              mask-image: radial-gradient(circle at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 22%, transparent 48%); }
-    .sky::after { content: ""; position: absolute; left: 50%; top: -38vh; width: 120vmax; height: 80vmax; transform: translateX(-50%);
-      background: radial-gradient(closest-side, rgba(255, 223, 128, 0.75), rgba(255, 216, 107, 0.25) 45%, transparent 75%); }
+    /* ---------- El cuadro: cada parte de la web tiene su trozo, quieto detrás mientras pasa el texto ---------- */
+    .part { position: relative; isolation: isolate; min-height: 100vh; overflow-x: clip; }
+    .backdrop { position: sticky; top: 0; z-index: -1; height: 100vh; height: 100lvh; margin-bottom: -100vh; margin-bottom: -100lvh; overflow: hidden; }
+    .backdrop img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .part-angel .backdrop img { object-position: 50% 35%; }
+    .part-dragon .backdrop img { object-position: 50% 20%; }
+    .part-pueblo .backdrop img { object-position: 50% 70%; }
+    /* Cada trozo entra fundiéndose con el anterior, como en el cuadro entero */
+    .part + .part { margin-top: -22vh; }
+    /* --top es lo que el principio de la parte ya ha subido por encima de la pantalla (lo pone el script):
+       así el fundido se queda en la juntura y no fijo arriba mientras el fondo está quieto */
+    .part + .part .backdrop { --top: 0px;
+      -webkit-mask-image: linear-gradient(transparent var(--top), #000 calc(var(--top) + 22vh));
+              mask-image: linear-gradient(transparent var(--top), #000 calc(var(--top) + 22vh)); }
+    .part-body { padding-bottom: 30vh; }
+    .part + .part .part-body { padding-top: calc(22vh + 60px); }
+    .part:last-child .part-body { padding-bottom: 36px; }
 
-    /* Nubes lejanas, borrosas y a la deriva */
-    .bank { position: absolute; filter: url(#lejana) blur(2px); opacity: 0.9; will-change: transform; }
-    .bank i { position: absolute; border-radius: 50%; background: radial-gradient(circle at 45% 40%, #fff, rgba(255, 255, 255, 0.85) 45%, rgba(220, 232, 250, 0) 72%); }
-    .bank.a { left: -8vw; top: 16vh; width: 46vw; height: 18vh; animation: drift 140s ease-in-out infinite alternate; }
-    .bank.b { right: -12vw; top: 46vh; width: 52vw; height: 20vh; animation: drift 170s ease-in-out infinite alternate-reverse; opacity: 0.75; }
-    .bank.c { left: 18vw; bottom: -4vh; width: 70vw; height: 22vh; animation: drift 200s ease-in-out infinite alternate; opacity: 0.95; }
-    .bank i:nth-child(1) { left: 0; top: 30%; width: 38%; height: 70%; }
-    .bank i:nth-child(2) { left: 20%; top: 0; width: 42%; height: 100%; }
-    .bank i:nth-child(3) { left: 48%; top: 14%; width: 36%; height: 86%; }
-    .bank i:nth-child(4) { left: 70%; top: 36%; width: 30%; height: 64%; }
-    @keyframes drift { from { transform: translateX(-4vw); } to { transform: translateX(6vw); } }
+    /* ---------- Las nubes de los bocadillos ----------
+       El dibujo (lóbulos con trazo de lápiz, reborde de luz, panza en sombra con tramado) lo hace el script de abajo,
+       a la medida de cada nube. Sin script, queda un bocadillo liso para que el texto se siga leyendo. */
+    .cloud { position: relative; isolation: isolate; padding: 36px 46px; color: var(--ink); }
+    .cloud:not(.drawn) { background: var(--paper); border-radius: 40px; box-shadow: 0 16px 30px rgba(52, 34, 18, 0.35); }
+    .cloud > .cloud-art { position: absolute; z-index: -1; pointer-events: none; overflow: visible;
+      filter: drop-shadow(0 16px 16px rgba(52, 34, 18, 0.34)); }
 
-    /* ---------- Los bocadillos de nube ---------- */
-    .cloud {
-      --puff: 1;                         /* tamaño de los bultos de arriba */
-      position: relative; isolation: isolate; container-type: inline-size;
-      padding: calc(30px + 14px * var(--puff)) 40px 30px;
-      color: var(--ink);
-    }
-    /* El cuerpo de la nube: un rectángulo y bultos redondos por todo el borde, fundidos en una sola silueta
-       esponjosa por el filtro #nube (se difuminan y se vuelven a cortar, como gotas que se juntan) */
-    .cloud::before {
-      content: ""; position: absolute; z-index: -1;
-      /* Un margen alrededor de la nube para los bultos: el cuerpo es justo la caja del texto y los bultos van
-         centrados en su borde, con un tamaño que depende del ancho de la nube (cqw), así sobresalen en cualquier tamaño */
-      inset: -60px -40px;
-      background:
-        radial-gradient(circle min(8cqw, 40px) at 6% 70px, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(12cqw, 56px) at 21% 62px, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(14cqw, 58px) at 41% 60px, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(12cqw, 54px) at 61% 67px, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(12cqw, 56px) at 79% 60px, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(8cqw, 40px) at 95% 74px, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(8cqw, 40px) at 9% calc(100% - 68px), var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(11cqw, 52px) at 29% calc(100% - 60px), var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(13cqw, 56px) at 54% calc(100% - 63px), var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(11cqw, 50px) at 77% calc(100% - 58px), var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(7cqw, 38px) at 94% calc(100% - 70px), var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(7cqw, 38px) at 40px 34%, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(6cqw, 34px) at 42px 66%, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(7cqw, 38px) at calc(100% - 40px) 30%, var(--cloud) 98%, transparent 100%),
-        radial-gradient(circle min(6cqw, 34px) at calc(100% - 42px) 64%, var(--cloud) 98%, transparent 100%),
-        linear-gradient(var(--cloud), var(--cloud)) 40px 60px / calc(100% - 80px) calc(100% - 120px) no-repeat;
-      filter: url(#nube) drop-shadow(0 18px 20px rgba(18, 44, 98, 0.3));
-    }
-    /* La cola del bocadillo: los circulitos de los bocadillos de pensamiento */
-    .tail { position: absolute; z-index: -1; width: 34px; height: 34px; border-radius: 50%; background: var(--cloud);
-      box-shadow: 0 10px 16px rgba(18, 44, 98, 0.22); }
-    .tail::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--cloud);
-      box-shadow: 0 6px 10px rgba(18, 44, 98, 0.2); }
-    .tail.to-left { left: -52px; top: 46%; }
-    .tail.to-left::after { left: -38px; top: 22px; }
-    .tail.to-up { left: 22%; top: -64px; }
-    .tail.to-up::after { left: -26px; top: -30px; }
+    /* ---------- Los querubines y sus pergaminos ---------- */
+    .cherub { position: relative; margin: 0; container-type: inline-size; }
+    .cherub img { display: block; width: 100%; height: auto; filter: drop-shadow(0 20px 22px rgba(52, 34, 18, 0.4)); }
+    .cherub.flip img { transform: scaleX(-1); }
+    /* El hueco en blanco de cada pergamino, medido sobre la imagen */
+    .scroll-text { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; color: var(--scroll-ink); }
+    .frente .scroll-text { left: 21.4%; top: 45.8%; width: 51.6%; height: 29.6%; }
+    .frente.flip .scroll-text { left: 27%; }
+    .lee .scroll-text { left: 51.8%; top: 49.5%; width: 24.1%; height: 21.8%; transform: rotate(2.5deg); }
+    .lee.flip .scroll-text { left: 24.1%; transform: rotate(-2.5deg); }
+    .scroll-text h1, .scroll-text h2 { color: var(--scroll-ink); font-weight: 700; text-wrap: balance;
+      text-shadow: 0 0 1px rgba(59, 36, 17, 0.35); }
+    .frente h1 { font-size: 6.4cqw; line-height: 1.12; }
+    .frente h2 { font-size: 5.6cqw; line-height: 1.15; }
+    .lee h2 { font-size: 4.3cqw; line-height: 1.12; }
 
-    /* ---------- Estructura ---------- */
-    .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; }
-    header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
-    .brand { display: inline-flex; align-items: center; gap: 10px; color: #fff; text-decoration: none;
-      font: 700 20px/1 Cinzel, Georgia, serif; letter-spacing: 0.06em; text-shadow: 0 2px 10px rgba(10, 30, 70, 0.6); }
-    .brand img { width: 40px; height: 40px; border-radius: 10px; box-shadow: 0 0 0 2px rgba(255, 216, 107, 0.7); }
-    nav.links { display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(255, 253, 246, 0.92);
-      box-shadow: 0 8px 20px rgba(18, 44, 98, 0.25); }
-    nav.links a { color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 500; padding: 4px 14px; border-radius: 999px; }
-    nav.links a:hover { background: #f3e6bf; }
-
-    h1, h2, h3 { font-family: Cinzel, Georgia, serif; color: var(--ink); margin: 0; }
-    h1 { font-size: clamp(38px, 5.4vw, 62px); line-height: 1.08; font-weight: 800; letter-spacing: 0.01em; }
-    h2 { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.2; font-weight: 700; }
+    /* ---------- Estructura y letra ---------- */
+    .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 24px; }
+    h1, h2, h3 { font-family: Cinzel, Georgia, serif; color: var(--blue); margin: 0; }
+    h2 { font-size: clamp(25px, 2.6vw, 32px); line-height: 1.2; font-weight: 700; }
     h3 { font-size: 19px; line-height: 1.3; font-weight: 700; }
     p { margin: 0; }
-    code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.84em; background: #eef2fa; color: var(--ink); padding: 1px 6px; border-radius: 6px; }
+    code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.84em; background: #eee0c2; color: var(--ink); padding: 1px 6px; border-radius: 6px; }
 
-    /* Portada: el ángel (el logo) y su bocadillo */
-    .hero { display: grid; grid-template-columns: minmax(260px, 0.82fr) 1.18fr; gap: 76px; align-items: center; padding-block: 40px 90px; }
-    .icon-frame { position: relative; justify-self: center; width: min(400px, 100%); }
-    .icon-frame::before { content: ""; position: absolute; inset: -14%; border-radius: 50%;
-      background: radial-gradient(closest-side, rgba(255, 228, 140, 0.85), rgba(255, 216, 107, 0.3) 55%, transparent); }
-    .icon-frame img { position: relative; display: block; width: 100%; height: auto; border-radius: 30px;
-      box-shadow: 0 0 0 6px rgba(255, 236, 180, 0.9), 0 0 0 9px var(--gold), 0 30px 60px rgba(12, 32, 80, 0.45); }
-    .hero .cloud { --puff: 1.15; padding: 70px 52px 46px; }
-    .lead { margin-top: 16px; font-size: 20px; color: var(--ink-soft); max-width: 32em; }
-    .version { margin-top: 14px; font-style: italic; color: var(--gold-deep); }
-    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
-    .button { display: inline-flex; align-items: center; gap: 10px; padding: 13px 24px; border-radius: 999px; text-decoration: none;
-      font: 600 17px/1.2 Spectral, Georgia, serif; color: var(--ink); background: #fff; box-shadow: inset 0 0 0 2px #c9d6ec;
+    header.top { display: flex; justify-content: flex-end; padding-block: 30px 10px; }
+    nav.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; padding: 12px 26px; }
+    nav.links a { color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 500; padding: 2px 10px; border-radius: 999px; }
+    nav.links a:hover { color: var(--blue); text-decoration: underline; }
+
+    /* Portada: el ángel del cuadro en medio, el querubín con el título a un lado y la nube de la descarga al otro */
+    .hero { display: grid; grid-template-columns: minmax(0, 38%) 1fr minmax(0, 34%); align-items: center;
+      min-height: calc(100vh - 110px); padding-bottom: 30px; }
+    .hero .frente { grid-column: 1; align-self: end; width: min(100%, 520px); }
+    .hero .cloud { grid-column: 3; padding: 40px 44px 36px; }
+    .lead { font-size: 18.5px; }
+    .version { margin-top: 12px; font-style: italic; color: var(--gold-deep); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .button { display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 999px; text-decoration: none;
+      font: 600 17px/1.2 Spectral, Georgia, serif; color: var(--ink); background: #fffaf0; box-shadow: inset 0 0 0 2px #d6c095;
       transition: transform 0.15s, box-shadow 0.15s; }
-    .button:hover { color: var(--ink); transform: translateY(-1px); box-shadow: inset 0 0 0 2px var(--sky-mid); }
-    .button.primary { color: #2b1d02; background: linear-gradient(180deg, #ffe596, var(--sun) 45%, #e9b744);
-      box-shadow: inset 0 0 0 1px rgba(138, 97, 20, 0.45), 0 10px 22px rgba(184, 134, 42, 0.45); }
-    .button.primary:hover { box-shadow: inset 0 0 0 1px rgba(138, 97, 20, 0.6), 0 14px 28px rgba(184, 134, 42, 0.55); }
+    .button:hover { color: var(--ink); transform: translateY(-1px); box-shadow: inset 0 0 0 2px var(--gold); }
+    .button.primary { color: #2b1d02; background: linear-gradient(180deg, #ffe596, var(--sun) 45%, #e3ad3c);
+      box-shadow: inset 0 0 0 1px rgba(122, 82, 18, 0.5), 0 8px 18px rgba(122, 82, 18, 0.4); }
+    .button.primary:hover { box-shadow: inset 0 0 0 1px rgba(122, 82, 18, 0.7), 0 12px 24px rgba(122, 82, 18, 0.5); }
     .button svg { width: 20px; height: 20px; flex: none; }
     .fine { margin-top: 16px; font-size: 15px; color: var(--ink-soft); }
 
-    /* Títulos de sección: una nube estrecha, centrada */
-    section { padding-block: 70px 90px; }
-    .title-cloud { --puff: 0.7; width: min(680px, 100%); margin: 0 auto 110px; text-align: center; padding: 40px 48px 26px; }
-    .title-cloud p { margin-top: 8px; color: var(--ink-soft); }
+    /* La entrada de cada parte: un querubín con el título en su pergamino y una nube con la explicación */
+    .intro { display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+    .intro .cherub { width: min(560px, 48%); flex: none; }
+    .intro .cloud { width: min(440px, 40%); }
+    .intro.reverse { flex-direction: row-reverse; }
 
-    /* Funciones: nubes a distintas alturas, no una rejilla rígida */
-    .flock { display: grid; grid-template-columns: repeat(3, 1fr); gap: 120px 96px; padding-inline: 24px; }
-    .flock .cloud { --puff: 0.62; padding: 46px 30px 26px; }
-    .flock .cloud:nth-child(3n + 2) { transform: translateY(34px); }
-    .flock .cloud:nth-child(3n) { transform: translateY(-10px); }
+    /* Funciones: a los dos lados del dragón, que queda en medio */
+    .flock { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 24%) minmax(0, 1fr); gap: 120px 0; margin-top: 120px; padding-bottom: 130px; }
+    .flock > :nth-child(odd) { grid-column: 1; }
+    .flock > :nth-child(even) { grid-column: 3; transform: translateY(140px); }
+    .flock .cloud { padding: 36px 46px 32px; }
     .flock .cloud p { margin-top: 6px; font-size: 16.5px; color: var(--ink-soft); }
-    .glyph { width: 26px; height: 26px; color: var(--gold); margin-bottom: 8px; }
+    .glyph { width: 26px; height: 26px; color: var(--gold); margin-bottom: 6px; }
 
     /* Pasos: sí son una secuencia, así que van numerados */
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 96px; padding-inline: 24px; }
-    .steps .cloud { --puff: 0.6; padding: 46px 30px 26px 84px; }
-    .steps .cloud::marker { content: none; }
-    .steps .cloud > .num { position: absolute; left: 24px; top: 46px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
-      font: 800 20px/1 Cinzel, Georgia, serif; color: #2b1d02; background: radial-gradient(circle at 35% 30%, #ffe9a6, var(--sun) 50%, #d9a538);
-      box-shadow: 0 4px 10px rgba(184, 134, 42, 0.45); }
-    .steps .cloud:nth-child(2) { transform: translateY(26px); }
-    .steps .cloud:nth-child(3) { transform: translateY(52px); }
+    .steps { list-style: none; margin: 120px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 110px; }
+    .steps .cloud { padding: 36px 34px 32px 92px; }
+    .steps .num { position: absolute; left: 30px; top: 36px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+      font: 800 20px/1 Cinzel, Georgia, serif; color: #2b1d02; background: radial-gradient(circle at 35% 30%, #ffe9a6, var(--sun) 50%, #d09a2e);
+      box-shadow: 0 0 0 2px rgba(122, 82, 18, 0.35), 0 4px 10px rgba(122, 82, 18, 0.4); }
+    .steps .cloud:nth-child(2) { transform: translateY(40px); }
+    .steps .cloud:nth-child(3) { transform: translateY(80px); }
     .steps .cloud p { margin-top: 4px; font-size: 16.5px; color: var(--ink-soft); }
 
-    /* Requisitos, sobre el horizonte dorado */
-    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 96px; align-items: start; padding-inline: 24px; }
-    .pair .cloud { --puff: 0.75; padding: 52px 40px 30px; }
+    /* Requisitos */
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 110px; align-items: start; margin-top: 200px; }
+    .pair .cloud { padding: 38px 44px 34px; }
     .pair ul { margin: 12px 0 0; padding-left: 20px; }
     .pair li { margin: 8px 0; color: var(--ink-soft); }
     .pair li strong { color: var(--ink); font-weight: 600; }
 
-    .final .cloud { --puff: 1; max-width: 720px; margin: 0 auto; text-align: center; padding: 64px 48px 40px; }
-    .final .actions { justify-content: center; }
-    .final p { margin-top: 8px; color: var(--ink-soft); }
+    /* La descarga del final */
+    .final { margin-top: 140px; }
+    .final .intro .cherub { width: min(500px, 44%); }
+    .final .cloud p { color: var(--ink-soft); }
 
-    footer { padding-block: 10px 40px; }
-    footer .cloud { --puff: 0.5; max-width: 760px; margin: 0 auto; padding: 32px 32px 20px; text-align: center; font-size: 15.5px; color: var(--ink-soft); }
+    footer { display: flex; justify-content: center; margin-top: 110px; }
+    footer .cloud { padding: 22px 34px; text-align: center; font-size: 15.5px; color: var(--ink-soft); }
     footer .cloud a { margin-inline: 6px; }
 
-    @media (max-width: 920px) {
-      .hero { grid-template-columns: 1fr; gap: 130px; padding-top: 16px; }
-      .icon-frame { width: min(300px, 76%); }
-      .tail.to-left { left: 46%; top: -74px; }
-      .tail.to-left::after { left: 22px; top: -38px; }
-      .flock { grid-template-columns: 1fr 1fr; gap: 110px 80px; }
-      .flock .cloud:nth-child(n) { transform: none; }
-      .flock .cloud:nth-child(2n) { transform: translateY(30px); }
-      .steps { grid-template-columns: 1fr; gap: 110px; max-width: 560px; margin: 0 auto; }
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; min-height: 0; padding-top: 34vh; gap: 70px; }
+      .hero .frente { grid-column: 1; justify-self: center; width: min(100%, 480px); }
+      .hero .cloud { grid-column: 1; justify-self: center; width: min(100%, 560px); }
+      .intro, .intro.reverse { flex-direction: column; gap: 60px; }
+      .intro .cherub, .final .intro .cherub { width: min(560px, 100%); }
+      .intro .cloud { width: min(100%, 560px); }
+      .flock { grid-template-columns: 1fr 1fr; gap: 120px 90px; }
+      .flock > :nth-child(n) { grid-column: auto; transform: none; }
+      .flock > :nth-child(even) { transform: translateY(60px); }
+      .steps { grid-template-columns: 1fr; gap: 110px; max-width: 560px; margin-inline: auto; }
       .steps .cloud:nth-child(n) { transform: none; }
-      .pair { grid-template-columns: 1fr; gap: 120px; }
-      nav.links { display: none; }
+      .pair { grid-template-columns: 1fr; gap: 120px; max-width: 640px; margin-inline: auto; }
     }
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
       body { font-size: 17px; }
-      .wrap { padding-inline: 32px; }
-      header.wrap { padding-inline: 16px; }
-      .flock, .steps, .pair { padding-inline: 0; }
-      .hero .cloud { padding: 60px 26px 34px; }
-      .flock { grid-template-columns: 1fr; gap: 110px; padding-inline: 12px; }
-      .flock .cloud:nth-child(n) { transform: none; }
-      .title-cloud { padding: 40px 28px 24px; }
-      .pair .cloud, .final .cloud { padding-inline: 26px; }
+      .wrap { padding-inline: 30px; }
+      header.top { justify-content: center; padding-top: 34px; }
+      nav.links { padding: 10px 14px; }
+      nav.links a { font-size: 15px; padding-inline: 7px; }
+      .hero { padding-top: 30vh; }
+      .hero .cloud { padding: 32px 22px 28px; }
+      /* En el móvil el querubín que lee se agranda (y se le salen las alas de la pantalla) para que el pergamino se lea bien */
+      .intro .cherub.lee { align-self: flex-start; width: 132vw; max-width: none; margin-left: 50%; transform: translateX(-63.9%); }
+      .intro .cherub.lee.flip { transform: translateX(-36.1%); }
+      .flock { grid-template-columns: 1fr; gap: 110px; }
+      .flock > :nth-child(even) { transform: none; }
+      .flock .cloud, .pair .cloud { padding-inline: 24px; }
+      .steps .cloud { padding: 32px 22px 28px 80px; }
+      .steps .num { left: 22px; top: 32px; }
       .button { width: 100%; justify-content: center; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      .bank { animation: none; }
       .button { transition: none; }
     }
   </style>
 </head>
 <body>
-  <!-- Filtros SVG: el borde esponjoso de los bocadillos y la textura de las nubes lejanas -->
+  <!-- Lo que comparten todas las nubes: el trazo de lápiz, el tramado de la sombra y sus colores -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-    <filter id="nube" x="-10%" y="-20%" width="120%" height="140%" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="difuso"/>
-      <feColorMatrix in="difuso" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"/>
-    </filter>
-    <filter id="lejana" x="-20%" y="-40%" width="140%" height="180%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="3" result="ruido"/>
-      <feDisplacementMap in="SourceGraphic" in2="ruido" scale="60" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
+    <defs>
+      <filter id="pencil" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="7" result="wave"/>
+        <feDisplacementMap in="SourceGraphic" in2="wave" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="shaky"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="2" result="grain"/>
+        <feColorMatrix in="grain" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.2 0 0 0 1.95" result="pores"/>
+        <feComposite in="shaky" in2="pores" operator="in"/>
+      </filter>
+      <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+        <path d="M0 0V5" stroke="#5b4a3f" stroke-width="0.8" stroke-opacity="0.55"/>
+      </pattern>
+      <linearGradient id="cloud-shade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#d6c6ae"/><stop offset="1" stop-color="#a4a6b9"/>
+      </linearGradient>
+      <linearGradient id="cloud-body" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fffaf0"/><stop offset="0.55" stop-color="#f9efd9"/><stop offset="1" stop-color="#f2e3c6"/>
+      </linearGradient>
+      <radialGradient id="cloud-glow" cx="0.28" cy="0.12" r="0.7">
+        <stop offset="0" stop-color="#ffe0a0" stop-opacity="0.55"/><stop offset="1" stop-color="#ffe0a0" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter>
+    </defs>
   </svg>
 
-  <div class="sky" aria-hidden="true">
-    <div class="bank a"><i></i><i></i><i></i><i></i></div>
-    <div class="bank b"><i></i><i></i><i></i><i></i></div>
-    <div class="bank c"><i></i><i></i><i></i><i></i></div>
-  </div>
-
-  <header class="wrap top">
-    <a class="brand" href="#"><img src="logo.png" alt="">Basilisco</a>
-    <nav class="links" aria-label="Secciones">
-      <a href="#funciones">Qué hace</a>
-      <a href="#empezar">Cómo empezar</a>
-      <a href="#requisitos">Requisitos</a>
-      <a href="https://github.com/sergio120602/Proyecto-Basilisco">GitHub</a>
-    </nav>
-  </header>
-
   <main>
-    <div class="wrap hero">
-      <div class="icon-frame"><img src="logo.png" width="512" height="512" alt="Logo de Basilisco: un arcángel venciendo a un basilisco entre nubes"></div>
-      <div class="cloud">
-        <span class="tail to-left" aria-hidden="true"></span>
-        <h1>Todos tus juegos, en su caja</h1>
-        <p class="lead">Basilisco reúne tu colección en un carrusel de cajas en 3D: Steam, Epic, GOG, EA, Battle.net, emuladores y cualquier carpeta de tu disco. Es un solo <code>.exe</code> y no hay que instalar nada.</p>
-        <p class="version" id="version-tag">Versión 1.0.0 para Windows</p>
-        <div class="actions">
-          <a class="button primary" id="download" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-            <span id="download-label">Descargar Basilisco 1.0.0</span>
-          </a>
-          <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
-            Ver el código en GitHub
-          </a>
-        </div>
-        <p class="fine">Para Windows 10 y 11 de 64 bits. Es un <span id="size-text">.zip portable</span>; si lo prefieres, baja <a id="exe-link" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.exe">el .exe suelto</a> o mira <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">las novedades</a>.</p>
-      </div>
-    </div>
+    <!-- Primera parte: el ángel y el nombre -->
+    <section class="part part-angel">
+      <div class="backdrop" aria-hidden="true"><img src="fondo-angel.jpg" alt=""></div>
+      <div class="part-body">
+        <header class="wrap top">
+          <nav class="links cloud" data-puffs="0.9" aria-label="Secciones">
+            <a href="#funciones">Qué hace</a>
+            <a href="#empezar">Cómo empezar</a>
+            <a href="#requisitos">Requisitos</a>
+            <a href="https://github.com/sergio120602/Proyecto-Basilisco">GitHub</a>
+          </nav>
+        </header>
 
-    <section id="funciones">
-      <div class="wrap">
-        <div class="cloud title-cloud">
-          <h2>Qué hace</h2>
-          <p>Abres Basilisco y ves toda tu colección de un vistazo, como una estantería. Eliges un juego, se abre su caja y juegas.</p>
+        <div class="wrap hero">
+          <figure class="cherub frente">
+            <img src="querubin-frente.webp" width="824" height="827" alt="">
+            <div class="scroll-text"><h1>Todos tus juegos, en su caja</h1></div>
+          </figure>
+          <div class="cloud">
+            <p class="lead">Basilisco reúne tu colección en un carrusel de cajas en 3D: Steam, Epic, GOG, EA, Battle.net, emuladores y cualquier carpeta de tu disco. Es un solo <code>.exe</code> y no hay que instalar nada.</p>
+            <p class="version" id="version-tag">Versión 1.0.0 para Windows</p>
+            <div class="actions">
+              <a class="button primary" id="download" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                <span id="download-label">Descargar Basilisco 1.0.0</span>
+              </a>
+              <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+                Ver el código en GitHub
+              </a>
+            </div>
+            <p class="fine">Para Windows 10 y 11 de 64 bits. Es un <span id="size-text">.zip portable</span>; si lo prefieres, baja <a id="exe-link" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.exe">el .exe suelto</a> o mira <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">las novedades</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Segunda parte: el basilisco cayendo, con lo que hace Basilisco a los lados -->
+    <section class="part part-dragon" id="funciones">
+      <div class="backdrop" aria-hidden="true"><img src="fondo-dragon.jpg" alt="" loading="lazy"></div>
+      <div class="part-body wrap">
+        <div class="intro">
+          <figure class="cherub lee">
+            <img src="querubin-lee.webp" width="912" height="843" alt="" loading="lazy">
+            <div class="scroll-text"><h2>Qué hace</h2></div>
+          </figure>
+          <div class="cloud">
+            <p>Abres Basilisco y ves toda tu colección de un vistazo, como una estantería. Eliges un juego, se abre su caja y juegas.</p>
+          </div>
         </div>
         <div class="flock">
           <article class="cloud">
@@ -323,13 +319,21 @@
       </div>
     </section>
 
-    <section id="empezar">
-      <div class="wrap">
-        <div class="cloud title-cloud">
-          <h2>Cómo empezar</h2>
-          <p>No hay instalador ni hace falta .NET: todo va dentro del <code>.exe</code>.</p>
+    <!-- Tercera parte: el pueblo del valle, con los pasos, los requisitos y la descarga -->
+    <section class="part part-pueblo" id="empezar">
+      <div class="backdrop" aria-hidden="true"><img src="fondo-pueblo.jpg" alt="" loading="lazy"></div>
+      <div class="part-body wrap">
+        <div class="intro reverse">
+          <figure class="cherub lee flip">
+            <img src="querubin-lee.webp" width="912" height="843" alt="" loading="lazy">
+            <div class="scroll-text"><h2>Cómo empezar</h2></div>
+          </figure>
+          <div class="cloud">
+            <p>No hay instalador ni hace falta .NET: todo va dentro del <code>.exe</code>.</p>
+          </div>
         </div>
-        <ol class="steps" style="list-style:none;margin:0;padding:0">
+
+        <ol class="steps">
           <li class="cloud"><span class="num" aria-hidden="true">1</span>
             <h3>Descarga</h3>
             <p>Baja el <code>.zip</code> y extráelo donde quieras, con Windows, WinRAR o 7-Zip.</p>
@@ -343,59 +347,204 @@
             <p>Pulsa «Importación +» (o la tecla <code>S</code>) para traer tus tiendas, o arrastra tus juegos a la ventana.</p>
           </li>
         </ol>
-      </div>
-    </section>
 
-    <section id="requisitos">
-      <div class="wrap pair">
-        <div class="cloud">
-          <h2>Lo que necesitas</h2>
-          <ul>
-            <li><strong>Windows 10 u 11</strong> de 64 bits.</li>
-            <li><strong>Microsoft Edge WebView2</strong>, que ya viene con Windows, para los vídeos, YouTube y Pinterest.</li>
-            <li><strong>Internet</strong> para buscar carátulas, manuales, bandas sonoras y tráileres. Para jugar no hace falta.</li>
-          </ul>
-        </div>
-        <div class="cloud">
-          <h2>Bueno saber</h2>
-          <ul>
-            <li>Tu biblioteca vive en <code>basilisco-data</code>, junto al <code>.exe</code>. Si lo mueves, muévela con él.</li>
-            <li>La primera vez Windows puede avisar con «Windows protegió su PC», porque el <code>.exe</code> no está firmado: pulsa «Más información» y «Ejecutar de todas formas».</li>
-            <li>Cuando sale una versión nueva, el botón <strong>Actualizar</strong> de arriba la instala sola y conserva tu biblioteca.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="final">
-      <div class="wrap">
-        <div class="cloud">
-          <h2>¿Ordenamos tu estantería?</h2>
-          <p>Basilisco es gratis y de código abierto.</p>
-          <div class="actions">
-            <a class="button primary" id="download-2" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-              <span id="download-label-2">Descargar Basilisco 1.0.0</span>
-            </a>
-            <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Ver todas las versiones</a>
+        <div class="pair" id="requisitos">
+          <div class="cloud">
+            <h2>Lo que necesitas</h2>
+            <ul>
+              <li><strong>Windows 10 u 11</strong> de 64 bits.</li>
+              <li><strong>Microsoft Edge WebView2</strong>, que ya viene con Windows, para los vídeos, YouTube y Pinterest.</li>
+              <li><strong>Internet</strong> para buscar carátulas, manuales, bandas sonoras y tráileres. Para jugar no hace falta.</li>
+            </ul>
+          </div>
+          <div class="cloud">
+            <h2>Bueno saber</h2>
+            <ul>
+              <li>Tu biblioteca vive en <code>basilisco-data</code>, junto al <code>.exe</code>. Si lo mueves, muévela con él.</li>
+              <li>La primera vez Windows puede avisar con «Windows protegió su PC», porque el <code>.exe</code> no está firmado: pulsa «Más información» y «Ejecutar de todas formas».</li>
+              <li>Cuando sale una versión nueva, el botón <strong>Actualizar</strong> de arriba la instala sola y conserva tu biblioteca.</li>
+            </ul>
           </div>
         </div>
+
+        <div class="final">
+          <div class="intro reverse">
+            <figure class="cherub frente flip">
+              <img src="querubin-frente.webp" width="824" height="827" alt="" loading="lazy">
+              <div class="scroll-text"><h2>¿Ordenamos tu estantería?</h2></div>
+            </figure>
+            <div class="cloud">
+              <p>Basilisco es gratis y de código abierto.</p>
+              <div class="actions">
+                <a class="button primary" id="download-2" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                  <span id="download-label-2">Descargar Basilisco 1.0.0</span>
+                </a>
+                <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Ver todas las versiones</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer>
+          <div class="cloud" data-puffs="0.8">
+            Basilisco, hecho por <a href="https://github.com/sergio120602">sergio120602</a>.
+            <a href="https://github.com/sergio120602/Proyecto-Basilisco">Código</a>
+            <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">Novedades</a>
+            <a href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Versiones</a>
+          </div>
+        </footer>
       </div>
     </section>
   </main>
 
-  <footer>
-    <div class="wrap">
-      <div class="cloud">
-        Basilisco, hecho por <a href="https://github.com/sergio120602">sergio120602</a>.
-        <a href="https://github.com/sergio120602/Proyecto-Basilisco">Código</a>
-        <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">Novedades</a>
-        <a href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Versiones</a>
-      </div>
-    </div>
-  </footer>
-
   <script>
+    // Las nubes, dibujadas como las del cuadro: una silueta de lóbulos redondos alrededor de la caja del texto,
+    // con la panza en sombra, un reborde de luz por dentro, rizos de lápiz en cada lóbulo y el contorno a lápiz.
+    (() => {
+      const NS = 'http://www.w3.org/2000/svg';
+      const MARGIN = 90;   // sitio alrededor de la caja para los lóbulos
+
+      function random(seed) {
+        let s = seed % 2147483647 || 1;
+        return () => (s = s * 16807 % 2147483647) / 2147483647;
+      }
+
+      // Recorre el borde de un rectángulo redondeado en el sentido de las agujas del reloj: punto y normal hacia fuera
+      function outline(x, y, w, h, r) {
+        const arc = Math.PI * r / 2;
+        const lengths = [w - 2 * r, arc, h - 2 * r, arc, w - 2 * r, arc, h - 2 * r, arc];
+        const total = lengths.reduce((a, b) => a + b, 0);
+        const corners = [[x + w - r, y + r, -Math.PI / 2], [x + w - r, y + h - r, 0], [x + r, y + h - r, Math.PI / 2], [x + r, y + r, Math.PI]];
+        function at(s) {
+          s = ((s % total) + total) % total;
+          for (let i = 0; i < 8; i++) {
+            if (s <= lengths[i] || i === 7) {
+              const side = i >> 1;
+              if (i % 2 === 0) {
+                if (side === 0) return [x + r + s, y, 0, -1];
+                if (side === 1) return [x + w, y + r + s, 1, 0];
+                if (side === 2) return [x + w - r - s, y + h, 0, 1];
+                return [x, y + h - r - s, -1, 0];
+              }
+              const [cx, cy, a0] = corners[side];
+              const a = a0 + s / r;
+              return [cx + r * Math.cos(a), cy + r * Math.sin(a), Math.cos(a), Math.sin(a)];
+            }
+            s -= lengths[i];
+          }
+        }
+        return { total, at };
+      }
+
+      const f = n => n.toFixed(1);
+
+      function draw(el) {
+        const w = el.offsetWidth, h = el.offsetHeight;
+        if (!w || !h) return;
+        const rnd = random(Number(el.dataset.seed) * 7919 + 13);
+        const base = Math.max(22, Math.min(70, Math.min(w, h) * 0.34)) * (parseFloat(el.dataset.puffs) || 1);
+        const inset = base * 0.26;             // los valles entre lóbulos quedan un poco dentro de la caja
+        const lift = base * 0.22;              // lo que sube la parte iluminada: lo que queda debajo es la sombra
+        // La silueta baja lo que sube la parte iluminada, para que la sombra quede por debajo del texto
+        const bw = w - 2 * inset, bh = h - 2 * inset + lift;
+        const { total, at } = outline(MARGIN + inset, MARGIN + inset, bw, bh, Math.max(1, Math.min(bw * 0.4, bh * 0.4, base * 1.1)));
+
+        // Dónde acaba cada lóbulo: grandes arriba, medianos a los lados y pequeños y aplastados abajo
+        const cuts = [0];
+        for (let s = 0; ;) {
+          const ny = at(s + base * 0.5)[3];
+          const billow = ny <= 0.5 && rnd() < 0.22 ? 1.55 : 1;   // de vez en cuando, un lóbulo bien grande
+          const c = base * (ny < -0.5 ? 1.05 : ny > 0.5 ? 0.62 : 0.8) * (0.75 + rnd() * 0.55) * billow;
+          if (total - s - c < base * 0.45) break;
+          s += c;
+          cuts.push(s);
+        }
+        cuts.push(total);
+        const phase = rnd() * total;
+
+        const rim = Math.max(4, base * 0.13);
+        let d = '', curls = '', rims = '';
+        for (let i = 1; i < cuts.length; i++) {
+          const a = at(cuts[i - 1] + phase), b = at(cuts[i] + phase);
+          const below = at((cuts[i - 1] + cuts[i]) / 2 + phase)[3] > 0.5;
+          const dx = b[0] - a[0], dy = b[1] - a[1], c = Math.hypot(dx, dy);
+          if (c < 1) continue;
+          const nx = dy / c, ny = -dx / c;   // hacia fuera
+          const big = below ? 0 : 1;
+          const r = c * (below ? 0.6 + rnd() * 0.15 : 0.52 + rnd() * 0.1);
+          const rise = Math.sqrt(Math.max(0, r * r - c * c / 4)) * (big ? 1 : -1);
+          const cx = (a[0] + b[0]) / 2 + nx * rise, cy = (a[1] + b[1]) / 2 + ny * rise;
+          if (!d) d = `M${f(a[0])} ${f(a[1])}`;
+          d += ` A${f(r)} ${f(r)} 0 ${big} 1 ${f(b[0])} ${f(b[1])}`;
+          const arc = (q, t0, t1) => `M${f(cx + q * Math.cos(t0))} ${f(cy + q * Math.sin(t0))} A${f(q)} ${f(q)} 0 0 1 ${f(cx + q * Math.cos(t1))} ${f(cy + q * Math.sin(t1))} `;
+          const t = Math.atan2(ny, nx);
+          if (!below) {
+            // La luz que bordea cada lóbulo por dentro, sin llegar a los valles
+            const spread = 0.85 + rnd() * 0.35;
+            rims += arc(r - rim * 0.9, t - spread, t + spread);
+            // El rizo de dentro de cada lóbulo, como los trazos que dibujan el volumen en el cuadro
+            if (rnd() < 0.8) {
+              const q = r * (0.6 + rnd() * 0.12);
+              curls += rnd() < 0.5 ? arc(q, t - 1.35, t + 0.2) : arc(q, t - 0.2, t + 1.35);
+            }
+            // El pliegue entre dos lóbulos: un trazo corto que entra desde el valle
+            if (rnd() < 0.7) {
+              const len = base * (0.14 + rnd() * 0.14), side = rnd() < 0.5 ? -1 : 1;
+              const tx = -a[3] * side, ty = a[2] * side;
+              curls += `M${f(a[0])} ${f(a[1])} Q${f(a[0] - a[2] * len * 0.6 + tx * len * 0.35)} ${f(a[1] - a[3] * len * 0.6 + ty * len * 0.35)} ${f(a[0] - a[2] * len + tx * len * 0.2)} ${f(a[1] - a[3] * len + ty * len * 0.2)} `;
+            }
+          }
+        }
+        d += ' Z';
+
+        const id = `cloud-clip-${el.dataset.seed}`;
+        let svg = el.querySelector(':scope > .cloud-art');
+        if (!svg) {
+          svg = document.createElementNS(NS, 'svg');
+          svg.setAttribute('class', 'cloud-art');
+          svg.setAttribute('aria-hidden', 'true');
+          el.prepend(svg);
+        }
+        svg.setAttribute('width', w + 2 * MARGIN);
+        svg.setAttribute('height', h + 2 * MARGIN);
+        svg.style.left = svg.style.top = `${-MARGIN}px`;
+        svg.innerHTML = `
+          <defs><clipPath id="${id}"><path d="${d}"/></clipPath></defs>
+          <!-- El contorno va debajo de la nube: solo asoma su mitad de fuera, y no se ven los cruces entre lóbulos -->
+          <path d="${d}" fill="none" stroke="#5a3e26" stroke-width="3.6" filter="url(#pencil)"/>
+          <path d="${d}" transform="translate(0.9 1.4)" fill="none" stroke="#5a3e26" stroke-opacity="0.4" stroke-width="2" filter="url(#pencil)"/>
+          <path d="${d}" fill="url(#cloud-shade)"/>
+          <g clip-path="url(#${id})">
+            <rect width="100%" height="100%" fill="url(#hatch)" opacity="0.45"/>
+            <path d="${d}" transform="translate(0 -${f(lift)})" fill="url(#cloud-body)"/>
+            <path d="${d}" transform="translate(0 -${f(lift)})" fill="url(#cloud-glow)"/>
+            <path d="${rims}" fill="none" stroke="#fffdf4" stroke-opacity="0.85" stroke-width="${f(rim)}" stroke-linecap="round" filter="url(#soft)"/>
+            <path d="${d}" transform="translate(0 -${f(lift)})" fill="none" stroke="#7a5a3c" stroke-opacity="0.4" stroke-width="1.1" filter="url(#pencil)"/>
+          </g>
+          <path d="${curls}" fill="none" stroke="#7a5a3c" stroke-opacity="0.5" stroke-width="1.2" stroke-linecap="round" filter="url(#pencil)"/>`;
+        el.classList.add('drawn');
+      }
+
+      const clouds = document.querySelectorAll('.cloud');
+      const observer = new ResizeObserver(entries => entries.forEach(entry => draw(entry.target)));
+      clouds.forEach((el, i) => { el.dataset.seed = i + 1; observer.observe(el); });
+    })();
+
+    // El fundido entre una parte del cuadro y la siguiente acompaña a la juntura al hacer scroll
+    (() => {
+      const parts = [...document.querySelectorAll('.part + .part')].map(part => [part, part.querySelector('.backdrop')]);
+      let queued = false;
+      function update() {
+        queued = false;
+        for (const [part, backdrop] of parts) backdrop.style.setProperty('--top', `${Math.min(0, part.getBoundingClientRect().top)}px`);
+      }
+      const queue = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+      addEventListener('scroll', queue, { passive: true });
+      addEventListener('resize', queue);
+      update();
+    })();
+
     // Los enlaces apuntan a la 1.0.0; si hay una versión más nueva publicada, se cambian a ella.
     (async () => {
       try {
