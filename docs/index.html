@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basilisco · Descargar</title>
+  <meta name="description" content="Basilisco: un launcher de videojuegos para Windows que reúne todos tus juegos en un carrusel de cajas en 3D. Portable, sin instalar nada.">
+  <meta property="og:title" content="Basilisco — todos tus juegos, en su caja">
+  <meta property="og:description" content="Launcher de videojuegos portable para Windows: Steam, Epic, GOG, EA, Battle.net, emuladores y carpetas, en un carrusel de cajas en 3D.">
+  <meta property="og:image" content="https://sergio120602.github.io/Proyecto-Basilisco/logo.png">
+  <link rel="icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14110d;
+      --ink-2: #1d1913;
+      --ink-3: #28221a;
+      --parchment: #efe3c8;
+      --parchment-dim: #c9b994;
+      --muted: #a39878;
+      --gold: #d8a645;
+      --gold-bright: #f0c46a;
+      --line: rgba(216, 166, 69, 0.22);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(216, 166, 69, 0.16), transparent 70%),
+        var(--ink);
+      color: var(--parchment);
+      font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--gold-bright); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+    /* Cabecera */
+    header.top { display: flex; align-items: center; justify-content: space-between; padding-block: 18px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-family: Cinzel, Georgia, serif; font-weight: 700; letter-spacing: 0.08em; color: var(--parchment); }
+    .brand img { width: 34px; height: 34px; border-radius: 8px; }
+    nav.links { display: flex; gap: 20px; font-size: 14px; }
+    nav.links a { color: var(--parchment-dim); }
+
+    /* Portada */
+    .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; padding-block: 48px 72px; }
+    .eyebrow { display: inline-block; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+    h1 { font-family: Cinzel, Georgia, serif; font-size: clamp(44px, 7vw, 76px); line-height: 1.02; margin: 18px 0 12px; letter-spacing: 0.03em; color: var(--parchment); }
+    h1 span { color: var(--gold-bright); }
+    .lead { font-size: 19px; color: var(--parchment-dim); max-width: 34em; margin: 0 0 28px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .button {
+      display: inline-flex; align-items: center; gap: 10px; border-radius: 12px; padding: 14px 22px; font-weight: 600; font-size: 16px;
+      border: 1px solid var(--line); color: var(--parchment); background: var(--ink-3); transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .button:hover { text-decoration: none; transform: translateY(-1px); background: #322a1f; }
+    .button.primary { background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color: #241a08; border-color: transparent; box-shadow: 0 10px 30px rgba(216, 166, 69, 0.28); }
+    .button.primary:hover { background: linear-gradient(180deg, #f6d184, var(--gold-bright)); box-shadow: 0 14px 36px rgba(216, 166, 69, 0.38); }
+    .button svg { width: 20px; height: 20px; flex: none; }
+    .meta { margin-top: 14px; font-size: 14px; color: var(--muted); }
+    .meta a { color: var(--parchment-dim); }
+
+    .art { position: relative; justify-self: center; width: min(440px, 100%); aspect-ratio: 1; }
+    .art::before { content: ""; position: absolute; inset: -8%; background: radial-gradient(closest-side, rgba(240, 196, 106, 0.32), transparent); filter: blur(8px); }
+    .art img { position: relative; width: 100%; height: 100%; border-radius: 26px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--line); transform: rotate(-2deg); }
+
+    /* Secciones */
+    section { padding: 56px 0; border-top: 1px solid var(--line); }
+    h2 { font-family: Cinzel, Georgia, serif; font-size: clamp(28px, 4vw, 38px); margin: 0 0 8px; letter-spacing: 0.04em; }
+    .sub { color: var(--parchment-dim); margin: 0 0 32px; max-width: 46em; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .card { background: linear-gradient(180deg, var(--ink-2), #18140f); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+    .card h3 { margin: 12px 0 6px; font-size: 17px; color: var(--parchment); }
+    .card p { margin: 0; font-size: 15px; color: var(--parchment-dim); }
+    .icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: rgba(216, 166, 69, 0.12); color: var(--gold-bright); }
+    .icon svg { width: 22px; height: 22px; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: step; }
+    .step { position: relative; padding: 22px 22px 22px 70px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--radius); }
+    .step::before { counter-increment: step; content: counter(step); position: absolute; left: 20px; top: 20px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: Cinzel, Georgia, serif; font-weight: 700; color: #241a08; background: var(--gold); }
+    .step h3 { margin: 0 0 4px; font-size: 17px; }
+    .step p { margin: 0; color: var(--parchment-dim); font-size: 15px; }
+    code { font-family: Consolas, "SFMono-Regular", monospace; font-size: 0.92em; background: rgba(239, 227, 200, 0.08); padding: 1px 6px; border-radius: 5px; color: var(--parchment); }
+
+    .specs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .specs ul { margin: 0; padding-left: 20px; color: var(--parchment-dim); }
+    .specs li { margin: 6px 0; }
+    .specs li strong { color: var(--parchment); font-weight: 600; }
+
+    .final { text-align: center; padding: 72px 0; }
+    .final .cta { justify-content: center; margin-top: 24px; }
+
+    footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+    footer a { color: var(--parchment-dim); }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; gap: 32px; padding-block-start: 24px; text-align: center; }
+      .hero .lead { margin-left: auto; margin-right: auto; }
+      .hero .cta { justify-content: center; }
+      .art { width: min(320px, 80%); order: -1; }
+      .grid, .steps { grid-template-columns: 1fr 1fr; }
+      .specs { grid-template-columns: 1fr; }
+      nav.links { display: none; }
+    }
+    @media (max-width: 560px) {
+      .grid, .steps { grid-template-columns: 1fr; }
+      .button { width: 100%; justify-content: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap top">
+    <a class="brand" href="#"><img src="logo.png" alt="">BASILISCO</a>
+    <nav class="links">
+      <a href="#funciones">Funciones</a>
+      <a href="#empezar">Cómo empezar</a>
+      <a href="#requisitos">Requisitos</a>
+      <a href="https://github.com/sergio120602/Proyecto-Basilisco">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="wrap hero">
+      <div>
+        <span class="eyebrow" id="version-tag">Versión 1.0.0 · Windows</span>
+        <h1>Todos tus juegos, <span>en su caja</span></h1>
+        <p class="lead">Basilisco es un launcher de videojuegos para PC que reúne tu colección en un carrusel de cajas en 3D: Steam, Epic, GOG, EA, Battle.net, emuladores y cualquier carpeta de tu disco. Un solo <code>.exe</code>, sin instalar nada.</p>
+        <div class="cta">
+          <a class="button primary" id="download" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span id="download-label">Descargar Basilisco 1.0.0</span>
+          </a>
+          <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+            Código en GitHub
+          </a>
+        </div>
+        <p class="meta" id="download-meta">Windows 10 y 11 (64 bits) · .zip portable · <a id="exe-link" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.exe">o el .exe suelto</a> · <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">novedades</a></p>
+      </div>
+      <div class="art"><img src="logo.png" alt="Logo de Basilisco: un arcángel venciendo a un basilisco"></div>
+    </div>
+
+    <section id="funciones">
+      <div class="wrap">
+        <h2>Qué hace</h2>
+        <p class="sub">Abres Basilisco y ves toda tu colección de un vistazo, como una estantería. Eliges un juego, se abre su caja y juegas.</p>
+        <div class="grid">
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="14" rx="1"/><rect x="9" y="3" width="6" height="18" rx="1"/><rect x="15" y="5" width="6" height="14" rx="1"/></svg></div>
+            <h3>Carrusel de cajas en 3D</h3>
+            <p>Cajas cuadradas o rectangulares con la franja de cada consola, que puedes girar para ver el lomo y la contraportada.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/><path d="M9 9v11"/></svg></div>
+            <h3>Importa de todas partes</h3>
+            <p>Steam (también la familia), Epic Games, GOG, EA, Battle.net, 12 emuladores y cualquier carpeta del disco, con sus carátulas.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+            <h3>La caja, por dentro</h3>
+            <p>Al abrirla: el manual a un lado y el disco (o el cartucho) al otro. Al darle a Jugar, el disco gira y empieza el juego.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2z"/><path d="M13 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5z"/></svg></div>
+            <h3>Manuales que se hojean</h3>
+            <p>Lee el manual como un libro: el PDF original de Games Database, hecho con Pinterest o creado con la ficha del juego.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+            <h3>Banda sonora, capturas y vídeos</h3>
+            <p>Pasa la hoja: la música del juego, sus capturas y tráileres, y también tus capturas y grabaciones de Steam.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
+            <h3>Logros y trofeos</h3>
+            <p>Los de Steam y, para el resto, RetroAchievements, RPCS3, PlayStation o los del propio juego, con bronce, plata, oro y platino.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.96 3.43L2 14.5A2.5 2.5 0 0 0 6.5 16l1.5-2h8l1.5 2a2.5 2.5 0 0 0 4.5-1.5l-.74-6.07A4 4 0 0 0 17.3 5Z"/></svg></div>
+            <h3>Con mando</h3>
+            <p>Xbox, PlayStation y Switch Pro, por cable o Bluetooth, con los símbolos de tu mando en cada botón.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v9l6-6"/></svg></div>
+            <h3>A tu gusto</h3>
+            <p>Sagas, orden, fondos y color de letras por juego, modo nocturno, y un modo edición para mover los botones por la pantalla.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
+            <h3>100 % portable</h3>
+            <p>Un solo <code>.exe</code> con su carpeta de datos al lado. Cópialo a un USB o a otro PC y sigue igual. Se actualiza solo.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="empezar">
+      <div class="wrap">
+        <h2>Cómo empezar</h2>
+        <p class="sub">No hay instalador ni hace falta .NET: todo va dentro del <code>.exe</code>.</p>
+        <div class="steps">
+          <div class="step">
+            <h3>Descarga</h3>
+            <p>Baja el <code>.zip</code> de arriba y extráelo donde quieras (con Windows, WinRAR o 7-Zip).</p>
+          </div>
+          <div class="step">
+            <h3>Abre</h3>
+            <p>Entra en la carpeta <code>Basilisco-v1.0.0</code> y abre <code>Basilisco.exe</code>.</p>
+          </div>
+          <div class="step">
+            <h3>Importa</h3>
+            <p>Pulsa «Importación +» (o <code>S</code>) para traer Steam y las demás tiendas, o arrastra tus juegos a la ventana.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="requisitos">
+      <div class="wrap specs">
+        <div>
+          <h2>Requisitos</h2>
+          <ul>
+            <li><strong>Windows 10 u 11</strong> de 64 bits.</li>
+            <li><strong>Microsoft Edge WebView2</strong> (ya viene con Windows) para los vídeos, YouTube y Pinterest.</li>
+            <li><strong>Conexión a internet</strong> para buscar carátulas, manuales, bandas sonoras y tráileres. Para jugar no hace falta.</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Bueno saber</h2>
+          <ul>
+            <li>Tu biblioteca vive en <code>basilisco-data</code>, junto al <code>.exe</code>: si lo mueves, muévela con él.</li>
+            <li>Windows puede avisar la primera vez («Windows protegió su PC») porque el <code>.exe</code> no está firmado: «Más información» → «Ejecutar de todas formas».</li>
+            <li>Cuando hay versión nueva, el botón <strong>Actualizar</strong> de arriba la pone sola y conserva tu biblioteca.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="final">
+      <div class="wrap">
+        <h2>¿Listo para ordenar la estantería?</h2>
+        <p class="sub" style="margin: 0 auto;">Gratis y de código abierto.</p>
+        <div class="cta">
+          <a class="button primary" id="download-2" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span id="download-label-2">Descargar Basilisco 1.0.0</span>
+          </a>
+          <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Todas las versiones</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Basilisco · hecho por <a href="https://github.com/sergio120602">sergio120602</a></span>
+      <span><a href="https://github.com/sergio120602/Proyecto-Basilisco">Código</a> · <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">Novedades</a> · <a href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Versiones</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // Los enlaces apuntan a la 1.0.0; si hay una versión más nueva publicada, se cambian a ella.
+    (async () => {
+      try {
+        const response = await fetch('https://api.github.com/repos/sergio120602/Proyecto-Basilisco/releases/latest');
+        if (!response.ok) return;
+        const release = await response.json();
+        const zip = release.assets.find(asset => asset.name.endsWith('-win-x64.zip'));
+        const exe = release.assets.find(asset => asset.name.endsWith('-win-x64.exe'));
+        if (!zip) return;
+        const version = release.tag_name.replace(/^v/, '');
+        const megabytes = Math.round(zip.size / 1048576);
+        for (const id of ['download', 'download-2']) document.getElementById(id).href = zip.browser_download_url;
+        for (const id of ['download-label', 'download-label-2']) document.getElementById(id).textContent = `Descargar Basilisco ${version}`;
+        document.getElementById('version-tag').textContent = `Versión ${version} · Windows`;
+        if (exe) document.getElementById('exe-link').href = exe.browser_download_url;
+        document.getElementById('download-meta').firstChild.textContent = `Windows 10 y 11 (64 bits) · .zip portable de ${megabytes} MB · `;
+        document.querySelectorAll('.step code').forEach(code => { if (code.textContent.startsWith('Basilisco-v')) code.textContent = `Basilisco-v${version}`; });
+      } catch {
+        // Sin conexión con GitHub: se quedan los enlaces de la 1.0.0.
+      }
+    })();
+  </script>
+</body>
+</html>

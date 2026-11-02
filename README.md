@@ -6,13 +6,13 @@
 
 Es **100 % portable**: un único `.exe`, sin instalación de ningún tipo. Lo copias donde quieras (un USB, otro disco…) y funciona.
 
-> ⚠️ Proyecto en fase inicial. Este README y la hoja de ruta irán cambiando con el tiempo.
+🌐 **Página de descarga: [sergio120602.github.io/Proyecto-Basilisco](https://sergio120602.github.io/Proyecto-Basilisco/)**
 
 ---
 
 ## 📥 Descargar
 
-Descarga el último `Basilisco-vX.Y.Z-win-x64.zip` desde **[Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases)** y extráelo (con Windows, WinRAR o 7-Zip): sale una carpeta `Basilisco-vX.Y.Z` con `Basilisco.exe` y su carpeta de datos `basilisco-data`. Ábrelo y listo; no necesita instalar nada (ni siquiera .NET). También está el `.exe` suelto, por si lo prefieres.
+Descarga el último `Basilisco-vX.Y.Z-win-x64.zip` desde **[la página de Basilisco](https://sergio120602.github.io/Proyecto-Basilisco/)** o desde **[Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases)** y extráelo (con Windows, WinRAR o 7-Zip): sale una carpeta `Basilisco-vX.Y.Z` con `Basilisco.exe` y su carpeta de datos `basilisco-data`. Ábrelo y listo; no necesita instalar nada (ni siquiera .NET). También está el `.exe` suelto, por si lo prefieres.
 
 Cuando sale una versión nueva, Basilisco lo avisa con un botón **Actualizar** arriba a la derecha: se descarga y se pone sola, conservando tu biblioteca.
 
@@ -182,6 +182,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.9.5** — Las hojas dobles de los manuales en PDF se detectan y se parten por la mitad (con botón para cambiarlo a mano)
 - [x] **v0.10.0** — Capturas de pantalla y tráiler (de Steam y LaunchBox) en una tercera página de la caja abierta, a la derecha de la banda sonora
 - [x] **v0.10.1** — Capturas y vídeos por origen (desplegable) y en carrusel: también los tuyos de Steam (capturas y grabaciones) y los de las carpetas que añadas
+- [x] **v1.0.0** — Primera versión terminada, con su página web de descarga en GitHub Pages
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

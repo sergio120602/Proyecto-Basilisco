@@ -3,6 +3,11 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [1.0.0] - 2026-11-02
+
+- **Basilisco 1.0.0**: la primera versión terminada. Reúne todo lo de las versiones 0.x: el carrusel de cajas en 3D, la importación de Steam, Epic Games, GOG, EA, Battle.net, emuladores y carpetas, la caja abierta (manual, disco o cartucho, banda sonora, capturas y vídeos), los manuales, los logros y trofeos, el mando y la personalización.
+- **Página web de descarga**: https://sergio120602.github.io/Proyecto-Basilisco/ (alojada en GitHub Pages, desde la carpeta `docs` de este repositorio). Su botón descarga siempre la última versión publicada.
+
 ## [0.10.1] - 2026-11-02
 
 - **Capturas y vídeos, por origen y en carrusel**: la página de la caja abierta pasa a llamarse «Capturas y vídeos». Cada mitad tiene un **desplegable** con los orígenes y cuántas hay de cada uno; al elegir uno, sus capturas o vídeos salen **en carrusel**: el elegido grande en el centro y los de los lados más pequeños, deslizándose al pasar.
