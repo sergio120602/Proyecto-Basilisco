@@ -43,6 +43,12 @@ public sealed class Game
     /// <summary>Capturas de pantalla y tráiler (de Steam y LaunchBox), para la tercera página de la caja abierta.</summary>
     public GameMedia? Media { get; set; }
 
+    /// <summary>Carpetas con tus capturas de este juego (cada una sale como un grupo en el desplegable de las capturas).</summary>
+    public List<string>? ScreenshotFolders { get; set; }
+
+    /// <summary>Carpetas con tus vídeos de este juego (cada una, un grupo en el desplegable de los vídeos).</summary>
+    public List<string>? VideoFolders { get; set; }
+
     /// <summary>Banda sonora: la lista de canciones (de MusicBrainz) y la música importada para cada una.</summary>
     public Soundtrack? Soundtrack { get; set; }
 

@@ -3098,10 +3098,17 @@ public partial class MainWindow : Window
             CaseView.RequestManual();
             return;
         }
-        // RB y LB: pasar de la banda sonora a las capturas y el tráiler, y volver.
-        if (CaseView.IsOpen && !Customizer.IsOpen && action is PadAction.PageRight or PadAction.PageLeft)
+        // RB y LB: pasar de la banda sonora a las capturas y los vídeos, y volver. LT y RT: en esa página, cambiar de origen
+        // las capturas y los vídeos (lo que hacen G y H).
+        if (CaseView.IsOpen && !Customizer.IsOpen && action is PadAction.NextFilter or PadAction.PreviousFilter or PadAction.PageLeft or PadAction.PageRight)
         {
-            InjectKey(action == PadAction.PageRight ? Key.PageDown : Key.PageUp);
+            InjectKey(action switch
+            {
+                PadAction.NextFilter => Key.PageDown,
+                PadAction.PreviousFilter => Key.PageUp,
+                PadAction.PageLeft => Key.G,
+                _ => Key.H,
+            });
             return;
         }
         if (IsPanelOpen)

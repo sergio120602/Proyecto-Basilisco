@@ -36,14 +36,13 @@ public static class GameMediaFinder
 
     /// <summary>True si hay que buscarlos (nunca se buscaron, o hace mucho).</summary>
     public static bool NeedsLookup(Game game) =>
-        game.Media is not { } media || DateTime.Now - media.Looked > (media.IsEmpty ? StaleEmpty : Stale);
+        game.Media is not { } media || media.Version < GameMedia.CurrentVersion || DateTime.Now - media.Looked > (media.IsEmpty ? StaleEmpty : Stale);
 
     /// <summary>Busca las capturas y el tráiler del juego. Nunca falla: si no hay red o no se encuentra, devuelve lo que haya.</summary>
     /// <param name="steamFound">Lo de Steam, en cuanto llega (LaunchBox puede tardar si hay que descargar su base de datos).</param>
     public static async Task<GameMedia> FindAsync(Game game, IProgress<string>? status, CancellationToken cancellation, Action<GameMedia>? steamFound = null)
     {
-        var media = new GameMedia { Looked = DateTime.Now };
-        var sources = new List<string>();
+        var media = new GameMedia { Looked = DateTime.Now, Version = GameMedia.CurrentVersion };
 
         status?.Report("Buscando en Steam…");
         var appId = game.SteamAppId;
@@ -52,11 +51,10 @@ public static class GameMediaFinder
             appId = await FindSteamAppAsync(game.Name, cancellation);
         if (appId is { } id && await FillFromSteamAsync(media, id, cancellation))
         {
-            sources.Add("Steam");
             steamFound?.Invoke(new GameMedia
             {
-                Screenshots = [.. media.Screenshots], Trailer = media.Trailer, TrailerPoster = media.TrailerPoster, TrailerName = media.TrailerName,
-                Sources = "Steam", Looked = DateTime.MinValue,
+                SteamScreenshots = [.. media.SteamScreenshots], SteamTrailers = [.. media.SteamTrailers],
+                Version = GameMedia.CurrentVersion, Looked = DateTime.MinValue,
             });
         }
 
@@ -71,13 +69,8 @@ public static class GameMediaFinder
                     .OrderBy(image => image.Detail == "Captura" ? 0 : 1)
                     .Select(image => LaunchBoxDatabase.ImagesUrl + image.FileName)
                     .ToList();
-                var video = YouTubeMusic.VideoIdOf(found.VideoUrl);
-                // Las de LaunchBox van detrás de las de Steam (que suelen ser más grandes); el tráiler, si Steam no tiene.
-                media.Screenshots.AddRange(shots.Take(Math.Max(0, MaxScreenshots - media.Screenshots.Count)));
-                if (media.Trailer is null)
-                    media.YouTubeTrailer = video;
-                if (shots.Count > 0 || video is not null)
-                    sources.Add("LaunchBox");
+                media.LaunchBoxScreenshots.AddRange(shots.Take(MaxScreenshots));
+                media.YouTubeTrailer = YouTubeMusic.VideoIdOf(found.VideoUrl);
             }
         }
         catch (Exception ex) when (ex is ArtProviderException or HttpRequestException or IOException or InvalidDataException
@@ -86,7 +79,6 @@ public static class GameMediaFinder
             // Sin LaunchBox (sin red, o la descarga ha fallado): se queda lo de Steam.
         }
 
-        media.Sources = sources.Count > 0 ? string.Join(" y ", sources) : null;
         return media;
     }
 
@@ -127,23 +119,26 @@ public static class GameMediaFinder
                 foreach (var shot in screenshots.EnumerateArray().Take(MaxScreenshots))
                 {
                     if (shot.TryGetProperty("path_full", out var full) && full.GetString() is { Length: > 0 } url)
-                        media.Screenshots.Add(url);
+                        media.SteamScreenshots.Add(url);
                 }
             }
 
-            if (data.TryGetProperty("movies", out var movies) && movies.GetArrayLength() > 0)
+            if (data.TryGetProperty("movies", out var movies))
             {
-                var movie = movies.EnumerateArray().FirstOrDefault(item => item.TryGetProperty("highlight", out var h) && h.ValueKind == JsonValueKind.True);
-                if (movie.ValueKind != JsonValueKind.Object)
-                    movie = movies[0];
-                // Los tráileres antiguos tienen .mp4; los nuevos, solo en streaming (HLS), que la página del reproductor también pone.
-                media.Trailer = movie.TryGetProperty("mp4", out var mp4) && mp4.ValueKind == JsonValueKind.Object && mp4.TryGetProperty("max", out var max)
-                    ? max.GetString()
-                    : movie.TryGetProperty("hls_h264", out var hls) ? hls.GetString() : null;
-                media.TrailerPoster = movie.TryGetProperty("thumbnail", out var thumb) ? thumb.GetString() : null;
-                media.TrailerName = movie.TryGetProperty("name", out var title) ? title.GetString() : null;
+                // Los destacados primero. Los tráileres antiguos tienen .mp4; los nuevos, solo en streaming (HLS), que la
+                // página del reproductor también pone.
+                foreach (var movie in movies.EnumerateArray().OrderBy(item => item.TryGetProperty("highlight", out var h) && h.ValueKind == JsonValueKind.True ? 0 : 1))
+                {
+                    var url = movie.TryGetProperty("mp4", out var mp4) && mp4.ValueKind == JsonValueKind.Object && mp4.TryGetProperty("max", out var max)
+                        ? max.GetString()
+                        : movie.TryGetProperty("hls_h264", out var hls) ? hls.GetString() : null;
+                    if (url is null)
+                        continue;
+                    media.SteamTrailers.Add(new MediaVideo(movie.TryGetProperty("name", out var title) ? title.GetString() ?? "Tráiler" : "Tráiler", url,
+                        movie.TryGetProperty("thumbnail", out var thumb) ? thumb.GetString() : null));
+                }
             }
-            return media.Screenshots.Count > 0 || media.Trailer is not null;
+            return media.SteamScreenshots.Count > 0 || media.SteamTrailers.Count > 0;
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException
                                    || ex is TaskCanceledException && !cancellation.IsCancellationRequested)
@@ -210,26 +205,40 @@ public static class GameMediaFinder
         return folder;
     }
 
-    /// <summary>La página que pone un tráiler de Steam (en .mp4 o en streaming HLS) a todo el reproductor.</summary>
-    public static string TrailerUrl(string video, double volume) =>
-        $"https://{YouTubeMusic.Host}/trailer.html?src={Uri.EscapeDataString(video)}&vol={(int)Math.Round(volume * 100)}";
+    /// <summary>
+    /// La página que pone un vídeo a todo el reproductor: un tráiler de Steam (.mp4 o en streaming HLS), una grabación de
+    /// Steam (DASH, .mpd) o un vídeo tuyo. Con <paramref name="codec"/> (el del vídeo de una grabación), antes mira si se puede ver.
+    /// </summary>
+    public static string TrailerUrl(string video, double volume, string? codec = null) =>
+        $"https://{YouTubeMusic.Host}/trailer.html?src={Uri.EscapeDataString(video)}&vol={(int)Math.Round(volume * 100)}" +
+        (codec is null ? "" : $"&codec={Uri.EscapeDataString(codec)}");
 
     /// <summary>
     /// El vídeo con sus controles. Los .m3u8 (los tráileres nuevos de Steam) se ponen con hls.js si el navegador no los
-    /// sabe poner solo. Avisa a Basilisco de cuándo suena, se para o acaba; window.bas lo maneja desde fuera.
+    /// sabe poner solo, y los .mpd (las grabaciones de Steam) con dash.js. Si el vídeo es de un formato que este equipo no
+    /// sabe poner (las grabaciones en HEVC sin sus extensiones de Windows) avisa con { error: 'codec' }. Avisa a Basilisco
+    /// de cuándo suena, se para o acaba; window.bas lo maneja desde fuera.
     /// </summary>
     const string TrailerHtml = """
         <!doctype html>
         <html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}video{width:100%;height:100%;background:#000}</style></head>
         <body><video id="v" controls autoplay playsinline></video>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dashjs/4.7.4/dash.all.min.js"></script>
         <script>
           const query = new URLSearchParams(location.search);
           const src = query.get('src');
           const video = document.getElementById('v');
           const send = message => window.chrome && window.chrome.webview && window.chrome.webview.postMessage(JSON.stringify(message));
           video.volume = Math.min(1, Math.max(0, Number(query.get('vol') || 70) / 100));
-          if (src.includes('.m3u8') && !video.canPlayType('application/vnd.apple.mpegurl') && window.Hls && Hls.isSupported()) {
+          const codec = query.get('codec');
+          if (codec && !(window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="' + codec + '"'))) {
+            send({ error: 'codec' });
+          } else if (src.includes('.mpd') && window.dashjs) {
+            const dash = dashjs.MediaPlayer().create();
+            dash.on(dashjs.MediaPlayer.events.ERROR, () => send({ error: 'video' }));
+            dash.initialize(video, src, true);
+          } else if (src.includes('.m3u8') && !video.canPlayType('application/vnd.apple.mpegurl') && window.Hls && Hls.isSupported()) {
             const hls = new Hls({ capLevelToPlayerSize: true });
             hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) send({ error: data.details }); });
             hls.loadSource(src);

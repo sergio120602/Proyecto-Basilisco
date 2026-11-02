@@ -1,28 +1,33 @@
 namespace Basilisco.Models;
 
-/// <summary>Capturas de pantalla y tráiler de un juego (de Steam y de LaunchBox), para su página en la caja abierta.</summary>
+/// <summary>
+/// Capturas de pantalla y tráileres de un juego encontrados en Steam y LaunchBox, para su página en la caja abierta. Las
+/// tuyas (las de Steam y las de tus carpetas) no se guardan aquí: se leen del disco al abrir la página.
+/// </summary>
 public sealed class GameMedia
 {
-    /// <summary>Direcciones de las capturas, a tamaño completo (se descargan a basilisco-data/media al verlas).</summary>
-    public List<string> Screenshots { get; set; } = [];
+    /// <summary>Formato: la 2 separa las capturas por su origen. Las de la 0.10.0 (1) se vuelven a buscar.</summary>
+    public const int CurrentVersion = 2;
 
-    /// <summary>Tráiler de Steam: su dirección en streaming (.m3u8) o en .mp4. Null si no tiene.</summary>
-    public string? Trailer { get; set; }
+    public int Version { get; set; }
 
-    /// <summary>Miniatura del tráiler de Steam (lo que se ve antes de darle a reproducir).</summary>
-    public string? TrailerPoster { get; set; }
+    /// <summary>Capturas de la ficha de Steam (direcciones a tamaño completo; se descargan a basilisco-data/media al verlas).</summary>
+    public List<string> SteamScreenshots { get; set; } = [];
 
-    /// <summary>Nombre del tráiler («Launch Trailer»…).</summary>
-    public string? TrailerName { get; set; }
+    /// <summary>Capturas de LaunchBox (de juego y de la pantalla de título).</summary>
+    public List<string> LaunchBoxScreenshots { get; set; } = [];
 
-    /// <summary>Tráiler de YouTube (el identificador del vídeo, de LaunchBox), si no hay el de Steam.</summary>
+    /// <summary>Los tráileres de la ficha de Steam, el destacado primero.</summary>
+    public List<MediaVideo> SteamTrailers { get; set; } = [];
+
+    /// <summary>Tráiler de YouTube (el identificador del vídeo) que enlaza LaunchBox.</summary>
     public string? YouTubeTrailer { get; set; }
-
-    /// <summary>De dónde salieron («Steam», «LaunchBox» o los dos).</summary>
-    public string? Sources { get; set; }
 
     /// <summary>Cuándo se buscaron (se vuelven a buscar pasado un tiempo, o si no se encontró nada).</summary>
     public DateTime Looked { get; set; }
 
-    public bool IsEmpty => Screenshots.Count == 0 && Trailer is null && YouTubeTrailer is null;
+    public bool IsEmpty => SteamScreenshots.Count == 0 && LaunchBoxScreenshots.Count == 0 && SteamTrailers.Count == 0 && YouTubeTrailer is null;
 }
+
+/// <summary>Un tráiler de Steam: su nombre, su dirección (.mp4 o en streaming, .m3u8) y su miniatura.</summary>
+public sealed record MediaVideo(string Name, string Url, string? Poster);

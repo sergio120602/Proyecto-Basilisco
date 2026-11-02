@@ -3,6 +3,16 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [0.10.1] - 2026-11-02
+
+- **Capturas y vídeos, por origen y en carrusel**: la página de la caja abierta pasa a llamarse «Capturas y vídeos». Cada mitad tiene un **desplegable** con los orígenes y cuántas hay de cada uno; al elegir uno, sus capturas o vídeos salen **en carrusel**: el elegido grande en el centro y los de los lados más pequeños, deslizándose al pasar.
+  - **Capturas**: Steam, LaunchBox, **Mis capturas de Steam** (las que haces con F12, de `userdata/<cuenta>/760/remote/<juego>/screenshots`) y **las carpetas que añadas**.
+  - **Vídeos**: los tráileres de Steam (ahora todos, no solo el destacado), el de YouTube de LaunchBox, **Mis grabaciones de Steam** (los clips de la grabación de partidas, con su miniatura y su duración) y **las carpetas que añadas** (.mp4, .webm, .mov, .m4v y .mkv, con la miniatura que da Windows).
+  - En el desplegable, **«Añadir una carpeta…»** (se pueden elegir varias a la vez) y **«Quitar esta carpeta»** (los archivos no se borran). Cada carpeta es un grupo más, y se guarda en el juego.
+  - Teclas: `←` `→` capturas, `↑` `↓` vídeos, `Enter` pone el vídeo del centro, `Z` (o un clic en la del centro) ve la captura a toda pantalla, `G` y `H` cambian de origen. En el mando, **LT** y **RT** cambian de origen.
+  - Las grabaciones de Steam se ponen con dash.js. Si están en HEVC (H.265) y Windows no tiene sus extensiones, Basilisco lo dice y deja abrir su carpeta.
+- **Arreglo**: en la 0.10.0, pasar a esta página y volver iba con los gatillos (LT y RT), aunque la ayuda decía RB y LB. Ahora va con **RB** y **LB**.
+
 ## [0.10.0] - 2026-11-02
 
 - **Capturas y tráiler en la caja abierta**: una tercera doble página, a la derecha de la banda sonora. Se llega con el botón **«Capturas y tráiler ▶»**, con `Av Pág` (o `V`) o con **RB** en el mando, y la hoja pasa doblándose sobre el lomo, como un libro. Se vuelve con «◀ Banda sonora», `Re Pág`, `Esc`, **LB** o **B**.

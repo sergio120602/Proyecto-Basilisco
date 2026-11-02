@@ -181,6 +181,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.9.4** — Filtros por consola y por tienda en el menú «Formato», y logotipos de Epic Games, GOG, EA y Battle.net en sus cajas cuadradas
 - [x] **v0.9.5** — Las hojas dobles de los manuales en PDF se detectan y se parten por la mitad (con botón para cambiarlo a mano)
 - [x] **v0.10.0** — Capturas de pantalla y tráiler (de Steam y LaunchBox) en una tercera página de la caja abierta, a la derecha de la banda sonora
+- [x] **v0.10.1** — Capturas y vídeos por origen (desplegable) y en carrusel: también los tuyos de Steam (capturas y grabaciones) y los de las carpetas que añadas
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

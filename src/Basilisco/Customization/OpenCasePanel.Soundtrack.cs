@@ -103,8 +103,8 @@ public partial class OpenCasePanel
         GameButtons.Visibility = Visibility.Collapsed;
         SoundtrackButtons.Visibility = Visibility.Visible;
         HintText.Text = _padMode
-            ? "↑ ↓  Canción     ·     A  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     RB  Capturas y tráiler     ·     B  Volver al juego"
-            : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     S  Buscar banda sonora     ·     Av Pág  Capturas y tráiler     ·     Esc  Volver al juego";
+            ? "↑ ↓  Canción     ·     A  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     RB  Capturas y vídeos     ·     B  Volver al juego"
+            : "↑ ↓  Canción     ·     Enter o clic en el disco  Reproducir / parar     ·     ← →  Retroceder / avanzar     ·     S  Buscar banda sonora     ·     Av Pág  Capturas y vídeos     ·     Esc  Volver al juego";
     }
 
     /// <summary>
