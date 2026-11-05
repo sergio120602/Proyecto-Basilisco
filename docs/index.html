@@ -3,11 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Basilisco · Descargar</title>
-  <meta name="description" content="Basilisco: un launcher de videojuegos para Windows que reúne todos tus juegos en un carrusel de cajas en 3D. Portable, sin instalar nada.">
+  <title>Basilisco: launcher de juegos gratis y portable para Windows</title>
+  <meta name="description" content="Descarga Basilisco, un launcher de videojuegos gratis y de código abierto para Windows 10 y 11. Reúne Steam, Epic, GOG, EA, Battle.net, emuladores y tus carpetas en un carrusel de cajas en 3D. Portable: no se instala.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="sergio120602">
+  <link rel="canonical" href="https://sergio120602.github.io/Proyecto-Basilisco/">
+  <!-- Cómo se ve el enlace al compartirlo (WhatsApp, Discord, X, Facebook…) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Basilisco">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:url" content="https://sergio120602.github.io/Proyecto-Basilisco/">
   <meta property="og:title" content="Basilisco: un launcher caído del cielo">
-  <meta property="og:description" content="Launcher de videojuegos portable para Windows: Steam, Epic, GOG, EA, Battle.net, emuladores y carpetas, en un carrusel de cajas en 3D.">
+  <meta property="og:description" content="Launcher de videojuegos gratis y portable para Windows: Steam, Epic, GOG, EA, Battle.net, emuladores y carpetas, en un carrusel de cajas en 3D.">
   <meta property="og:image" content="https://sergio120602.github.io/Proyecto-Basilisco/logo.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="Logo de Basilisco">
+  <meta name="twitter:card" content="summary">
+  <!-- Para Google: qué es Basilisco (un programa gratis para Windows) y dónde se descarga -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Basilisco",
+    "alternateName": "Proyecto Basilisco",
+    "description": "Launcher de videojuegos gratis, portable y de código abierto para Windows. Reúne Steam, Epic, GOG, EA, Battle.net, emuladores y carpetas de juegos en un carrusel de cajas en 3D.",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Windows 10, Windows 11",
+    "inLanguage": "es",
+    "url": "https://sergio120602.github.io/Proyecto-Basilisco/",
+    "downloadUrl": "https://github.com/sergio120602/Proyecto-Basilisco/releases/latest",
+    "image": "https://sergio120602.github.io/Proyecto-Basilisco/logo.png",
+    "author": { "@type": "Person", "name": "sergio120602", "url": "https://github.com/sergio120602" },
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+  }
+  </script>
   <meta name="theme-color" content="#C9A86E">
   <!-- Siempre de día. La página dice que ya tiene modo nocturno (que es igual que el de día): así el modo oscuro
        del navegador del móvil (Chrome, Samsung Internet) no la oscurece por su cuenta ni vuelve negras las nubes -->
@@ -34,6 +64,8 @@
       --H: max(min(167.35vw, 285vh), 165vh);
     }
     * { box-sizing: border-box; }
+    /* Texto que no se ve pero sí leen los lectores de pantalla y Google */
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
@@ -271,7 +303,7 @@
     <div class="wrap sides hero" id="inicio">
       <figure class="cherub frente left">
         <img src="querubin-frente.webp" width="824" height="827" alt="">
-        <div class="scroll-text"><h1>Un Launcher caído del cielo</h1></div>
+        <div class="scroll-text"><h1><span class="sr-only">Basilisco: </span>Un Launcher caído del cielo</h1></div>
         <div class="cloud perch" data-puffs="0.8" aria-hidden="true"></div>
       </figure>
       <div class="cloud right">
