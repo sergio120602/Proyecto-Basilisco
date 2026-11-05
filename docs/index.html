@@ -105,10 +105,12 @@
       pointer-events: none; }
     header.top nav { pointer-events: auto; }
     /* Al saltar a una sección desde el menú, que su principio no quede debajo de él */
-    #funciones, #empezar, #requisitos { scroll-margin-top: 110px; }
-    nav.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; padding: 12px 26px; }
+    #funciones, #empezar, #requisitos, #final { scroll-margin-top: 110px; }
+    /* En el ordenador el menú cabe en el ancho de la columna derecha (en dos líneas) para no meterse en el centro del cuadro */
+    nav.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 2px; padding: 12px 22px; max-width: clamp(270px, 27vw, 380px); }
     nav.links a { color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 500; padding: 2px 10px; border-radius: 999px; }
     nav.links a:hover { color: var(--blue); text-decoration: underline; }
+    nav.links .short { display: none; }
 
     /* ---------- Las tres columnas: lo de en medio (el ángel, el basilisco, el pueblo) queda siempre a la vista ---------- */
     /* El hueco de en medio es ancho (40 %) para que el ángel, el basilisco y el pueblo se vean bien */
@@ -120,6 +122,7 @@
     .hero { min-height: calc(var(--H) * 0.46 + 10vh); padding-top: 110px; align-items: start; }
     .hero .frente { width: min(100%, 400px); justify-self: center; margin-top: -60px; }
     .hero .cloud { padding: 38px 40px 34px; }
+    .hero > .cloud.right { margin-top: 40px; }
     .lead { font-size: 18px; }
     .version { margin-top: 12px; font-style: italic; color: var(--gold-deep); }
     .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
@@ -188,12 +191,14 @@
       .wrap { padding-inline: 30px; }
       /* En el móvil el menú va centrado y en una sola línea, lo más bajito posible */
       header.top { justify-content: center; padding: 12px 10px 0; }
-      nav.links { flex-wrap: nowrap; gap: 0; padding: 8px 12px; }
-      nav.links a { font-size: 14.5px; padding-inline: 6px; white-space: nowrap; }
-      #funciones, #empezar, #requisitos { scroll-margin-top: 80px; }
+      nav.links { flex-wrap: nowrap; gap: 0; padding: 8px 10px; max-width: 100%; }
+      nav.links a { font-size: 14px; padding-inline: 5px; white-space: nowrap; }
+      nav.links .long { display: none; }
+      nav.links .short { display: inline; }
+      #funciones, #empezar, #requisitos, #final { scroll-margin-top: 80px; }
       .hero .cloud { padding: 32px 22px 28px; }
       /* En el móvil el querubín que lee se agranda (y se le salen las alas de la pantalla) para que el pergamino se lea bien */
-      .info .lee { justify-self: start; width: 132vw; max-width: none; margin-left: 50%; transform: translateX(-63.9%); }
+      .info .lee, .info .lee.left, .info .lee.right { justify-self: start; width: 132vw; max-width: none; margin-left: 50%; transform: translateX(-63.9%); }
       .info .lee.flip { transform: translateX(-36.1%); }
       .flock .cloud, .village .cloud { padding-inline: 24px; }
       .steps .cloud { padding: 32px 22px 28px 80px; }
@@ -254,15 +259,16 @@
 
     <header class="top">
       <nav class="links cloud" data-puffs="0.9" aria-label="Secciones">
+        <a href="#inicio">Inicio</a>
         <a href="#funciones">Qué hace</a>
-        <a href="#empezar">Cómo empezar</a>
-        <a href="#requisitos">Requisitos</a>
+        <a href="#empezar"><span class="long">Cómo empezar</span><span class="short">Empezar</span></a>
+        <a href="#final">Bueno saber</a>
         <a href="https://github.com/sergio120602/Proyecto-Basilisco">GitHub</a>
       </nav>
     </header>
 
     <!-- El cielo: el ángel con el letrero de BASILISCO en medio, el querubín a un lado y la descarga al otro -->
-    <div class="wrap sides hero">
+    <div class="wrap sides hero" id="inicio">
       <figure class="cherub frente left">
         <img src="querubin-frente.webp" width="824" height="827" alt="">
         <div class="scroll-text"><h1>Un Launcher caído del cielo</h1></div>
@@ -409,7 +415,8 @@
         </div>
       </div>
 
-      <footer>
+      <!-- «Bueno saber» del menú lleva aquí, al final de la página, con el pueblo quieto y sus nubes a la vista -->
+      <footer id="final">
         <div class="cloud" data-puffs="0.8">
           Basilisco, hecho por <a href="https://github.com/sergio120602">sergio120602</a>.
           <a href="https://github.com/sergio120602/Proyecto-Basilisco">Código</a>
