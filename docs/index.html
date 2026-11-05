@@ -100,7 +100,12 @@
     p { margin: 0; }
     code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.84em; background: #eee0c2; color: var(--ink); padding: 1px 6px; border-radius: 6px; }
 
-    header.top { position: absolute; z-index: 2; top: 0; left: 0; right: 0; display: flex; justify-content: flex-end; padding: 28px 28px 0; }
+    /* El menú, fijo arriba de la pantalla al bajar. La franja del header deja pasar los clics; solo la nube los recoge */
+    header.top { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; justify-content: flex-end; padding: 22px 28px 0;
+      pointer-events: none; }
+    header.top nav { pointer-events: auto; }
+    /* Al saltar a una sección desde el menú, que su principio no quede debajo de él */
+    #funciones, #empezar, #requisitos { scroll-margin-top: 110px; }
     nav.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; padding: 12px 26px; }
     nav.links a { color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 500; padding: 2px 10px; border-radius: 999px; }
     nav.links a:hover { color: var(--blue); text-decoration: underline; }
@@ -181,8 +186,11 @@
     @media (max-width: 640px) {
       body { font-size: 17px; }
       .wrap { padding-inline: 30px; }
-      /* En el móvil el menú taparía la cabeza del ángel: la página es una sola bajada, así que no hace falta */
-      header.top { display: none; }
+      /* En el móvil el menú va centrado y en una sola línea, lo más bajito posible */
+      header.top { justify-content: center; padding: 12px 10px 0; }
+      nav.links { flex-wrap: nowrap; gap: 0; padding: 8px 12px; }
+      nav.links a { font-size: 14.5px; padding-inline: 6px; white-space: nowrap; }
+      #funciones, #empezar, #requisitos { scroll-margin-top: 80px; }
       .hero .cloud { padding: 32px 22px 28px; }
       /* En el móvil el querubín que lee se agranda (y se le salen las alas de la pantalla) para que el pergamino se lea bien */
       .info .lee { justify-self: start; width: 132vw; max-width: none; margin-left: 50%; transform: translateX(-63.9%); }
@@ -553,12 +561,13 @@
       const front = document.querySelector('.rail.front');
       const info = document.querySelector('.info');
       const column = matchMedia('(max-width: 980px)');
+      const menu = document.querySelector('header.top nav');   // en el móvil el basilisco se para justo debajo del menú
       // Dónde están el basilisco y su cabeza, en fracción del alto del cuadro
       const DRAGON_TOP = 0.34, DRAGON_CENTER = 0.455, DRAGON_BOTTOM = 0.568;
       function place() {
         const height = paintings[0].offsetHeight, screen = innerHeight, y = scrollY;
         const pin = Math.min(Math.max(0, height - screen),
-          Math.max(0, column.matches ? height * DRAGON_TOP - 12 : height * DRAGON_CENTER - screen / 2));
+          Math.max(0, column.matches ? height * DRAGON_TOP - 12 - menu.getBoundingClientRect().bottom : height * DRAGON_CENTER - screen / 2));
         const release = Math.max(pin, info.offsetTop + info.offsetHeight - screen / 2);
         const travel = Math.max(0, height - screen - pin);                         // del basilisco al pueblo
         const offset = y < release ? Math.min(y, pin) : pin + Math.min(y - release, travel);
