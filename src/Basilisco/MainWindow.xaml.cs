@@ -215,6 +215,7 @@ public partial class MainWindow : Window
             ShowToast($"Mando conectado: {name}");
         };
         _gamepad.Disconnected += () => ShowToast("Mando desconectado");
+        Closing += OnClosingWhileStoring;
         Closed += (_, _) =>
         {
             _gamepad.Dispose();
@@ -647,7 +648,8 @@ public partial class MainWindow : Window
     /// </summary>
     async Task RepairMovedGamesAsync()
     {
-        var missing = Games.Where(game => !GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game))).Select(game => (Game: game, game.Path)).ToList();
+        // Los desinstalados (guardados comprimidos) no se buscan: no están porque se han guardado.
+        var missing = Games.Where(game => game.Archive is null && !GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game))).Select(game => (Game: game, game.Path)).ToList();
         if (missing.Count == 0)
             return;
 
@@ -732,7 +734,7 @@ public partial class MainWindow : Window
 
     /// <summary>Juego de la biblioteca cuyo archivo ya no existe y que tenía este mismo ejecutable.</summary>
     Game? FindMissingWithSameFile(string path) =>
-        Games.FirstOrDefault(game =>
+        Games.FirstOrDefault(game => game.Archive is null &&
             string.Equals(Path.GetFileName(game.Path), Path.GetFileName(path), StringComparison.OrdinalIgnoreCase) &&
             !GameLauncher.IsLink(game.Path) && !GameLauncher.IsLink(path) && !File.Exists(game.Path));
 
@@ -1327,6 +1329,7 @@ public partial class MainWindow : Window
         // (con la tarjeta de importar se ven la apariencia general)
         ApplyLook(selectedGame);
         ShowAchievements(selectedGame);
+        ShowInstallButton(selectedGame);
 
         UpdateOverlayLayout();
         TitlePanel.BeginAnimation(OpacityProperty, new DoubleAnimation(0.3, 1, TimeSpan.FromMilliseconds(220))
@@ -2171,7 +2174,9 @@ public partial class MainWindow : Window
         else if (StoreLibraries.Find(game.Store) is { } store)
             chips.Add(store.Name);
 
-        if (!GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game)))
+        if (game.Archive is not null)
+            chips.Add("Desinstalado");
+        else if (!GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game)))
             chips.Add("Archivo no encontrado");
 
         return chips;
@@ -2451,6 +2456,17 @@ public partial class MainWindow : Window
 
     void Launch(Game game)
     {
+        // Desinstalado con Basilisco: primero hay que instalarlo.
+        if (game.Archive is not null)
+        {
+            OfferInstall(game);
+            return;
+        }
+        if (_storageJob?.Game == game)
+        {
+            ShowToast($"Espera a que termine de desinstalarse «{game.Name}»");
+            return;
+        }
         if (!GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game)))
         {
             // Lo más probable es que hayas movido su carpeta: primero lo buscamos nosotros.
@@ -2497,7 +2513,14 @@ public partial class MainWindow : Window
             return;
 
         var game = _visibleGames[index];
-        var answer = MessageBox.Show(this, $"¿Quitar «{game.Name}» de la biblioteca?\n\nEl juego no se borrará de tu disco.",
+        if (_storageJob?.Game == game)
+        {
+            ShowToast($"Espera a que termine de {(_storageJob.Installing ? "instalarse" : "desinstalarse")} «{game.Name}»");
+            return;
+        }
+        var answer = MessageBox.Show(this, game.Archive is { } archive
+                ? $"¿Quitar «{game.Name}» de la biblioteca?\n\nEstá desinstalado: su archivo comprimido se queda en\n{archive.File}\n(bórralo tú si ya no lo quieres)."
+                : $"¿Quitar «{game.Name}» de la biblioteca?\n\nEl juego no se borrará de tu disco.",
             "Quitar juego", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes)
             return;
@@ -3667,6 +3690,7 @@ public partial class MainWindow : Window
     void OpenThemeEditor()
     {
         ThemeEditor.SetPerformance(_settings.Quality, _settings.Reflections, _settings.AnimatedBackgrounds);
+        ThemeEditor.SetArchive(_settings.ArchiveFolder, _settings.ArchiveCompression, ArchiveSummary());
         OpenThemeEditorCore();
     }
 
@@ -3690,6 +3714,8 @@ public partial class MainWindow : Window
         }
         _settings.TextColor = result.TextColor;
         _settings.InsideOpacity = OpenCaseArt.InsideOpacity = Math.Clamp(result.InsideOpacity, 0, 1);
+        _settings.ArchiveFolder = result.ArchiveFolder;
+        _settings.ArchiveCompression = result.ArchiveCompression;
         _settings.Save();
 
         if (result.ClearOwn)
@@ -3710,7 +3736,7 @@ public partial class MainWindow : Window
 
         _lookBackground = "\\0"; // Fuerza a recargar el fondo.
         ShowDetails(_flow.SelectedIndex);
-        ShowToast("Apariencia guardada");
+        ShowToast("Ajustes guardados");
     }
 
     void OnSteamClick(object sender, RoutedEventArgs e) => OpenImportMenu();

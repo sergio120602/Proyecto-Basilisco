@@ -48,6 +48,12 @@ public sealed class AppSettings
     /// <summary>Carpetas de juegos añadidas a mano para cada emulador (además de las que tenga en su configuración).</summary>
     public Dictionary<string, List<string>> EmulatorFolders { get; set; } = [];
 
+    /// <summary>Carpeta donde se guardan comprimidos los juegos desinstalados (mejor en otro disco). Null: se pregunta la primera vez.</summary>
+    public string? ArchiveFolder { get; set; }
+
+    /// <summary>Cuánto se comprimen los juegos al desinstalarlos.</summary>
+    public ArchiveCompression ArchiveCompression { get; set; } = ArchiveCompression.Normal;
+
     /// <summary>Orden de los juegos en el carrusel.</summary>
     public Models.SortMode SortMode { get; set; } = Models.SortMode.Custom;
 
@@ -125,3 +131,7 @@ public sealed class AppSettings
 /// <summary>Calidad de las cajas del carrusel.</summary>
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BoxQuality>))]
 public enum BoxQuality { High, Medium, Low }
+
+/// <summary>Compresión de los juegos desinstalados: rápida (ocupa algo más) o máxima (tarda más).</summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ArchiveCompression>))]
+public enum ArchiveCompression { Fast, Normal, Max }

@@ -45,8 +45,8 @@ Abrir Basilisco y ver de un vistazo toda tu colección de videojuegos en un carr
 | Crear saga | Menú **Sagas** → «+ Nueva saga» |
 | Editar o eliminar saga | Menú **Sagas** → «Editar saga», o clic derecho en Sagas |
 | Quitar de la biblioteca | `Supr` (no borra nada del disco) |
-| Fondo y color de las letras para todos los juegos | `A` o botón «Apariencia» |
-| Modo nocturno (claro, nocturno o como Windows) | `N`, botón de la luna arriba a la derecha, o «Apariencia → Modo» |
+| Ajustes: fondo y color de las letras para todos los juegos, rendimiento y carpeta de los juegos desinstalados | `A` o botón «Ajustes» |
+| Modo nocturno (claro, nocturno o como Windows) | `N`, botón de la luna arriba a la derecha, o «Ajustes → Modo» |
 | Zoom de las cajas | Barra «Zoom» abajo a la derecha, `Ctrl + rueda` o `+` / `−` |
 | Alineación de las cajas (clásica, giradas hacia el fondo, o moderna, de frente en una fila recta) | Botón «Alineación moderna» abajo a la derecha |
 | Subir o bajar las cajas | Barra «Altura» abajo a la derecha; «Auto» las baja solo lo justo para que el nombre del juego no las pise |
@@ -183,6 +183,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.10.0** — Capturas de pantalla y tráiler (de Steam y LaunchBox) en una tercera página de la caja abierta, a la derecha de la banda sonora
 - [x] **v0.10.1** — Capturas y vídeos por origen (desplegable) y en carrusel: también los tuyos de Steam (capturas y grabaciones) y los de las carpetas que añadas
 - [x] **v1.0.0** — Primera versión terminada, con su página web de descarga en GitHub Pages
+- [x] **v1.1.0** — Instalar y desinstalar los juegos que no son de Steam: se comprimen y se guardan en otra carpeta (en «Ajustes») para liberar espacio, y vuelven a su sitio al instalarlos
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos
@@ -224,7 +225,7 @@ Las **horas de juego** de los juegos de Steam son las de Steam: se leen del Stea
 
 Al darle a un juego se abre su caja: la tapa gira sobre el lomo y deja ver el **manual** a la izquierda y el **disco** a la derecha, en su bandeja. Al darle a **Jugar**, el disco gira, se inicia el juego y la caja se cierra sola.
 
-En Nintendo 64, Nintendo DS y Nintendo Switch, en lugar del disco va su cartucho, que sale de la caja al darle a Jugar. El interior de la caja es de plástico translúcido del color de su consola. En Personalizar («Interior de la caja») puedes poner una imagen tuya o de SteamGridDB, que se ve nítida a través del plástico, de lado a lado de la caja abierta. Con «Ajustar…» eliges también su **opacidad** (cuánto se funde con el plástico); en Apariencia está la opacidad general para todos los juegos que no tengan la suya.
+En Nintendo 64, Nintendo DS y Nintendo Switch, en lugar del disco va su cartucho, que sale de la caja al darle a Jugar. El interior de la caja es de plástico translúcido del color de su consola. En Personalizar («Interior de la caja») puedes poner una imagen tuya o de SteamGridDB, que se ve nítida a través del plástico, de lado a lado de la caja abierta. Con «Ajustar…» eliges también su **opacidad** (cuánto se funde con el plástico); en Ajustes está la opacidad general para todos los juegos que no tengan la suya.
 
 El disco y el manual se eligen en Personalizar (`E`): una imagen tuya, un disco de Steam Game Covers o de LaunchBox, o para el manual un póster, un fondo o la pantalla de título de LaunchBox. Si no tienen imagen, el disco se dibuja con la portada y el manual es un librito con el nombre del juego.
 

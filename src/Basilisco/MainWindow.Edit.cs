@@ -25,7 +25,7 @@ public partial class MainWindow
         LogoPanel, SearchField, EditButton, ShortcutsButton, UpdateButton, NightButton, ThemeButton,
         AllTab, ConsolesTab, FiltersTab, PlayersTab, FamilyTab, SortTab, FormatButton, ImportMenuButton, ImportFolderButton, ImportGameButton,
         AlignToggle, ShiftGroup, AutoShiftToggle, MetadataButton, ZoomGroup,
-        TitleText, Chips, AchievementsPanel,
+        TitleText, Chips, InstallButton, AchievementsPanel,
     ];
 
     /// <summary>Al abrir: cada cosa en el sitio donde la dejaste, y el arrastre preparado (solo hace algo en modo edición).</summary>
@@ -62,7 +62,7 @@ public partial class MainWindow
         EditBanner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         ExitBar();
         // El título y sus datos no reciben el ratón normalmente (para no tapar las cajas); al editar, sí.
-        TitlePanel.IsHitTestVisible = on;
+        TitleText.IsHitTestVisible = Chips.IsHitTestVisible = on;
         foreach (var element in Movables())
         {
             if (on && !_editFrames.ContainsKey(element) && AdornerLayer.GetAdornerLayer(element) is { } layer)
@@ -77,7 +77,7 @@ public partial class MainWindow
         }
         // El cursor de mano de la barra de logros vuelve al terminar.
         if (!on)
-            AchievementsPanel.Cursor = Cursors.Hand;
+            AchievementsPanel.Cursor = InstallButton.Cursor = Cursors.Hand;
     }
 
     static Vector OffsetOf(FrameworkElement element) =>

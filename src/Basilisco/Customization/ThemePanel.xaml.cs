@@ -12,15 +12,21 @@ using Microsoft.Win32;
 
 namespace Basilisco.Customization;
 
-/// <summary>Lo decidido en la ventana de Apariencia.</summary>
+/// <summary>Lo decidido en la ventana de Ajustes.</summary>
 /// <param name="Background">Cambio del fondo general (imagen o vídeo).</param>
 /// <param name="TextColor">Color general de las letras, o null para el de siempre.</param>
 /// <param name="ClearOwn">Quitar el fondo y el color propios de cada juego, para que todos usen los generales.</param>
 /// <param name="InsideOpacity">Opacidad general de la imagen del interior de la caja (de 0 a 1).</param>
 /// <param name="ClearOwnOpacity">Quitar la opacidad del interior propia de cada juego, para que todos usen la general.</param>
-public sealed record ThemeResult(ImageChange Background, string? TextColor, bool ClearOwn, double InsideOpacity, bool ClearOwnOpacity);
+/// <param name="ArchiveFolder">Carpeta de los juegos desinstalados (null: aún sin elegir).</param>
+/// <param name="ArchiveCompression">Cuánto se comprimen los juegos al desinstalarlos.</param>
+public sealed record ThemeResult(ImageChange Background, string? TextColor, bool ClearOwn, double InsideOpacity, bool ClearOwnOpacity,
+    string? ArchiveFolder, ArchiveCompression ArchiveCompression);
 
-/// <summary>Apariencia general de Basilisco: fondo (estático o dinámico) y color de las letras para todos los juegos.</summary>
+/// <summary>
+/// Ajustes de Basilisco: la apariencia general (fondo estático o dinámico y color de las letras para todos los juegos), el
+/// rendimiento y dónde se guardan los juegos desinstalados.
+/// </summary>
 public partial class ThemePanel : UserControl
 {
     static readonly (string Name, string? Hex)[] Swatches =
@@ -73,6 +79,54 @@ public partial class ThemePanel : UserControl
         PerformanceChanged?.Invoke(_quality, ReflectionsToggle.IsChecked == true, AnimatedToggle.IsChecked == true);
 
     void OnOptimizeClick(object sender, RoutedEventArgs e) => OptimizeRequested?.Invoke();
+
+    // ---- Juegos desinstalados ----
+
+    string? _archiveFolder;
+    ArchiveCompression _compression;
+
+    /// <summary>Pone la carpeta de juegos desinstalados, la compresión y cuántos hay (antes de abrir).</summary>
+    public void SetArchive(string? folder, ArchiveCompression compression, string summary)
+    {
+        _archiveFolder = folder;
+        _compression = compression;
+        ArchiveSummaryText.Text = summary;
+        SyncArchive();
+    }
+
+    void SyncArchive()
+    {
+        ArchiveFolderText.Text = _archiveFolder ?? "Sin elegir: se pregunta la primera vez que desinstales un juego.";
+        ArchiveFolderText.ToolTip = _archiveFolder;
+        OpenArchiveButton.IsEnabled = _archiveFolder is not null && Directory.Exists(_archiveFolder);
+        CompressionFast.IsChecked = _compression == ArchiveCompression.Fast;
+        CompressionNormal.IsChecked = _compression == ArchiveCompression.Normal;
+        CompressionMax.IsChecked = _compression == ArchiveCompression.Max;
+    }
+
+    void OnArchiveFolderClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog { Title = "Carpeta para los juegos desinstalados" };
+        if (_archiveFolder is not null && Directory.Exists(_archiveFolder))
+            dialog.InitialDirectory = _archiveFolder;
+        if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+        {
+            _archiveFolder = dialog.FolderName;
+            SyncArchive();
+        }
+    }
+
+    void OnOpenArchiveClick(object sender, RoutedEventArgs e)
+    {
+        if (_archiveFolder is not null && Directory.Exists(_archiveFolder))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(_archiveFolder) { UseShellExecute = true })?.Dispose();
+    }
+
+    void OnCompressionClick(object sender, RoutedEventArgs e)
+    {
+        _compression = sender == CompressionFast ? ArchiveCompression.Fast : sender == CompressionMax ? ArchiveCompression.Max : ArchiveCompression.Normal;
+        SyncArchive();
+    }
 
     /// <summary>Se ha elegido otro modo (claro, nocturno o como Windows); se aplica al momento.</summary>
     public event Action<ColorMode>? ModeChanged;
@@ -283,7 +337,8 @@ public partial class ThemePanel : UserControl
 
     void Save()
     {
-        var result = new ThemeResult(_background, _textColor, _clearOwn, Math.Round(InsideOpacitySlider.Value, 2), _clearOwnOpacity);
+        var result = new ThemeResult(_background, _textColor, _clearOwn, Math.Round(InsideOpacitySlider.Value, 2), _clearOwnOpacity,
+            _archiveFolder, _compression);
         Close();
         Saved?.Invoke(result);
     }

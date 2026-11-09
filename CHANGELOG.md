@@ -3,6 +3,16 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [1.1.0] - 2026-11-09
+
+- **Instalar y desinstalar juegos para liberar espacio**: debajo del título de cada juego que no es de Steam (de PC, de las tiendas o de cualquier consola) hay un botón nuevo con lo que ocupa su carpeta: **«Desinstalar · 12,4 GB»** si está instalado, o **«Instalar · 12,4 GB»** (en verde) si está guardado.
+  - **Desinstalar** comprime la carpeta del juego en un `.zip` y la guarda en la **carpeta de juegos desinstalados** (mejor en otro disco); después la borra de su sitio. El juego sigue en la biblioteca con sus portadas, trofeos y tiempo de juego, con la etiqueta «Desinstalado».
+  - **Instalar** lo descomprime en el mismo sitio de donde salió, tal cual, y borra el `.zip`. Al abrir un juego desinstalado, Basilisco ofrece instalarlo.
+  - Mientras trabaja, el botón enseña el porcentaje y una barra; un clic lo cancela. Al cancelar no se pierde nada: si se estaba desinstalando, el juego sigue en su sitio; si se estaba instalando, sigue guardado.
+  - **Qué se guarda**: de los juegos de PC, la carpeta del juego (si el `.exe` está en `bin\x64` o parecidas, la de encima); de las tiendas, su carpeta de instalación; de las consolas, la carpeta del juego si es solo suya (PS3 y Wii U en formato carpeta incluidos) o, si comparte carpeta con otros juegos, solo sus archivos (por ejemplo el `.cue` con sus pistas `.bin`). Nunca la raíz de un disco, el escritorio, Program Files, una carpeta con otros juegos de la biblioteca ni la de Basilisco. Si no se sabe con seguridad, el botón pide elegir la carpeta, y en la confirmación se puede elegir otra.
+  - **Seguro**: el `.zip` se comprueba entero antes de borrar nada, y solo se borran los archivos que van dentro. Se apunta en la biblioteca antes de borrar, así que aunque se cierre Basilisco a medias el juego no se pierde.
+- **«Apariencia» pasa a llamarse «Ajustes»** (sigue en la tecla `A`), con una sección nueva, **«Juegos desinstalados»**: la carpeta donde se guardan (se pregunta la primera vez), un botón para abrirla, la **compresión** (rápida, normal o máxima) y cuántos juegos hay desinstalados y lo que ocupan.
+
 ## [1.0.0] - 2026-11-02
 
 - **Basilisco 1.0.0**: la primera versión terminada. Reúne todo lo de las versiones 0.x: el carrusel de cajas en 3D, la importación de Steam, Epic Games, GOG, EA, Battle.net, emuladores y carpetas, la caja abierta (manual, disco o cartucho, banda sonora, capturas y vídeos), los manuales, los logros y trofeos, el mando y la personalización.

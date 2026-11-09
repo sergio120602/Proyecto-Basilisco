@@ -25,6 +25,9 @@ public sealed class Game
     /// <summary>Carpeta donde está instalado (los de las tiendas), para saber cuándo sigue abierto aunque se abra con su lanzador.</summary>
     public string? InstallDir { get; set; }
 
+    /// <summary>Si está desinstalado con Basilisco (comprimido en la carpeta de juegos desinstalados), dónde y cómo. Null: instalado.</summary>
+    public GameArchive? Archive { get; set; }
+
     /// <summary>Juego de Steam (se lanza con steam://rungameid/…), o null si es un archivo.</summary>
     public int? SteamAppId { get; set; }
 

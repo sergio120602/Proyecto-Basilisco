@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Focusable="True" FocusVisualStyle="{x:Null}" PreviewKeyDown="OnPreviewKeyDown">
-    <!-- Apariencia general: fondo y color de letras para todos los juegos -->
+    <!-- Ajustes: la apariencia general (fondo y color de letras para todos los juegos), el rendimiento y los juegos desinstalados -->
     <Grid Background="#A60E1218">
         <Border Background="{DynamicResource CardBrush}" CornerRadius="20" Padding="34" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Border.Effect>
@@ -35,10 +35,34 @@
                     </Grid>
                 </Border>
 
+                <!-- Debajo de la vista previa: dónde se guardan los juegos desinstalados (comprimidos) y cuánto se comprimen -->
+                <StackPanel Margin="0,324,0,0" VerticalAlignment="Top">
+                    <TextBlock Text="JUEGOS DESINSTALADOS" Style="{StaticResource FieldLabel}" Margin="2,0,0,8"/>
+                    <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="2,0,0,0"
+                               Text="Los juegos que no son de Steam se desinstalan con el botón que hay debajo de su título: se comprimen y se guardan en esta carpeta, y al instalarlos vuelven a su sitio tal cual. Mejor en otro disco, para liberar el de los juegos."/>
+                    <DockPanel Margin="0,10,0,0">
+                        <Button x:Name="OpenArchiveButton" DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Abrir" Margin="8,0,0,0"
+                                Click="OnOpenArchiveClick" ToolTip="Abrir la carpeta en el Explorador"/>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Content="Elegir carpeta…" Margin="10,0,0,0"
+                                Click="OnArchiveFolderClick"/>
+                        <TextBlock x:Name="ArchiveFolderText" FontSize="13" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" Margin="2,0,0,0"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,12,0,0">
+                        <TextBlock Text="Compresión" FontSize="13" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="2,0,12,8"/>
+                        <ToggleButton x:Name="CompressionFast" Style="{StaticResource FilterToggle}" Content="Rápida" Click="OnCompressionClick"
+                                      ToolTip="Tarda menos en desinstalar; el archivo ocupa algo más"/>
+                        <ToggleButton x:Name="CompressionNormal" Style="{StaticResource FilterToggle}" Content="Normal" Click="OnCompressionClick"/>
+                        <ToggleButton x:Name="CompressionMax" Style="{StaticResource FilterToggle}" Content="Máxima" Click="OnCompressionClick"
+                                      ToolTip="Ocupa lo menos posible; tarda bastante más en desinstalar"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="ArchiveSummaryText" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="2,0,0,0"/>
+                </StackPanel>
+
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Apariencia" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Ajustes" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0" TextWrapping="Wrap"
-                               Text="Para todos los juegos. Si un juego tiene fondo o color propios (en Personalizar), se usan los suyos."/>
+                               Text="La apariencia es para todos los juegos. Si un juego tiene fondo o color propios (en Personalizar), se usan los suyos."/>
 
                     <TextBlock Text="MODO" Style="{StaticResource FieldLabel}" Margin="2,22,0,8"/>
                     <WrapPanel>

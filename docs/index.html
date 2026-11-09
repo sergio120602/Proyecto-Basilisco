@@ -308,14 +308,14 @@
       </figure>
       <div class="cloud right">
         <p class="lead">Basilisco reúne tu colección en un carrusel de cajas en 3D: Steam, Epic, GOG, EA, Battle.net, emuladores y cualquier carpeta de tu disco. Es un solo <code>.exe</code> y no hay que instalar nada.</p>
-        <p class="version" id="version-tag">Versión 1.0.0 para Windows</p>
+        <p class="version" id="version-tag">Versión 1.1.0 para Windows</p>
         <div class="actions">
-          <a class="button primary" id="download" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
+          <a class="button primary" id="download" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.1.0/Basilisco-v1.1.0-win-x64.zip">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-            <span id="download-label">Descargar Basilisco 1.0.0</span>
+            <span id="download-label">Descargar Basilisco 1.1.0</span>
           </a>
         </div>
-        <p class="fine">Para Windows 10 y 11 de 64 bits. Es un <span id="size-text">.zip portable</span>; si lo prefieres, baja <a id="exe-link" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.exe">el .exe suelto</a> o mira <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">las novedades</a>.</p>
+        <p class="fine">Para Windows 10 y 11 de 64 bits. Es un <span id="size-text">.zip portable</span>; si lo prefieres, baja <a id="exe-link" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.1.0/Basilisco-v1.1.0-win-x64.exe">el .exe suelto</a> o mira <a href="https://github.com/sergio120602/Proyecto-Basilisco/blob/main/CHANGELOG.md">las novedades</a>.</p>
       </div>
     </div>
 
@@ -398,7 +398,7 @@
         </li>
         <li class="cloud"><span class="num" aria-hidden="true">2</span>
           <h3>Abre</h3>
-          <p>Entra en la carpeta <code id="folder-name">Basilisco-v1.0.0</code> y abre <code>Basilisco.exe</code>.</p>
+          <p>Entra en la carpeta <code id="folder-name">Basilisco-v1.1.0</code> y abre <code>Basilisco.exe</code>.</p>
         </li>
         <li class="cloud"><span class="num" aria-hidden="true">3</span>
           <h3>Importa</h3>
@@ -437,9 +437,9 @@
           <div class="cloud download">
             <p>Basilisco es gratis y de código abierto.</p>
             <div class="actions">
-              <a class="button primary" id="download-2" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.0.0/Basilisco-v1.0.0-win-x64.zip">
+              <a class="button primary" id="download-2" href="https://github.com/sergio120602/Proyecto-Basilisco/releases/download/v1.1.0/Basilisco-v1.1.0-win-x64.zip">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-                <span id="download-label-2">Descargar Basilisco 1.0.0</span>
+                <span id="download-label-2">Descargar Basilisco 1.1.0</span>
               </a>
               <a class="button" href="https://github.com/sergio120602/Proyecto-Basilisco/releases">Ver todas las versiones</a>
             </div>
@@ -621,7 +621,7 @@
     })();
 
 
-    // Los enlaces apuntan a la 1.0.0; si hay una versión más nueva publicada, se cambian a ella.
+    // Los enlaces apuntan a la 1.1.0; si hay una versión más nueva publicada, se cambian a ella.
     (async () => {
       try {
         const response = await fetch('https://api.github.com/repos/sergio120602/Proyecto-Basilisco/releases/latest');
@@ -638,7 +638,7 @@
         document.getElementById('folder-name').textContent = `Basilisco-v${version}`;
         if (exe) document.getElementById('exe-link').href = exe.browser_download_url;
       } catch {
-        // Sin conexión con GitHub: se quedan los enlaces de la 1.0.0.
+        // Sin conexión con GitHub: se quedan los enlaces de la 1.1.0.
       }
     })();
   </script>

@@ -33,7 +33,7 @@ public static class GameProcesses
     }
 
     /// <summary>Carpetas en las que hay de todo (el escritorio, Program Files…): ahí no se puede saber qué proceso es el juego.</summary>
-    static bool IsTooBroad(string folder)
+    internal static bool IsTooBroad(string folder)
     {
         var full = Path.GetFullPath(folder).TrimEnd('\\');
         if (Path.GetPathRoot(full)?.TrimEnd('\\') == full)

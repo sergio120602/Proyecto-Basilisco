@@ -193,8 +193,8 @@
                 <Button x:Name="NightButton" Style="{StaticResource PillButton}" Click="OnNightClick" Margin="0,0,10,0" MinWidth="46"
                         FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontWeight="Normal"
                         ToolTip="Modo nocturno (N)"/>
-                <Button x:Name="ThemeButton" Style="{StaticResource PillButton}" Content="Apariencia" Click="OnThemeClick"
-                        ToolTip="Fondo (imagen o vídeo) y color de las letras para todos los juegos (A)"/>
+                <Button x:Name="ThemeButton" Style="{StaticResource PillButton}" Content="Ajustes" Click="OnThemeClick"
+                        ToolTip="Fondo (imagen o vídeo) y color de las letras para todos los juegos, rendimiento y la carpeta de los juegos desinstalados (A)"/>
             </StackPanel>
 
             <DockPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,14,0,0" LastChildFill="False">
@@ -233,14 +233,15 @@
         </AdornerDecorator>
 
         <!-- Título y etiquetas del juego seleccionado -->
-        <StackPanel x:Name="TitlePanel" VerticalAlignment="Top" HorizontalAlignment="Center" IsHitTestVisible="False">
-            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}"
+        <!-- El título y sus etiquetas no reciben el ratón (para no tapar las cajas); el botón de instalar, sí -->
+        <StackPanel x:Name="TitlePanel" VerticalAlignment="Top" HorizontalAlignment="Center">
+            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}" IsHitTestVisible="False"
                        HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="1000">
                 <TextBlock.Effect>
                     <DropShadowEffect Color="White" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
                 </TextBlock.Effect>
             </TextBlock>
-            <ItemsControl x:Name="Chips" HorizontalAlignment="Center" Margin="0,12,0,0">
+            <ItemsControl x:Name="Chips" HorizontalAlignment="Center" Margin="0,12,0,0" IsHitTestVisible="False">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"/>
@@ -254,6 +255,33 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <!-- Instalar o desinstalar el juego (los que no son de Steam), con lo que ocupa; mientras trabaja, su progreso -->
+            <Button x:Name="InstallButton" HorizontalAlignment="Center" Margin="0,10,0,0" Cursor="Hand" Focusable="False"
+                    Visibility="Collapsed" Click="OnInstallClick" Background="{DynamicResource ChipBrush}">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Pill" Background="{TemplateBinding Background}" CornerRadius="14" Padding="16,5"
+                                BorderBrush="#99FFFFFF" BorderThickness="1.5">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="BorderBrush" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Pill" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+                <StackPanel>
+                    <TextBlock x:Name="InstallText" Foreground="White" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <Grid x:Name="InstallProgress" Height="3" Margin="0,4,0,1" Visibility="Collapsed">
+                        <Border Background="#40FFFFFF" CornerRadius="1.5"/>
+                        <Border x:Name="InstallProgressFill" Background="White" CornerRadius="1.5" HorizontalAlignment="Left" Width="0"/>
+                    </Grid>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <!-- Debajo de la cabecera, a los lados del título: a la izquierda la alineación y la altura del carrusel; a la
@@ -344,7 +372,7 @@
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="S"/></Border>
                         <TextBlock Style="{StaticResource HintText}" Text="Importar"/>
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="A"/></Border>
-                        <TextBlock Style="{StaticResource HintText}" Text="Apariencia"/>
+                        <TextBlock Style="{StaticResource HintText}" Text="Ajustes"/>
                         <Border Style="{StaticResource KeyBadge}"><TextBlock Style="{StaticResource KeyBadgeText}" Text="N"/></Border>
                         <TextBlock Style="{StaticResource HintText}" Text="Modo nocturno"/>
                         </StackPanel>
