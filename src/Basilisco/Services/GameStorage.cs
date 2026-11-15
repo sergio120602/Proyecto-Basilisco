@@ -9,10 +9,20 @@ namespace Basilisco.Services;
 /// <summary>Lo que se guarda al desinstalar un juego: su carpeta entera o sus archivos sueltos (el principal y los que le acompañan).</summary>
 /// <param name="Path">La carpeta del juego, o su archivo principal si son archivos sueltos.</param>
 /// <param name="Files">Con archivos sueltos, todos ellos (el principal incluido); con carpeta, vacía.</param>
-public sealed record InstallSource(string Path, bool IsFolder, IReadOnlyList<string> Files)
+/// <param name="Games">
+/// Los juegos de la biblioteca que van dentro: el propio juego y, si la carpeta es una colección (varios ejecutables que la
+/// comparten, como un recopilatorio), todos los demás. Se desinstalan y se instalan juntos.
+/// </param>
+public sealed record InstallSource(string Path, bool IsFolder, IReadOnlyList<string> Files, IReadOnlyList<Game> Games)
 {
     /// <summary>La carpeta en la que está (o que es) lo que se guarda.</summary>
     public string Folder => IsFolder ? Path : System.IO.Path.GetDirectoryName(Path)!;
+
+    /// <summary>True si en la carpeta hay varios juegos de la biblioteca (una colección).</summary>
+    public bool IsCollection => Games.Count > 1;
+
+    /// <summary>El nombre de la colección: el de su carpeta.</summary>
+    public string CollectionName => System.IO.Path.GetFileName(Path);
 }
 
 /// <summary>
@@ -44,9 +54,9 @@ public static class GameStorage
             return null;
         try
         {
-            // Los de las tiendas y los que tienen su carpeta elegida a mano: esa carpeta.
+            // Los de las tiendas y los que tienen su carpeta elegida a mano: esa carpeta (con los demás juegos que tenga, si es una colección).
             if (game.InstallDir is { } installDir)
-                return Directory.Exists(installDir) && IsSafeFolder(installDir, game, library) ? FolderSource(installDir) : null;
+                return Directory.Exists(installDir) && IsAllowedFolder(installDir) ? FolderSource(installDir, game, library) : null;
 
             if (GameLauncher.IsLink(game.Path))
                 return null;
@@ -67,18 +77,19 @@ public static class GameStorage
 
     /// <summary>
     /// Lo que se guardaría si el usuario elige a mano la carpeta del juego, o null si esa carpeta no vale (es la raíz de un
-    /// disco, el escritorio, tiene otros juegos o tiene Basilisco). Si el juego es un archivo, tiene que estar dentro.
+    /// disco, el escritorio o tiene Basilisco). Si el juego es un archivo, tiene que estar dentro. Si tiene otros juegos de la
+    /// biblioteca, es una colección: van todos juntos.
     /// </summary>
     public static InstallSource? SourceFromFolder(string folder, Game game, IReadOnlyCollection<Game> library)
     {
         try
         {
             folder = Path.GetFullPath(folder);
-            if (!Directory.Exists(folder) || !IsSafeFolder(folder, game, library))
+            if (!Directory.Exists(folder) || !IsAllowedFolder(folder))
                 return null;
             if (!GameLauncher.IsLink(game.Path) && !IsInside(Path.GetFullPath(GameLauncher.FileOf(game)), folder))
                 return null;
-            return FolderSource(folder);
+            return FolderSource(folder, game, library);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException)
         {
@@ -86,7 +97,22 @@ public static class GameStorage
         }
     }
 
-    static InstallSource FolderSource(string folder) => new(Path.GetFullPath(folder).TrimEnd('\\'), true, []);
+    /// <summary>
+    /// La carpeta entera, con todos los juegos de la biblioteca que tenga dentro (si hay más de uno, es una colección). Null si
+    /// alguno de ellos ya está desinstalado por su cuenta (se mezclarían al volver).
+    /// </summary>
+    static InstallSource? FolderSource(string folder, Game game, IReadOnlyCollection<Game> library)
+    {
+        folder = Path.GetFullPath(folder).TrimEnd('\\');
+        var others = OthersInside(folder, game, library);
+        if (others.Any(other => other.Archive is not null))
+            return null;
+        return new InstallSource(folder, true, [], [game, .. others.OrderBy(other => other.Name, StringComparer.CurrentCultureIgnoreCase)]);
+    }
+
+    /// <summary>Los demás juegos de la biblioteca que están dentro de esa carpeta.</summary>
+    static List<Game> OthersInside(string folder, Game game, IReadOnlyCollection<Game> library) =>
+        library.Where(other => other != game && PlacesOf(other).Any(place => IsInside(place, folder))).ToList();
 
     static InstallSource? PcSource(string file, string folder, Game game, IReadOnlyCollection<Game> library)
     {
@@ -100,10 +126,14 @@ public static class GameStorage
                 return null;
             folder = Path.GetDirectoryName(Path.GetFullPath(target))!;
         }
-        // De «Juego\bin\x64\juego.exe» sube hasta «Juego».
-        while (ExeSubfolders.Contains(Path.GetFileName(folder)) && Path.GetDirectoryName(folder) is { } up && IsSafeFolder(up, game, library))
+        // De «Juego\bin\x64\juego.exe» sube hasta «Juego» (sin meter más juegos de los que ya había: si en «bin» están los
+        // tres ejecutables de una colección, sube con los tres; si arriba hay otros juegos, se queda).
+        var inside = OthersInside(folder, game, library).Count;
+        while (ExeSubfolders.Contains(Path.GetFileName(folder)) && Path.GetDirectoryName(folder) is { } up && IsAllowedFolder(up) &&
+               OthersInside(up, game, library).Count == inside)
             folder = up;
-        return IsSafeFolder(folder, game, library) ? FolderSource(folder) : null;
+        // Si comparte la carpeta con otros ejecutables de la biblioteca, es una colección: se guardan todos juntos.
+        return IsAllowedFolder(folder) ? FolderSource(folder, game, library) : null;
     }
 
     static InstallSource? EmulatedSource(string file, string folder, Game game, IReadOnlyCollection<Game> library)
@@ -112,11 +142,11 @@ public static class GameStorage
         for (var dir = folder; dir is not null; dir = Path.GetDirectoryName(dir))
         {
             if (Path.GetFileName(dir).Equals("PS3_GAME", StringComparison.OrdinalIgnoreCase) && Path.GetDirectoryName(dir) is { } ps3Root)
-                return IsSafeFolder(ps3Root, game, library) ? FolderSource(ps3Root) : null;
+                return IsSafeFolder(ps3Root, game, library) ? FolderSource(ps3Root, game, library) : null;
         }
         if (Path.GetFileName(folder).Equals("code", StringComparison.OrdinalIgnoreCase) && Path.GetDirectoryName(folder) is { } wiiURoot &&
             Directory.Exists(Path.Combine(wiiURoot, "content")))
-            return IsSafeFolder(wiiURoot, game, library) ? FolderSource(wiiURoot) : null;
+            return IsSafeFolder(wiiURoot, game, library) ? FolderSource(wiiURoot, game, library) : null;
 
         // La imagen del disco y las que la acompañan: «Juego.cue» con «Juego (Track 1).bin», «Juego.m3u» con sus discos…
         var stem = Path.GetFileNameWithoutExtension(file);
@@ -132,10 +162,10 @@ public static class GameStorage
             && others.All(other => !Path.GetExtension(other).Equals(extension, StringComparison.OrdinalIgnoreCase) && new FileInfo(other).Length < LooseFileLimit)
             && (Directory.GetDirectories(folder).Length == 0 || LooksLike(Path.GetFileName(folder), game.Name, stem));
         if (ownFolder)
-            return FolderSource(folder);
+            return FolderSource(folder, game, library);
 
-        // Si no, solo sus archivos (los demás juegos de la carpeta se quedan donde están).
-        return companions.Any(companion => OtherGameUses(companion, game, library)) ? null : new InstallSource(file, false, companions);
+        // Si no, solo sus archivos (los demás juegos de la carpeta se quedan donde están: una carpeta de ROMs no es una colección).
+        return companions.Any(companion => OtherGameUses(companion, game, library)) ? null : new InstallSource(file, false, companions, [game]);
     }
 
     /// <summary>True si el nombre de la carpeta se parece al del juego («God of War (USA)» y «God of War»).</summary>
@@ -148,18 +178,18 @@ public static class GameStorage
     static string Letters(string text) => new(text.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
 
     /// <summary>
-    /// True si se puede guardar la carpeta entera: no es la raíz de un disco ni una carpeta del sistema, no tiene Basilisco
-    /// dentro ni otros juegos de la biblioteca.
+    /// True si se puede guardar la carpeta entera: no es la raíz de un disco ni una carpeta del sistema (el escritorio,
+    /// Program Files, Documentos…) y no tiene Basilisco dentro.
     /// </summary>
-    static bool IsSafeFolder(string folder, Game game, IReadOnlyCollection<Game> library)
+    static bool IsAllowedFolder(string folder)
     {
         folder = Path.GetFullPath(folder).TrimEnd('\\');
-        if (GameProcesses.IsTooBroad(folder))
-            return false;
-        if (IsInside(AppContext.BaseDirectory, folder) || IsInside(AppInfo.DataDirectory, folder))
-            return false;
-        return !library.Any(other => other != game && PlacesOf(other).Any(place => IsInside(place, folder)));
+        return !GameProcesses.IsTooBroad(folder) && !IsInside(AppContext.BaseDirectory, folder) && !IsInside(AppInfo.DataDirectory, folder);
     }
+
+    /// <summary>Como <see cref="IsAllowedFolder"/>, y además sin otros juegos de la biblioteca dentro.</summary>
+    static bool IsSafeFolder(string folder, Game game, IReadOnlyCollection<Game> library) =>
+        IsAllowedFolder(folder) && OthersInside(folder, game, library).Count == 0;
 
     static bool OtherGameUses(string file, Game game, IReadOnlyCollection<Game> library) =>
         library.Any(other => other != game && PlacesOf(other).Any(place => string.Equals(place, file, StringComparison.OrdinalIgnoreCase)));
@@ -271,7 +301,7 @@ public static class GameStorage
         };
 
         Directory.CreateDirectory(archiveFolder);
-        var zipPath = UniqueZipPath(archiveFolder, game);
+        var zipPath = UniqueZipPath(archiveFolder, source.IsCollection ? source.CollectionName : game.Name, game.Id);
         var partial = zipPath + ".partial";
         try
         {
@@ -305,6 +335,7 @@ public static class GameStorage
             File = zipPath,
             Source = source.Path,
             IsFolder = source.IsFolder,
+            Collection = source.IsCollection ? source.CollectionName : null,
             Size = total,
             CompressedSize = new FileInfo(zipPath).Length,
             Date = DateTime.Now,
@@ -386,16 +417,16 @@ public static class GameStorage
             throw new InvalidDataException("El archivo comprimido no ha salido bien. No se ha borrado nada.");
     }
 
-    static string UniqueZipPath(string archiveFolder, Game game)
+    static string UniqueZipPath(string archiveFolder, string title, string id)
     {
-        var name = string.Concat(game.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim().TrimEnd('.');
+        var name = string.Concat(title.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim().TrimEnd('.');
         if (name.Length == 0)
             name = "Juego";
         if (name.Length > 80)
             name = name[..80];
-        var path = Path.Combine(archiveFolder, $"{name} [{game.Id[..8]}].zip");
+        var path = Path.Combine(archiveFolder, $"{name} [{id[..8]}].zip");
         for (var n = 2; File.Exists(path); n++)
-            path = Path.Combine(archiveFolder, $"{name} [{game.Id[..8]}] ({n}).zip");
+            path = Path.Combine(archiveFolder, $"{name} [{id[..8]}] ({n}).zip");
         return path;
     }
 

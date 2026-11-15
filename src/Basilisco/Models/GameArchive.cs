@@ -15,6 +15,12 @@ public sealed class GameArchive
     /// <summary>True si se comprimió la carpeta entera; false si fueron sus archivos (se vuelven a la carpeta de <see cref="Source"/>).</summary>
     public bool IsFolder { get; set; }
 
+    /// <summary>
+    /// Si la carpeta era una colección (varios juegos de la biblioteca la comparten), su nombre. Todos sus juegos apuntan al
+    /// mismo .zip y se instalan juntos. Null: un solo juego.
+    /// </summary>
+    public string? Collection { get; set; }
+
     /// <summary>Lo que ocupaba instalado, en bytes.</summary>
     public long Size { get; set; }
 

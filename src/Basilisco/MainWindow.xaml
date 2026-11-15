@@ -217,8 +217,22 @@
                     <ToggleButton x:Name="SortTab" Style="{StaticResource HeaderTab}" Click="OnSortTabClick"
                                   ToolTip="Cambiar el orden de los juegos (O)"/>
                 </StackPanel>
-                <!-- Las acciones: Formato (antes donde estaba Importación) e importar -->
+                <!-- Las acciones: instalar o desinstalar el juego, Formato (antes donde estaba Importación) e importar -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Instalar o desinstalar el juego seleccionado (los que no son de Steam), con lo que ocupa; mientras trabaja,
+                         su progreso en una raya debajo del texto. Con los demás botones de configuración, a la izquierda de
+                         Formato (no encima de las cajas ni en la fila del título) -->
+                    <Button x:Name="InstallButton" Style="{StaticResource PillButton}" Margin="0,0,10,0" VerticalAlignment="Center"
+                            Visibility="Collapsed" Click="OnInstallClick">
+                        <Grid>
+                            <TextBlock x:Name="InstallText"/>
+                            <Grid x:Name="InstallProgress" Height="2.5" VerticalAlignment="Bottom" Margin="0,0,0,-5" Visibility="Collapsed">
+                                <Border Background="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Opacity="0.25" CornerRadius="1.25"/>
+                                <Border x:Name="InstallProgressFill" Background="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                        CornerRadius="1.25" HorizontalAlignment="Left" Width="0"/>
+                            </Grid>
+                        </Grid>
+                    </Button>
                     <Button x:Name="FormatButton" Style="{StaticResource PillButton}" Content="Formato" Click="OnFormatClick" Margin="0,0,10,0"
                             ToolTip="Cambia el formato de las cajas (cuadrada o rectangular) de uno, varios o todos los juegos (F)"/>
                     <Button x:Name="ImportMenuButton" Style="{StaticResource PillButton}" Content="Importación  +" Click="OnSteamClick" Margin="0,0,10,0"
@@ -233,15 +247,14 @@
         </AdornerDecorator>
 
         <!-- Título y etiquetas del juego seleccionado -->
-        <!-- El título y sus etiquetas no reciben el ratón (para no tapar las cajas); el botón de instalar, sí -->
-        <StackPanel x:Name="TitlePanel" VerticalAlignment="Top" HorizontalAlignment="Center">
-            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}" IsHitTestVisible="False"
+        <StackPanel x:Name="TitlePanel" VerticalAlignment="Top" HorizontalAlignment="Center" IsHitTestVisible="False">
+            <TextBlock x:Name="TitleText" FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource UiText}"
                        HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="1000">
                 <TextBlock.Effect>
                     <DropShadowEffect Color="White" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
                 </TextBlock.Effect>
             </TextBlock>
-            <ItemsControl x:Name="Chips" HorizontalAlignment="Center" Margin="0,12,0,0" IsHitTestVisible="False">
+            <ItemsControl x:Name="Chips" HorizontalAlignment="Center" Margin="0,12,0,0">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"/>
@@ -255,33 +268,6 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <!-- Instalar o desinstalar el juego (los que no son de Steam), con lo que ocupa; mientras trabaja, su progreso -->
-            <Button x:Name="InstallButton" HorizontalAlignment="Center" Margin="0,10,0,0" Cursor="Hand" Focusable="False"
-                    Visibility="Collapsed" Click="OnInstallClick" Background="{DynamicResource ChipBrush}">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Pill" Background="{TemplateBinding Background}" CornerRadius="14" Padding="16,5"
-                                BorderBrush="#99FFFFFF" BorderThickness="1.5">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Pill" Property="BorderBrush" Value="White"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Pill" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-                <StackPanel>
-                    <TextBlock x:Name="InstallText" Foreground="White" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                    <Grid x:Name="InstallProgress" Height="3" Margin="0,4,0,1" Visibility="Collapsed">
-                        <Border Background="#40FFFFFF" CornerRadius="1.5"/>
-                        <Border x:Name="InstallProgressFill" Background="White" CornerRadius="1.5" HorizontalAlignment="Left" Width="0"/>
-                    </Grid>
-                </StackPanel>
-            </Button>
         </StackPanel>
 
         <!-- Debajo de la cabecera, a los lados del título: a la izquierda la alineación y la altura del carrusel; a la

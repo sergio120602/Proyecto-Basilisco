@@ -3,6 +3,14 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [1.1.1] - 2026-11-15
+
+- **Colecciones**: si varios juegos de la biblioteca comparten carpeta (por ejemplo, un recopilatorio con tres ejecutables), es una colección. Sus juegos llevan la etiqueta **«Colección: 'Carpeta'»** y el botón dice **«Desinstalar colección · 12,4 GB»**: la carpeta se comprime una sola vez y se desinstalan todos juntos (antes no se podían desinstalar). Al instalar cualquiera de ellos vuelven todos, y la confirmación dice qué juegos van dentro.
+  - Si los ejecutables están en `bin` o parecidas, la colección es la carpeta de encima. Los juegos de cada uno en su carpeta siguen yendo por separado, y una carpeta de ROMs de consola no se toma por colección (cada juego sigue guardando solo sus archivos).
+  - Al elegir a mano la carpeta de un juego, ya se puede elegir una con más juegos dentro: va como colección.
+- **El botón de instalar y desinstalar cambia de sitio**: ya no va encima de las cajas, debajo del título, sino arriba, con los demás botones de configuración, a la izquierda de «Formato». Con el mismo estilo que ellos (verde para instalar) y se llega también con `↑` y con el mando.
+- El título del juego ya no se mete debajo de los controles de los lados: si es muy largo, acaba en «…».
+
 ## [1.1.0] - 2026-11-09
 
 - **Instalar y desinstalar juegos para liberar espacio**: debajo del título de cada juego que no es de Steam (de PC, de las tiendas o de cualquier consola) hay un botón nuevo con lo que ocupa su carpeta: **«Desinstalar · 12,4 GB»** si está instalado, o **«Instalar · 12,4 GB»** (en verde) si está guardado.

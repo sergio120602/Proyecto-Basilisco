@@ -176,6 +176,9 @@ public partial class MainWindow : Window
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
         Root.SizeChanged += (_, _) => UpdateUiScale();
         HeaderBar.SizeChanged += (_, _) => UpdateOverlayLayout();
+        // El botón de instalar cambia de ancho (lo que ocupa, el progreso): el título se ajusta al hueco que queda.
+        CarouselControlsLeft.SizeChanged += (_, _) => UpdateOverlayLayout();
+        CarouselControlsRight.SizeChanged += (_, _) => UpdateOverlayLayout();
         Activated += async (_, _) =>
         {
             CaseView.SetPaused(false);
@@ -2165,8 +2168,11 @@ public partial class MainWindow : Window
         else if (owners.Count == 0 && game.SteamOwner is { } owner)
             chips.Add($"Steam Familiar · de {owner}");
 
+        // Si comparte carpeta con otros juegos (una colección, como un recopilatorio con varios ejecutables), se dice cuál.
         var folder = GameLauncher.IsLink(game.Path) ? null : Path.GetFileName(Path.GetDirectoryName(game.Path));
-        if (!string.IsNullOrEmpty(folder))
+        if (CollectionOf(game) is { } collection)
+            chips.Add($"Colección: '{collection}'");
+        else if (!string.IsNullOrEmpty(folder))
             chips.Add($"Carpeta: '{folder}'");
 
         if (Emulators.Find(game.Emulator) is { } emulator)
@@ -2207,6 +2213,16 @@ public partial class MainWindow : Window
         var controlsTop = HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 12 * scale;
         CarouselControlsLeft.Margin = new Thickness(HeaderBar.Margin.Left, controlsTop, 0, 0);
         CarouselControlsRight.Margin = new Thickness(0, controlsTop, HeaderBar.Margin.Right, 0);
+
+        // El título va en la misma fila que esos controles: como mucho, el hueco que dejan en medio (si no cabe, acaba en «…»).
+        if (TitlePanel.Parent is FrameworkElement area && area.ActualWidth > 0)
+        {
+            var center = area.ActualWidth / 2;
+            var leftEnd = HeaderBar.Margin.Left + CarouselControlsLeft.ActualWidth * scale;
+            var rightStart = area.ActualWidth - HeaderBar.Margin.Right - CarouselControlsRight.ActualWidth * scale;
+            var half = Math.Min(center - leftEnd, rightStart - center) - 24 * scale;
+            TitleText.MaxWidth = Math.Clamp(2 * half / scale, 240, 1000);
+        }
     }
 
     void Activate(int index)
@@ -2462,9 +2478,9 @@ public partial class MainWindow : Window
             OfferInstall(game);
             return;
         }
-        if (_storageJob?.Game == game)
+        if (_storageJob is { } job && job.Includes(game))
         {
-            ShowToast($"Espera a que termine de desinstalarse «{game.Name}»");
+            ShowToast($"Espera a que termine de desinstalarse {job.Title}");
             return;
         }
         if (!GameLauncher.IsLink(game.Path) && !File.Exists(GameLauncher.FileOf(game)))
@@ -2513,13 +2529,15 @@ public partial class MainWindow : Window
             return;
 
         var game = _visibleGames[index];
-        if (_storageJob?.Game == game)
+        if (_storageJob is { } job && job.Includes(game))
         {
-            ShowToast($"Espera a que termine de {(_storageJob.Installing ? "instalarse" : "desinstalarse")} «{game.Name}»");
+            ShowToast($"Espera a que termine de {(job.Installing ? "instalarse" : "desinstalarse")} {job.Title}");
             return;
         }
         var answer = MessageBox.Show(this, game.Archive is { } archive
-                ? $"¿Quitar «{game.Name}» de la biblioteca?\n\nEstá desinstalado: su archivo comprimido se queda en\n{archive.File}\n(bórralo tú si ya no lo quieres)."
+                ? $"¿Quitar «{game.Name}» de la biblioteca?\n\n" + (SameArchive(archive).Count > 1
+                    ? $"Está desinstalado con su colección «{archive.Collection}»: el archivo comprimido se queda en\n{archive.File}\npara los demás juegos de la colección."
+                    : $"Está desinstalado: su archivo comprimido se queda en\n{archive.File}\n(bórralo tú si ya no lo quieres).")
                 : $"¿Quitar «{game.Name}» de la biblioteca?\n\nEl juego no se borrará de tu disco.",
             "Quitar juego", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes)

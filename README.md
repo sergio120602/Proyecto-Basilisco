@@ -184,6 +184,7 @@ Importar juegos y escribir nombres se sigue haciendo con teclado y ratón.
 - [x] **v0.10.1** — Capturas y vídeos por origen (desplegable) y en carrusel: también los tuyos de Steam (capturas y grabaciones) y los de las carpetas que añadas
 - [x] **v1.0.0** — Primera versión terminada, con su página web de descarga en GitHub Pages
 - [x] **v1.1.0** — Instalar y desinstalar los juegos que no son de Steam: se comprimen y se guardan en otra carpeta (en «Ajustes») para liberar espacio, y vuelven a su sitio al instalarlos
+- [x] **v1.1.1** — Colecciones (varios ejecutables en la misma carpeta) que se desinstalan juntas, y el botón de instalar arriba, con los de configuración
 - [ ] **Paso 6** — Descarga de cajas y carátulas según los filtros (PS1, PS2, PS3…) de forma automática
 - [ ] Tamaño de las cajas a elección del jugador
 - [x] **v0.0.6** — Importar directorios completos y escanearlos en busca de juegos

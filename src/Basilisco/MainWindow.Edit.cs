@@ -62,7 +62,7 @@ public partial class MainWindow
         EditBanner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         ExitBar();
         // El título y sus datos no reciben el ratón normalmente (para no tapar las cajas); al editar, sí.
-        TitleText.IsHitTestVisible = Chips.IsHitTestVisible = on;
+        TitlePanel.IsHitTestVisible = on;
         foreach (var element in Movables())
         {
             if (on && !_editFrames.ContainsKey(element) && AdornerLayer.GetAdornerLayer(element) is { } layer)
