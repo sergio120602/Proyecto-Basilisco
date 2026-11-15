@@ -176,9 +176,10 @@ public partial class MainWindow : Window
         Viewport.SizeChanged += (_, _) => UpdateOverlayLayout();
         Root.SizeChanged += (_, _) => UpdateUiScale();
         HeaderBar.SizeChanged += (_, _) => UpdateOverlayLayout();
-        // El botón de instalar cambia de ancho (lo que ocupa, el progreso): el título se ajusta al hueco que queda.
+        // El botón de instalar cambia de ancho (lo que ocupa, el progreso) y cada título mide distinto: se mira si el título cabe en su fila.
         CarouselControlsLeft.SizeChanged += (_, _) => UpdateOverlayLayout();
         CarouselControlsRight.SizeChanged += (_, _) => UpdateOverlayLayout();
+        TitleText.SizeChanged += (_, _) => UpdateOverlayLayout();
         Activated += async (_, _) =>
         {
             CaseView.SetPaused(false);
@@ -2196,7 +2197,18 @@ public partial class MainWindow : Window
         // El título va siempre en el mismo sitio, centrado justo debajo de la cabecera: no depende del zoom
         // ni del tamaño de la caja seleccionada.
         var scale = _uiScale.ScaleX;
-        TitlePanel.Margin = new Thickness(0, HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 14 * scale, 0, 0);
+
+        // Los controles del carrusel, debajo de la cabecera: la alineación y la altura a la izquierda, la descarga, instalar y
+        // el zoom a la derecha.
+        var controlsTop = HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 12 * scale;
+        CarouselControlsLeft.Margin = new Thickness(HeaderBar.Margin.Left, controlsTop, 0, 0);
+        CarouselControlsRight.Margin = new Thickness(0, controlsTop, HeaderBar.Margin.Right, 0);
+
+        // El título va en la fila de esos controles; si pisara alguno (un título largo, o el botón de instalar), baja debajo de ellos.
+        var titleTop = HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 14 * scale;
+        if (ControlsUnderTitle(titleTop, scale) is { } below)
+            titleTop = below + 6 * scale;
+        TitlePanel.Margin = new Thickness(0, titleTop, 0, 0);
         if (_settings.CarouselAutoShift)
         {
             // Ni el título ni los controles de los lados (alineación, altura, zoom) pisan las cajas.
@@ -2209,20 +2221,39 @@ public partial class MainWindow : Window
         var horizon = _flow.Project(new Point3D(0, 0, -2.5));
         Floor.Margin = new Thickness(0, Math.Max(0, horizon.Y - 40), 0, 0);
 
-        // Los controles del carrusel, debajo de la cabecera: la alineación y la altura a la izquierda, la descarga y el zoom a la derecha.
-        var controlsTop = HeaderBar.Margin.Top + HeaderBar.ActualHeight * scale + 12 * scale;
-        CarouselControlsLeft.Margin = new Thickness(HeaderBar.Margin.Left, controlsTop, 0, 0);
-        CarouselControlsRight.Margin = new Thickness(0, controlsTop, HeaderBar.Margin.Right, 0);
+    }
 
-        // El título va en la misma fila que esos controles: como mucho, el hueco que dejan en medio (si no cabe, acaba en «…»).
-        if (TitlePanel.Parent is FrameworkElement area && area.ActualWidth > 0)
+    /// <summary>
+    /// Si el título, puesto en <paramref name="titleTop"/>, pisaría algún control de los lados (donde se ve de verdad, con lo
+    /// que se haya movido en el modo edición), dónde acaban esos controles por abajo; null si no pisa ninguno.
+    /// </summary>
+    double? ControlsUnderTitle(double titleTop, double scale)
+    {
+        if (TitlePanel.Parent is not FrameworkElement area || area.ActualWidth <= 0 || TitleText.DesiredSize.Width <= 0)
+            return null;
+        var offset = OffsetOf(TitleText);
+        var width = TitleText.DesiredSize.Width * scale;
+        var title = new Rect(area.ActualWidth / 2 - width / 2 + offset.X * scale, titleTop + offset.Y * scale, width, TitleText.DesiredSize.Height * scale);
+        title.Inflate(16 * scale, 0);
+
+        double? bottom = null;
+        foreach (var group in new[] { CarouselControlsLeft, CarouselControlsRight })
         {
-            var center = area.ActualWidth / 2;
-            var leftEnd = HeaderBar.Margin.Left + CarouselControlsLeft.ActualWidth * scale;
-            var rightStart = area.ActualWidth - HeaderBar.Margin.Right - CarouselControlsRight.ActualWidth * scale;
-            var half = Math.Min(center - leftEnd, rightStart - center) - 24 * scale;
-            TitleText.MaxWidth = Math.Clamp(2 * half / scale, 240, 1000);
+            foreach (var control in group.Children.OfType<FrameworkElement>().Where(control => control.IsVisible))
+            {
+                try
+                {
+                    var bounds = control.TransformToAncestor(area).TransformBounds(new Rect(control.RenderSize));
+                    if (bounds.IntersectsWith(title))
+                        bottom = Math.Max(bottom ?? 0, bounds.Bottom);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Aún no está en la ventana.
+                }
+            }
         }
+        return bottom;
     }
 
     void Activate(int index)

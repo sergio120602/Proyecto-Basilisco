@@ -68,7 +68,7 @@ public partial class MainWindow
 
         if (game is null || game.SteamAppId is not null)
         {
-            InstallButton.Visibility = Visibility.Collapsed;
+            StorageButton.Visibility = Visibility.Collapsed;
             return;
         }
         if (_storageJob is { } job && job.Includes(game))
@@ -82,11 +82,11 @@ public partial class MainWindow
         {
             SetInstallLook(green: true);
             InstallText.Text = $"{(archive.Collection is null ? "Instalar" : "Instalar colección")}  ·  {GameStorage.FormatSize(archive.Size)}";
-            InstallButton.ToolTip = (archive.Collection is { } collection
+            StorageButton.ToolTip = (archive.Collection is { } collection
                     ? $"Colección «{collection}»: {string.Join(", ", SameArchive(archive).Select(other => other.Name))}.\nSe instalan todos juntos.\n\n"
                     : "") +
                 $"Está guardado comprimido ({GameStorage.FormatSize(archive.CompressedSize)}) en:\n{archive.File}\n\nAl instalarlo vuelve a:\n{archive.Source}";
-            InstallButton.Visibility = Visibility.Visible;
+            StorageButton.Visibility = Visibility.Visible;
             return;
         }
 
@@ -94,16 +94,16 @@ public partial class MainWindow
         var hasFile = !GameLauncher.IsLink(game.Path) && File.Exists(GameLauncher.FileOf(game));
         if (!hasFile && game.InstallDir is null)
         {
-            InstallButton.Visibility = Visibility.Collapsed;
+            StorageButton.Visibility = Visibility.Collapsed;
             return;
         }
 
         SetInstallLook(green: false);
-        InstallButton.Visibility = Visibility.Visible;
+        StorageButton.Visibility = Visibility.Visible;
         if (!_installInfo.TryGetValue(game.Id, out var info))
         {
             InstallText.Text = "Desinstalar  ·  midiendo…";
-            InstallButton.ToolTip = null;
+            StorageButton.ToolTip = null;
             var measure = _installMeasure = new CancellationTokenSource();
             try
             {
@@ -128,13 +128,13 @@ public partial class MainWindow
     {
         if (green)
         {
-            InstallButton.Background = InstallBrush;
-            InstallButton.Foreground = Brushes.White;
+            StorageButton.Background = InstallBrush;
+            StorageButton.Foreground = Brushes.White;
         }
         else
         {
-            InstallButton.ClearValue(BackgroundProperty);
-            InstallButton.ClearValue(ForegroundProperty);
+            StorageButton.ClearValue(BackgroundProperty);
+            StorageButton.ClearValue(ForegroundProperty);
         }
     }
 
@@ -144,12 +144,12 @@ public partial class MainWindow
         if (source is null)
         {
             InstallText.Text = "Desinstalar  ·  elige su carpeta";
-            InstallButton.ToolTip = "No se sabe con seguridad cuál es la carpeta de este juego: elígela tú para poder desinstalarlo";
+            StorageButton.ToolTip = "No se sabe con seguridad cuál es la carpeta de este juego: elígela tú para poder desinstalarlo";
             return;
         }
         var label = source.IsCollection ? "Desinstalar colección" : "Desinstalar";
         InstallText.Text = size is { } bytes ? $"{label}  ·  {GameStorage.FormatSize(bytes)}" : label;
-        InstallButton.ToolTip = (source.IsCollection
+        StorageButton.ToolTip = (source.IsCollection
                 ? $"Colección «{source.CollectionName}»: {string.Join(", ", source.Games.Select(member => member.Name))}.\n" +
                   "Comparten carpeta, así que se desinstalan todos juntos.\n\n"
                 : "") +
@@ -180,11 +180,11 @@ public partial class MainWindow
     {
         var percent = (int)Math.Floor(job.Progress * 100);
         InstallText.Text = $"{(job.Installing ? "Instalando" : "Desinstalando")}…  {percent} %   ·   Cancelar";
-        InstallButton.ToolTip = job.Installing ? $"Descomprimiendo {job.Title} en su carpeta" : $"Comprimiendo {job.Title} en la carpeta de juegos desinstalados";
+        StorageButton.ToolTip = job.Installing ? $"Descomprimiendo {job.Title} en su carpeta" : $"Comprimiendo {job.Title} en la carpeta de juegos desinstalados";
         SetInstallLook(green: job.Installing);
         InstallProgress.Visibility = Visibility.Visible;
         InstallProgressFill.Width = Math.Max(0, InstallText.ActualWidth * job.Progress);
-        InstallButton.Visibility = Visibility.Visible;
+        StorageButton.Visibility = Visibility.Visible;
     }
 
     async void OnInstallClick(object sender, RoutedEventArgs e)

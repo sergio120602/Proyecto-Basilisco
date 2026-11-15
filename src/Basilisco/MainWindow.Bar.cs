@@ -43,8 +43,6 @@ public partial class MainWindow
             new(PlayersTab, "4", null, () => Press(PlayersTab)),
             new(FamilyTab, "5", null, () => Press(FamilyTab)),
             new(SortTab, "O", PadAction.Sort, () => Press(SortTab)),
-            // Instalar o desinstalar el juego seleccionado (sin tecla propia: se llega con ↑ o con el mando)
-            new(InstallButton, null, null, () => Press(InstallButton)),
             new(FormatButton, "F", PadAction.Format, () => Press(FormatButton)),
             new(ImportMenuButton, "S", null, () => Press(ImportMenuButton)),
             new(ImportFolderButton, "C", null, () => Press(ImportFolderButton)),
@@ -54,6 +52,8 @@ public partial class MainWindow
             new(AlignToggle, "L", null, () => Press(AlignToggle)),
             new(AutoShiftToggle, null, null, () => Press(AutoShiftToggle)),
             new(MetadataButton, "M", null, () => Press(MetadataButton)),
+            // Instalar o desinstalar el juego seleccionado (sin tecla propia: se llega con ↑ o con el mando)
+            new(StorageButton, null, null, () => Press(StorageButton)),
         ],
     ];
 

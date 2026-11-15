@@ -25,12 +25,17 @@ public partial class MainWindow
         LogoPanel, SearchField, EditButton, ShortcutsButton, UpdateButton, NightButton, ThemeButton,
         AllTab, ConsolesTab, FiltersTab, PlayersTab, FamilyTab, SortTab, FormatButton, ImportMenuButton, ImportFolderButton, ImportGameButton,
         AlignToggle, ShiftGroup, AutoShiftToggle, MetadataButton, ZoomGroup,
-        TitleText, Chips, InstallButton, AchievementsPanel,
+        TitleText, Chips, StorageButton, AchievementsPanel,
     ];
 
     /// <summary>Al abrir: cada cosa en el sitio donde la dejaste, y el arrastre preparado (solo hace algo en modo edición).</summary>
     void InitEditMode()
     {
+        // En la 1.1.0 el botón de instalar iba debajo del título y se llamaba «InstallButton»; lo que se movió entonces no
+        // vale arriba, con los botones de configuración (lo sacaba de la ventana): se olvida.
+        if (_settings.UiOffsets.Remove("InstallButton"))
+            _settings.Save();
+
         foreach (var element in Movables())
         {
             if (_settings.UiOffsets.TryGetValue(element.Name, out var offset) && offset.Length == 2)
@@ -77,7 +82,7 @@ public partial class MainWindow
         }
         // El cursor de mano de la barra de logros vuelve al terminar.
         if (!on)
-            AchievementsPanel.Cursor = InstallButton.Cursor = Cursors.Hand;
+            AchievementsPanel.Cursor = StorageButton.Cursor = Cursors.Hand;
     }
 
     static Vector OffsetOf(FrameworkElement element) =>

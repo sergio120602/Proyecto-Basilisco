@@ -3,6 +3,12 @@
 Todas las versiones de Basilisco. Cada versión se publica en
 [Releases](https://github.com/sergio120602/Proyecto-Basilisco/releases) con su `.exe` portable.
 
+## [1.1.2] - 2026-11-15
+
+- **Arreglo**: el botón de instalar y desinstalar no se veía si en la 1.1.0 lo habías movido en el modo edición: se quedaba con aquel desplazamiento y salía por encima de la ventana. Ahora empieza en su sitio (se puede volver a mover con «Editar»).
+- **El botón va al lado del Zoom**, con los controles del carrusel (antes, a la izquierda de «Formato»). Se sigue llegando con `↑` y con el mando.
+- **El título del juego baja una fila solo si choca** con algún control de los lados (mirando dónde se ve cada uno de verdad, con lo que hayas movido en el modo edición). Si cabe, se queda donde estaba.
+
 ## [1.1.1] - 2026-11-15
 
 - **Colecciones**: si varios juegos de la biblioteca comparten carpeta (por ejemplo, un recopilatorio con tres ejecutables), es una colección. Sus juegos llevan la etiqueta **«Colección: 'Carpeta'»** y el botón dice **«Desinstalar colección · 12,4 GB»**: la carpeta se comprime una sola vez y se desinstalan todos juntos (antes no se podían desinstalar). Al instalar cualquiera de ellos vuelven todos, y la confirmación dice qué juegos van dentro.
